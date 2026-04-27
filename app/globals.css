@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --accent: #6366f1;
+}
+
+.dark {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --accent: #818cf8;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.reading-content {
+  font-size: var(--reading-font-size, 16px);
+  line-height: var(--reading-line-height, 1.8);
+}
+
+.reading-content p {
+  margin-bottom: 1em;
+  text-indent: 2em;
+}
+
+.dark-mode {
+  background: #1a1a2e;
+  color: #e4e4e7;
+}
+
+.dark-mode .reading-content {
+  color: #d4d4d8;
+}
+
+/* 护眼模式 */
+.eye-care {
+  background: #fdf6e3;
+  color: #333;
+}
+
+.eye-care .reading-content {
+  color: #555;
+}
+
+/* 移动端沉浸式阅读 */
+@media (max-width: 640px) {
+  .reading-content {
+    font-size: 15px !important;
+    line-height: 1.9 !important;
+  }
+}
+
+/* 广告位样式 */
+.ad-container {
+  @apply bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-center text-sm text-gray-500;
+}
