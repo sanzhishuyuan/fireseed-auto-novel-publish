@@ -12,7 +12,7 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  return getAllNovelIds().map(id => ({ id }));
+  return getAllNovelIds().map(novel => ({ id: novel.id }));
 }
 
 export default async function NovelDetailPage({ params }: Props) {

@@ -60,3 +60,6 @@ export function generateAIToken(): string {
   }
   return result;
 }
+
+// 导出 ADMIN_PASSWORD（供其他模块使用）
+export { DEV_ADMIN_PASSWORD as ADMIN_PASSWORD };

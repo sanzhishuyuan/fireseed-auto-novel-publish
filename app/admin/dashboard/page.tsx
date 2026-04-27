@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { ADMIN_PASSWORD } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import db from '@/lib/db';
-import { getAllNovelIds, getNovelMeta, getNovelChapters } from '@/lib/novels';
+import { getAllNovelIds, getNovelChapters } from '@/lib/novels';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,15 +15,14 @@ export default async function AdminDashboard() {
     redirect('/admin');
   }
 
-  const novelIds = getAllNovelIds();
-  const novels = novelIds.map(id => ({
-    id,
-    ...getNovelMeta(id),
-    chapterCount: getNovelChapters(id).length
+  const novelList = getAllNovelIds();
+  const novels = novelList.map(novel => ({
+    ...novel,
+    chapterCount: getNovelChapters(novel.id).length
   }));
 
   const userCount = (db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number }).count;
-  const novelCount = novelIds.length;
+  const novelCount = novelList.length;
   const chapterCount = novels.reduce((acc, n) => acc + n.chapterCount, 0);
   const activeTokenCount = (db.prepare('SELECT COUNT(*) as count FROM ai_tokens WHERE is_active = 1').get() as { count: number }).count;
 

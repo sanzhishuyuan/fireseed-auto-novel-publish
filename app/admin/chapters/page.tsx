@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { ADMIN_PASSWORD } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { getAllNovelIds, getNovelMeta } from '@/lib/novels';
+import { getAllNovelIds } from '@/lib/novels';
 import ChapterEditor from './ChapterEditor';
 
 export const dynamic = 'force-dynamic';
@@ -14,8 +14,7 @@ export default async function ChaptersPage() {
     redirect('/admin');
   }
 
-  const novelIds = getAllNovelIds();
-  const novels = novelIds.map(id => ({ id, ...getNovelMeta(id) }));
+  const novels = getAllNovelIds();
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>

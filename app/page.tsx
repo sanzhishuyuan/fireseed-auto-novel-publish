@@ -1,15 +1,14 @@
 import Link from 'next/link';
-import { getAllNovelIds, getNovelMeta, getNovelChapters } from '@/lib/novels';
+import { getAllNovelIds, getNovelChapters } from '@/lib/novels';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const novelIds = getAllNovelIds();
+  const novelList = getAllNovelIds();
 
-  const novels = novelIds.map(id => ({
-    id,
-    ...getNovelMeta(id),
-    chapterCount: getNovelChapters(id).filter(c => c.meta.branch === 'main').length
+  const novels = novelList.map(novel => ({
+    ...novel,
+    chapterCount: getNovelChapters(novel.id).filter(c => c.meta.branch === 'main').length
   })).filter(n => n.title);
 
   return (

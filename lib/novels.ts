@@ -9,9 +9,14 @@ export interface NovelMeta {
   description?: string;
   cover_url?: string;
   status?: 'ongoing' | 'completed' | 'archived';
-  tags?: string[];
+  tags?: string; // 逗号分隔的字符串，如 "科幻,冒险"
   created_at?: string;
   updated_at?: string;
+}
+
+// 完整小说信息接口
+export interface Novel extends NovelMeta {
+  id: string;
 }
 
 export interface ChapterMeta {
@@ -36,15 +41,20 @@ export function getNovelsDir(): string {
   return path.join(process.cwd(), 'content', 'novels');
 }
 
-// 获取所有小说ID
-export function getAllNovelIds(): string[] {
+// 获取所有小说
+export function getAllNovelIds(): Novel[] {
   const novelsDir = getNovelsDir();
   if (!fs.existsSync(novelsDir)) {
     return [];
   }
-  return fs.readdirSync(novelsDir).filter(file => {
+  const novelIds = fs.readdirSync(novelsDir).filter(file => {
     const metaPath = path.join(novelsDir, file, 'meta.md');
     return fs.existsSync(metaPath);
+  });
+  
+  return novelIds.map(id => {
+    const meta = getNovelMeta(id);
+    return { id, ...meta } as Novel;
   });
 }
 
