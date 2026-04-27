@@ -1,0 +1,25 @@
+# SSH 私钥
+*.pem
+*.key
+*.txt  # 临时文件
+id_*
+known_hosts
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+npm-debug.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
