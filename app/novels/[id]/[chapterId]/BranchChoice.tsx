@@ -16,36 +16,28 @@ interface Props {
   userBranch: string | null | undefined;
 }
 
-export default function BranchChoice({ choices, novelId, currentBranch, userId, userBranch }: Props) {
+export default function BranchChoice({ choices, novelId, userId, userBranch }: Props) {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [selectedChoice, setSelectedChoice] = useState<Choice | null>(null);
 
   const handleChoice = async (choice: Choice) => {
     if (!userId) {
-      // 未登录，跳转登录
       router.push('/auth/login');
       return;
     }
-
     setSelectedChoice(choice);
     setShowModal(true);
   };
 
   const confirmChoice = async () => {
     if (!selectedChoice || !userId) return;
-
     try {
       await fetch('/api/user/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          novelId,
-          branch: selectedChoice.branch
-        })
+        body: JSON.stringify({ novelId, branch: selectedChoice.branch })
       });
-      
-      // 跳转到对应的支线章节
       router.push(`/novels/${novelId}/${selectedChoice.branch}-1`);
     } catch (error) {
       console.error('保存分支选择失败', error);
@@ -53,58 +45,91 @@ export default function BranchChoice({ choices, novelId, currentBranch, userId, 
   };
 
   return (
-    <div className="mt-12 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
-      <h3 className="text-lg font-bold text-center text-purple-700 dark:text-purple-300 mb-4">
-        🔀 剧情分支点
-      </h3>
-      <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
-        你的选择将影响故事走向
-      </p>
-      
-      <div className="space-y-3">
-        {choices.map((choice, index) => (
-          <button
-            key={index}
-            onClick={() => handleChoice(choice)}
-            className="w-full p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-purple-200 dark:border-purple-700 hover:border-purple-500 dark:hover:border-purple-500 transition text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-8 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 rounded-full flex items-center justify-center font-bold">
+    <>
+      <div className="mt-16 p-6 sm:p-8 rounded-2xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}>
+        {/* 标题 */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-3" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+              <circle cx="5" cy="5" r="5"/>
+            </svg>
+            剧情分支
+          </div>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            你的选择将影响后续故事走向
+          </p>
+        </div>
+
+        {/* 选项 */}
+        <div className="space-y-3">
+          {choices.map((choice, index) => (
+            <button
+              key={index}
+              onClick={() => handleChoice(choice)}
+              className="w-full p-4 rounded-xl text-left flex items-center gap-4 transition-all hover:scale-[1.01]"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1.5px solid var(--border-light)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
+              >
                 {String.fromCharCode(65 + index)}
-              </span>
-              <span className="text-gray-800 dark:text-gray-200 group-hover:text-purple-700 dark:group-hover:text-purple-300">
-                {choice.text}
-              </span>
-            </div>
-          </button>
-        ))}
+              </div>
+              <span className="text-sm font-medium flex-1">{choice.text}</span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
+                <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 确认弹窗 */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full">
-            <h4 className="font-bold text-lg text-gray-800 dark:text-white mb-2">确认选择</h4>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              确定要{selectedChoice?.text}吗？此选择将影响后续剧情。
-            </p>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-6 animate-fade-in"
+            style={{ background: 'var(--bg-card)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="text-center mb-5">
+              <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="var(--accent)" strokeWidth="1.5">
+                  <circle cx="11" cy="11" r="9"/>
+                  <path d="M11 7v4M11 14h.01"/>
+                </svg>
+              </div>
+              <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>确认选择</h4>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                确定要「{selectedChoice?.text}」吗？此选择将影响后续剧情。
+              </p>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300"
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium"
+                style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
               >
                 取消
               </button>
               <button
                 onClick={confirmChoice}
-                className="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="btn-primary flex-1 justify-center py-2.5 rounded-lg text-sm"
               >
-                确认
+                确认选择
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

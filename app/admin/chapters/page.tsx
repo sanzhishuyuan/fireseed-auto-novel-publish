@@ -1,8 +1,7 @@
 import { cookies } from 'next/headers';
 import { ADMIN_PASSWORD } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import db from '@/lib/db';
-import { getAllNovelIds, getNovelMeta, getNovelChapters } from '@/lib/novels';
+import { getAllNovelIds, getNovelMeta } from '@/lib/novels';
 import ChapterEditor from './ChapterEditor';
 
 export const dynamic = 'force-dynamic';
@@ -10,29 +9,27 @@ export const dynamic = 'force-dynamic';
 export default async function ChaptersPage() {
   const cookieStore = await cookies();
   const isAdmin = cookieStore.get('admin_auth')?.value === ADMIN_PASSWORD;
-  
+
   if (!isAdmin) {
     redirect('/admin');
   }
 
   const novelIds = getAllNovelIds();
-  const novels = novelIds.map(id => ({
-    id,
-    ...getNovelMeta(id)
-  }));
+  const novels = novelIds.map(id => ({ id, ...getNovelMeta(id) }));
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-800 dark:text-white">📄 章节管理</h1>
-          <a href="/admin/dashboard" className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg">
-            返回后台
+    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+          <a href="/admin/dashboard" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M13 8H3M7 4L3 8l4 4"/>
+            </svg>
           </a>
+          <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>章节管理</h1>
         </div>
       </header>
-
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <ChapterEditor novels={novels} />
       </div>
     </div>

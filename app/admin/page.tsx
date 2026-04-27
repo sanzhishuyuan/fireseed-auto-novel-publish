@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
       } else {
         setError('管理员密码错误');
       }
-    } catch (err) {
+    } catch {
       setError('网络错误');
     } finally {
       setLoading(false);
@@ -34,26 +34,43 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-      <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: 'var(--bg-primary)' }}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl p-8"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+      >
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-4">🔐</div>
-          <h1 className="text-2xl font-bold text-white">AI创作后台</h1>
-          <p className="text-gray-400 mt-2">请输入管理员密码</p>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
+            <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+              <path d="M11 18C11 18 13.5 11 18 11C22.5 11 25 18 25 18C25 18 22.5 25 18 25C13.5 25 11 18 11 18Z" stroke="var(--accent)" strokeWidth="1.5" fill="none"/>
+              <circle cx="18" cy="18" r="4" fill="var(--accent)"/>
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>创作后台</h1>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>输入管理员密码登录</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-            placeholder="管理员密码"
-            required
-          />
-          
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input text-center"
+              placeholder="管理员密码"
+              required
+            />
+          </div>
+
           {error && (
-            <div className="p-3 bg-red-900/50 text-red-400 rounded-lg text-sm">
+            <div
+              className="p-3 rounded-lg text-sm text-center"
+              style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}
+            >
               {error}
             </div>
           )}
@@ -61,14 +78,14 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50"
+            className="btn-primary w-full justify-center py-3"
           >
             {loading ? '验证中...' : '进入后台'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <a href="/" className="text-gray-400 hover:text-white text-sm">
+          <a href="/" className="text-xs" style={{ color: 'var(--text-muted)' }}>
             ← 返回首页
           </a>
         </div>

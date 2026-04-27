@@ -1,146 +1,288 @@
 import Link from 'next/link';
-import { getAllNovelIds, getNovelMeta } from '@/lib/novels';
+import { getAllNovelIds, getNovelMeta, getNovelChapters } from '@/lib/novels';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const novelIds = getAllNovelIds();
-  
+
   const novels = novelIds.map(id => ({
     id,
-    ...getNovelMeta(id)
+    ...getNovelMeta(id),
+    chapterCount: getNovelChapters(id).filter(c => c.meta.branch === 'main').length
   })).filter(n => n.title);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
       {/* 顶部导航 */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-            📚 AI小说平台
-          </h1>
-          <nav className="flex items-center gap-4">
-            <Link href="/novels" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600">
-              小说列表
+      <header
+        className="glass sticky top-0 z-50"
+        style={{ borderBottom: '1px solid var(--border-light)' }}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="14" cy="14" r="14" fill="url(#grad)" />
+              <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
+              <circle cx="14" cy="14" r="3" fill="white"/>
+              <defs>
+                <linearGradient id="grad" x1="0" y1="0" x2="28" y2="28">
+                  <stop offset="0%" stopColor="var(--accent)" />
+                  <stop offset="100%" stopColor="var(--accent-light)" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <span className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Spark
+            </span>
+          </Link>
+          <nav className="flex items-center gap-1">
+            <Link href="/novels" className="btn-ghost hide-mobile">
+              全部作品
             </Link>
-            <Link href="/auth/login" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            <Link href="/auth/login" className="btn-primary text-sm py-2 px-5">
               登录
             </Link>
           </nav>
         </div>
       </header>
 
-      {/* 开屏广告位 */}
-      <div className="ad-container mx-4 mt-4 hidden md:block">
-        <span>📢 广告位：开屏横幅广告 728x90</span>
-      </div>
+      {/* Hero 区域 */}
+      <section className="relative overflow-hidden py-20 sm:py-28">
+        {/* 背景装饰 */}
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: 'radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent)'
+          }}
+        />
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent)' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent-light)' }} />
 
-      {/* 特色功能介绍 */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">
-          ✨ 平台特色
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="text-4xl mb-4">🤖</div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">AI智能创作</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              采用先进AI技术，自动生成精彩剧情，支持多种风格题材
-            </p>
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+            style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <circle cx="6" cy="6" r="6"/>
+            </svg>
+            AI 驱动 · 互动叙事
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="text-4xl mb-4">🌳</div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">多分支剧情</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              你的选择决定故事走向，每条支线都是全新体验
-            </p>
+
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            每一个选择
+            <br />
+            <span className="text-gradient">改写故事结局</span>
+          </h1>
+
+          <p className="text-lg sm:text-xl mb-10 max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
+            在这里，你的选择将影响故事走向。AI 生成的分支剧情，每一次阅读都是独一无二的冒险。
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/novels" className="btn-primary text-base px-8 py-3">
+              开始探索
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+            <Link href="/auth/register" className="btn-secondary text-base px-8 py-3">
+              免费注册
+            </Link>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="text-4xl mb-4">📱</div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">沉浸阅读</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              移动端优化体验，支持个性化阅读设置，护眼模式
-            </p>
-          </div>
+        </div>
+      </section>
+
+      {/* 特色介绍 */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+        <div className="grid sm:grid-cols-3 gap-6">
+          {[
+            {
+              title: 'AI 智能叙事',
+              desc: '先进的大语言模型驱动，生成自然流畅的故事情节，支持多种题材与风格',
+              icon: (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                  <path d="M2 17l10 5 10-5"/>
+                  <path d="M2 12l10 5 10-5"/>
+                </svg>
+              )
+            },
+            {
+              title: '多分支剧情',
+              desc: '你的每一个选择都会影响故事走向。不同的抉择，通向截然不同的结局',
+              icon: (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>
+                  <path d="M5.64 5.64l4.24 4.24M14.12 14.12l4.24 4.24M5.64 18.36l4.24-4.24M14.12 9.88l4.24-4.24"/>
+                </svg>
+              )
+            },
+            {
+              title: '沉浸式阅读',
+              desc: '专为阅读优化的界面，支持字号、行距、主题自定义，护眼模式舒适阅读',
+              icon: (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+              )
+            }
+          ].map((item, i) => (
+            <div key={i} className="card p-6 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+                {item.icon}
+              </div>
+              <h3 className="font-semibold text-base mb-2" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* 热门小说 */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">🔥 热门小说</h2>
-          <Link href="/novels" className="text-indigo-600 hover:text-indigo-700">
-            查看全部 →
-          </Link>
-        </div>
-        
-        {novels.length > 0 ? (
-          <div className="grid md:grid-cols-4 gap-6">
-            {novels.map((novel) => (
-              <Link 
-                key={novel.id} 
+      {novels.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>作品推荐</h2>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>精选 AI 创作 · 持续更新</p>
+            </div>
+            <Link href="/novels" className="btn-ghost text-sm hide-mobile">
+              查看全部
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {novels.map((novel, i) => (
+              <Link
+                key={novel.id}
                 href={`/novels/${novel.id}`}
-                className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+                className="card overflow-hidden group animate-slide-up"
+                style={{ animationDelay: `${i * 80}ms` }}
               >
-                <div className="aspect-[3/4] bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-                  <span className="text-white text-4xl">📖</span>
+                {/* 封面 */}
+                <div
+                  className="aspect-[3/4] relative overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, #1e1e3a 0%, #2d1b69 50%, #4c1d95 100%)' }}
+                >
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center mb-3">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="white" strokeWidth="1.5">
+                        <path d="M10 2L3 6v8l7 4 7-4V6L10 2z"/>
+                        <path d="M10 2v12M3 6l7 4 7-4"/>
+                      </svg>
+                    </div>
+                    <span className="text-white/60 text-xs font-medium tracking-widest uppercase">
+                      {novel.tags?.split(',')[0]?.trim() || '故事'}
+                    </span>
+                  </div>
+                  {/* 状态标签 */}
+                  <div className="absolute top-3 right-3">
+                    <span className={novel.status === 'completed' ? 'badge badge-success' : 'badge badge-warning'}>
+                      {novel.status === 'completed' ? '完结' : '连载'}
+                    </span>
+                  </div>
+                  {/* 悬停渐变 */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.3), transparent)' }}
+                  />
                 </div>
+
+                {/* 信息 */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-gray-800 dark:text-white truncate">
+                  <h3 className="font-semibold text-sm mb-1 line-clamp-2" style={{ color: 'var(--text-primary)' }}>
                     {novel.title}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {novel.author || '未知作者'}
+                  <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+                    {novel.author || 'Spark AI'}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 line-clamp-2">
-                    {novel.description || '暂无简介'}
-                  </p>
+                  <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span className="flex items-center gap-1">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M1 3h10M1 6h10M1 9h6"/>
+                      </svg>
+                      {novel.chapterCount} 章
+                    </span>
+                    <span className="line-clamp-2 flex-1" style={{ color: 'var(--text-muted)' }}>
+                      {novel.description || '暂无简介'}
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <p className="text-6xl mb-4">📚</p>
-            <p>暂无小说，管理员正在创作中...</p>
-            <Link href="/admin" className="text-indigo-600 hover:underline mt-2 inline-block">
-              进入创作后台
-            </Link>
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* 会员服务 */}
-      <section className="bg-gradient-to-r from-indigo-600 to-purple-600 py-12 mt-12">
-        <div className="max-w-7xl mx-auto px-4 text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">💎 升级会员 畅享更多</h2>
-          <p className="text-lg mb-6 opacity-90">
-            解锁全部支线章节、无广告阅读、专属创作特权
+      {/* 空状态 */}
+      {novels.length === 0 && (
+        <section className="max-w-md mx-auto px-4 text-center py-20">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="var(--accent)" strokeWidth="1.5">
+              <path d="M14 4L4 9v11l10 5 10-5V9L14 4z"/>
+              <path d="M14 4v18M4 9l10 5 10-5"/>
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>故事正在酝酿中</h3>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+            第一部作品即将上线，敬请期待。
           </p>
-          <Link 
-            href="/vip"
-            className="inline-block px-8 py-3 bg-white text-indigo-600 rounded-full font-semibold hover:bg-gray-100 transition"
-          >
+          <Link href="/admin" className="btn-primary">
+            进入创作后台
+          </Link>
+        </section>
+      )}
+
+      {/* 会员 CTA */}
+      <section
+        className="mt-16 mx-4 mb-8 rounded-2xl p-8 sm:p-12 text-center relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)' }}
+      >
+        <div className="relative z-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            解锁全部剧情分支
+          </h2>
+          <p className="text-white/80 mb-6 max-w-md mx-auto">
+            升级会员，探索每一条隐藏支线，体验完整的故事宇宙
+          </p>
+          <Link href="/vip" className="inline-flex items-center gap-2 px-8 py-3 bg-white rounded-lg text-sm font-semibold" style={{ color: 'var(--accent)' }}>
             了解会员权益
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </Link>
         </div>
+        {/* 装饰 */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
+        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/5" />
       </section>
 
-      {/* 底部广告 */}
-      <div className="ad-container mx-4 my-8">
-        <span>📢 广告位：底部横幅广告 728x90</span>
-      </div>
-
       {/* 页脚 */}
-      <footer className="bg-gray-800 text-gray-400 py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p>© 2024 AI小说平台 - 智能创作 · 互动阅读</p>
-          <p className="mt-2 text-sm">
-            <Link href="/admin" className="hover:text-white">管理后台</Link>
-            {' · '}
-            <span>基于 Next.js + SQLite 构建</span>
-          </p>
+      <footer className="py-8 text-center" style={{ borderTop: '1px solid var(--border-light)' }}>
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="14" fill="url(#grad2)"/>
+            <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
+            <circle cx="14" cy="14" r="3" fill="white"/>
+            <defs>
+              <linearGradient id="grad2" x1="0" y1="0" x2="28" y2="28">
+                <stop offset="0%" stopColor="var(--accent)"/>
+                <stop offset="100%" stopColor="var(--accent-light)"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Spark</span>
         </div>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          © 2024 Spark · AI 互动小说平台
+        </p>
       </footer>
     </div>
   );

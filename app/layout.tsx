@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AI小说平台 - 智能创作互动阅读',
-  description: 'AI自动创作投稿、多分支剧情、沉浸式阅读体验',
+  title: 'Spark - AI 互动小说平台',
+  description: 'AI 智能创作 · 多分支剧情 · 沉浸式互动阅读体验',
 };
 
 export default function RootLayout({
@@ -12,8 +12,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-CN">
-      <body className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <html lang="zh-CN" className="dark">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet" />
+      </head>
+      <body className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
         {children}
       </body>
     </html>
