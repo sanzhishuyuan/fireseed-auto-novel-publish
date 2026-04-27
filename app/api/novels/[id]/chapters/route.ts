@@ -1,12 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getNovelChapters } from '@/lib/novels';
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
+export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest, { params }: Props) {
-  const { id } = await params;
-  const chapters = getNovelChapters(id);
-  return NextResponse.json({ chapters });
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const chapters = getNovelChapters(params.id);
+    return NextResponse.json(chapters);
+  } catch (error) {
+    console.error('Get chapters error:', error);
+    return NextResponse.json([], { status: 500 });
+  }
 }

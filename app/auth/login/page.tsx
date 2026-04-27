@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -9,6 +9,35 @@ export default function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // 检查是否已登录
+  useEffect(() => {
+    fetch('/api/user/me', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.loggedIn) {
+          router.push('/novels');
+        } else {
+          setCheckingAuth(false);
+        }
+      })
+      .catch(() => setCheckingAuth(false));
+  }, [router]);
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="flex items-center gap-3">
+          <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+            <path d="M12 2a10 10 0 0110 10" strokeLinecap="round"/>
+          </svg>
+          <span style={{ color: 'var(--text-secondary)' }}>检查登录状态...</span>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

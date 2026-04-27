@@ -1,15 +1,72 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { getAllNovelIds, getNovelChapters } from '@/lib/novels';
+import { useRouter } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
+interface User {
+  id: string;
+  username: string;
+  role: string;
+}
 
-export default async function NovelsPage() {
-  const novelList = getAllNovelIds();
+interface Novel {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  tags: string;
+  status: string;
+  chapterCount: number;
+}
 
-  const novels = novelList.map(novel => ({
-    ...novel,
-    chapterCount: getNovelChapters(novel.id).filter(c => c.meta.branch === 'main').length
-  })).filter(n => n.title);
+export default function NovelsPage() {
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const router = useRouter();
+
+  // 获取小说列表
+  useEffect(() => {
+    fetch('/api/novels')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setNovels(data);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  // 获取用户状态
+  useEffect(() => {
+    fetch('/api/user/me', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.loggedIn && data.user) {
+          setUser(data.user);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      setUser(null);
+      setMenuOpen(false);
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
@@ -25,19 +82,127 @@ export default async function NovelsPage() {
             <div>
               <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>全部作品</h1>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {novels.length} 部作品
+                {loading ? '加载中...' : `${novels.length} 部作品`}
               </p>
             </div>
           </div>
+          
           <nav className="flex items-center gap-1">
             <Link href="/" className="btn-ghost text-sm hide-mobile">首页</Link>
-            <Link href="/auth/login" className="btn-primary text-sm py-2 px-4">登录</Link>
+            
+            {/* 用户菜单 */}
+            {user ? (
+              <div className="relative ml-2">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
+                  style={{ 
+                    background: menuOpen ? 'var(--bg-secondary)' : 'transparent',
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
+                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}
+                  >
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium hide-mobile">
+                    {user.username}
+                  </span>
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 16 16" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5"
+                    className={`transition-transform ${menuOpen ? 'rotate-180' : ''}`}
+                  >
+                    <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                {menuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                    <div 
+                      className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-20"
+                      style={{ 
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-lg)'
+                      }}
+                    >
+                      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {user.username}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                          {user.role === 'admin' ? '管理员' : '普通用户'}
+                        </p>
+                      </div>
+                      <div className="py-1">
+                        {user.role === 'admin' && (
+                          <Link 
+                            href="/admin"
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                            style={{ color: 'var(--accent)' }}
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <rect x="2" y="3" width="12" height="10" rx="2"/>
+                              <path d="M5 7h6M5 10h4"/>
+                            </svg>
+                            管理后台
+                          </Link>
+                        )}
+                      </div>
+                      <div style={{ borderTop: '1px solid var(--border-light)' }}>
+                        <button
+                          onClick={handleLogout}
+                          disabled={loggingOut}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm w-full text-left transition-colors"
+                          style={{ color: '#ef4444' }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3M11 11l3-3-3-3M14 8H6"/>
+                          </svg>
+                          {loggingOut ? '退出中...' : '退出登录'}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link href="/auth/login" className="btn-ghost text-sm py-2">登录</Link>
+                <Link href="/auth/register" className="btn-primary text-sm py-2 px-4">注册</Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {novels.length > 0 ? (
+        {/* 加载中 */}
+        {loading && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="card overflow-hidden animate-pulse">
+                <div className="aspect-[3/4]" style={{ background: 'var(--bg-secondary)' }} />
+                <div className="p-4">
+                  <div className="h-4 rounded mb-2" style={{ background: 'var(--bg-secondary)', width: '70%' }} />
+                  <div className="h-3 rounded" style={{ background: 'var(--bg-secondary)', width: '40%' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 小说列表 */}
+        {!loading && novels.length > 0 && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {novels.map((novel, i) => (
               <Link
@@ -46,7 +211,6 @@ export default async function NovelsPage() {
                 className="card overflow-hidden group animate-slide-up"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
-                {/* 封面 */}
                 <div
                   className="aspect-[3/4] relative overflow-hidden"
                   style={{ background: 'linear-gradient(160deg, #1a1a3e 0%, #2d1b69 60%, #4c1d95 100%)' }}
@@ -78,7 +242,6 @@ export default async function NovelsPage() {
                   </div>
                 </div>
 
-                {/* 信息 */}
                 <div className="p-4">
                   <h3 className="font-semibold text-sm mb-1 line-clamp-2" style={{ color: 'var(--text-primary)' }}>
                     {novel.title}
@@ -103,7 +266,10 @@ export default async function NovelsPage() {
               </Link>
             ))}
           </div>
-        ) : (
+        )}
+
+        {/* 空状态 */}
+        {!loading && novels.length === 0 && (
           <div className="text-center py-24">
             <div className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="var(--accent)" strokeWidth="1.5">

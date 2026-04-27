@@ -1,46 +1,158 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { getNovelMeta, getNovelChapters, getAllNovelIds } from '@/lib/novels';
-import db from '@/lib/db';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
-interface Props {
-  params: Promise<{ id: string }>;
+interface User {
+  id: string;
+  username: string;
+  role: string;
 }
 
-export async function generateStaticParams() {
-  return getAllNovelIds().map(novel => ({ id: novel.id }));
+interface Chapter {
+  filePath: string;
+  meta: {
+    title: string;
+    branch?: string;
+    choices?: any[];
+  };
+  content?: string;
 }
 
-export default async function NovelDetailPage({ params }: Props) {
-  const { id } = await params;
-  const novel = getNovelMeta(id);
+interface Novel {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  tags: string;
+  status: string;
+}
+
+export default function NovelDetailPage({ params }: { params: { id: string } }) {
+  const [novel, setNovel] = useState<Novel | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const router = useRouter();
+
+  // 获取小说详情和章节
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/novels/${params.id}`).then(r => r.json()),
+      fetch(`/api/novels/${params.id}/chapters`).then(r => r.json())
+    ])
+      .then(([novelData, chaptersData]) => {
+        if (novelData.id) {
+          setNovel(novelData);
+          document.title = `${novelData.title} - Spark`;
+        }
+        if (Array.isArray(chaptersData)) {
+          setChapters(chaptersData);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [params.id]);
+
+  // 获取用户状态和收藏状态
+  useEffect(() => {
+    fetch('/api/user/me', { credentials: 'include' })
+      .then(res => res.json())
+      .then(async data => {
+        if (data.loggedIn && data.user) {
+          setUser(data.user);
+          // 获取收藏状态
+          const favRes = await fetch(`/api/user/favorites/${params.id}`, { credentials: 'include' });
+          const favData = await favRes.json();
+          setIsFavorite(favData.isFavorite || false);
+        }
+      })
+      .catch(console.error);
+  }, [params.id]);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      setUser(null);
+      setMenuOpen(false);
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
+  const handleFavorite = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+
+    if (favoriteLoading) return;
+    setFavoriteLoading(true);
+
+    try {
+      const res = await fetch('/api/user/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ novelId: params.id })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIsFavorite(!isFavorite);
+      }
+    } catch (error) {
+      console.error('Favorite error:', error);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
+  // 过滤主线章节
+  const mainChapters = chapters.filter(c => c.meta?.branch === 'main');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20" style={{ background: 'var(--bg-primary)' }}>
+        <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg animate-pulse" style={{ background: 'var(--bg-secondary)' }} />
+              <div>
+                <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--bg-secondary)' }} />
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+          <div className="animate-pulse">
+            <div className="h-6 w-48 rounded mb-4" style={{ background: 'var(--bg-secondary)' }} />
+            <div className="h-4 w-full rounded" style={{ background: 'var(--bg-secondary)' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!novel) {
-    notFound();
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>小说不存在</h2>
+          <Link href="/novels" className="btn-primary">返回作品列表</Link>
+        </div>
+      </div>
+    );
   }
-
-  const chapters = getNovelChapters(id);
-  const chaptersDir = chapters.filter(c => c.meta.branch === 'main');
-
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
-  let isFavorite = false;
-
-  if (token) {
-    const payload = verifyToken(token);
-    if (payload) {
-      const fav = db.prepare('SELECT id FROM favorites WHERE user_id = ? AND novel_id = ?')
-        .get(payload.userId, id);
-      isFavorite = !!fav;
-    }
-  }
-
-  const likeResult = db.prepare('SELECT COUNT(*) as count FROM novel_likes WHERE novel_id = ?')
-    .get(id) as { count: number };
 
   const tags = (novel.tags || '').split(',').filter(Boolean);
 
@@ -60,7 +172,7 @@ export default async function NovelDetailPage({ params }: Props) {
                 {novel.title}
               </h1>
               <p className="text-xs hide-mobile" style={{ color: 'var(--text-muted)' }}>
-                {chaptersDir.length} 章 · {likeResult.count} 次阅读
+                {mainChapters.length} 章
               </p>
             </div>
           </div>
@@ -68,17 +180,89 @@ export default async function NovelDetailPage({ params }: Props) {
             <Link href="/novels" className="btn-ghost text-sm hide-mobile">
               返回
             </Link>
-            {isFavorite ? (
-              <span className="btn-secondary text-sm py-2 px-4" style={{ color: '#ef4444' }}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-                  <path d="M7 12.5S1 8.5 1 4.5a2.5 2.5 0 0 1 4-1.8 2.5 2.5 0 0 1 4 1.8c0 4-6 8-6 8z"/>
-                </svg>
-                已收藏
-              </span>
-            ) : (
-              <Link href="/auth/login" className="btn-primary text-sm py-2 px-4">
-                收藏
-              </Link>
+            <button
+              onClick={handleFavorite}
+              disabled={favoriteLoading}
+              className={isFavorite ? 'btn-secondary text-sm py-2 px-4' : 'btn-primary text-sm py-2 px-4'}
+              style={isFavorite ? { color: '#ef4444' } : {}}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
+                <path d="M7 12.5S1 8.5 1 4.5a2.5 2.5 0 0 1 4-1.8 2.5 2.5 0 0 1 4 1.8c0 4-6 8-6 8z"/>
+              </svg>
+              {isFavorite ? '已收藏' : '收藏'}
+            </button>
+            
+            {/* 用户菜单（桌面端） */}
+            {user && (
+              <div className="relative ml-2 hide-mobile">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
+                  style={{ 
+                    background: menuOpen ? 'var(--bg-secondary)' : 'transparent',
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
+                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}
+                  >
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 16 16" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5"
+                    className={`transition-transform ${menuOpen ? 'rotate-180' : ''}`}
+                  >
+                    <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                {menuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                    <div 
+                      className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-20"
+                      style={{ 
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-lg)'
+                      }}
+                    >
+                      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {user.username}
+                        </p>
+                      </div>
+                      <div className="py-1">
+                        {user.role === 'admin' && (
+                          <Link 
+                            href="/admin"
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm"
+                            style={{ color: 'var(--accent)' }}
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            管理后台
+                          </Link>
+                        )}
+                      </div>
+                      <div style={{ borderTop: '1px solid var(--border-light)' }}>
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm w-full text-left"
+                          style={{ color: '#ef4444' }}
+                        >
+                          退出登录
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </nav>
         </div>
@@ -115,12 +299,12 @@ export default async function NovelDetailPage({ params }: Props) {
               {/* 统计 */}
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="text-center p-3 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{chaptersDir.length}</div>
+                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{mainChapters.length}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>章节</div>
                 </div>
                 <div className="text-center p-3 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{likeResult.count}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>阅读</div>
+                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{novel.status === 'completed' ? '完结' : '连载'}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>状态</div>
                 </div>
               </div>
 
@@ -150,9 +334,9 @@ export default async function NovelDetailPage({ params }: Props) {
               </div>
 
               {/* 开始阅读 */}
-              {chaptersDir.length > 0 && (
+              {mainChapters.length > 0 && (
                 <Link
-                  href={`/novels/${id}/${chaptersDir[0].filePath}`}
+                  href={`/novels/${params.id}/${mainChapters[0].filePath}`}
                   className="btn-primary w-full justify-center text-sm py-3"
                 >
                   开始阅读
@@ -172,16 +356,16 @@ export default async function NovelDetailPage({ params }: Props) {
                   目录
                 </h3>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  共 {chaptersDir.length} 章
+                  共 {mainChapters.length} 章
                 </span>
               </div>
 
-              {chaptersDir.length > 0 ? (
+              {mainChapters.length > 0 ? (
                 <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-                  {chaptersDir.map((chapter, index) => (
+                  {mainChapters.map((chapter, index) => (
                     <Link
                       key={chapter.filePath}
-                      href={`/novels/${id}/${chapter.filePath}`}
+                      href={`/novels/${params.id}/${chapter.filePath}`}
                       className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--bg-secondary)] transition-colors"
                     >
                       <div
