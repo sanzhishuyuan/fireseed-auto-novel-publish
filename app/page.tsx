@@ -13,15 +13,15 @@ export default async function HomePage() {
   })).filter(n => n.title);
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }} id="main-content">
       {/* 顶部导航 */}
       <header
         className="glass sticky top-0 z-50"
         style={{ borderBottom: '1px solid var(--border-light)' }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <Link href="/" className="flex items-center gap-2" aria-label="Spark 首页">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <circle cx="14" cy="14" r="14" fill="url(#grad)" />
               <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
               <circle cx="14" cy="14" r="3" fill="white"/>
@@ -49,15 +49,16 @@ export default async function HomePage() {
 
       {/* Hero 区域 */}
       <section className="relative overflow-hidden py-20 sm:py-28">
-        {/* 背景装饰 */}
+        {/* 背景装饰 - 简化blur效果以提升移动端性能 */}
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-20"
           style={{
             background: 'radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent)'
           }}
         />
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent)' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent-light)' }} />
+        {/* 仅在桌面端显示装饰元素 */}
+        <div className="hidden sm:block absolute top-1/4 left-1/4 w-48 h-48 rounded-full opacity-10" style={{ background: 'var(--accent)', filter: 'blur(40px)' }} />
+        <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-32 h-32 rounded-full opacity-10" style={{ background: 'var(--accent-light)', filter: 'blur(40px)' }} />
 
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <div
@@ -102,7 +103,7 @@ export default async function HomePage() {
               title: 'AI 智能叙事',
               desc: '先进的大语言模型驱动，生成自然流畅的故事情节，支持多种题材与风格',
               icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                   <path d="M2 17l10 5 10-5"/>
                   <path d="M2 12l10 5 10-5"/>
@@ -113,7 +114,7 @@ export default async function HomePage() {
               title: '多分支剧情',
               desc: '你的每一个选择都会影响故事走向。不同的抉择，通向截然不同的结局',
               icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>
                   <path d="M5.64 5.64l4.24 4.24M14.12 14.12l4.24 4.24M5.64 18.36l4.24-4.24M14.12 9.88l4.24-4.24"/>
@@ -124,7 +125,7 @@ export default async function HomePage() {
               title: '沉浸式阅读',
               desc: '专为阅读优化的界面，支持字号、行距、主题自定义，护眼模式舒适阅读',
               icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
                   <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                 </svg>

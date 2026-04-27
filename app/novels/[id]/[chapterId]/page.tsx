@@ -7,6 +7,8 @@ import { verifyToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import ReadingControls from './ReadingControls';
 import BranchChoice from './BranchChoice';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,8 +59,77 @@ export default async function ChapterPage({ params }: Props) {
     userBranch = progress?.branch;
   }
 
-  // 处理正文内容（简单的段落分割）
-  const paragraphs = (chapter.content || '').split('\n\n').filter(p => p.trim());
+  // 自定义 Markdown 渲染组件
+  const markdownComponents: Components = {
+    p: ({ children }) => (
+      <p className="mb-5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+        {children}
+      </p>
+    ),
+    h1: ({ children }) => (
+      <h1 className="text-2xl font-bold mt-8 mb-4" style={{ color: 'var(--text-primary)' }}>
+        {children}
+      </h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-xl font-bold mt-6 mb-3" style={{ color: 'var(--text-primary)' }}>
+        {children}
+      </h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-lg font-semibold mt-5 mb-2" style={{ color: 'var(--text-primary)' }}>
+        {children}
+      </h3>
+    ),
+    ul: ({ children }) => (
+      <ul className="list-disc list-inside mb-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
+        {children}
+      </ul>
+    ),
+    ol: ({ children }) => (
+      <ol className="list-decimal list-inside mb-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
+        {children}
+      </ol>
+    ),
+    li: ({ children }) => (
+      <li className="leading-relaxed">{children}</li>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote
+        className="border-l-4 pl-4 my-4 italic"
+        style={{ borderColor: 'var(--accent)', color: 'var(--text-muted)' }}
+      >
+        {children}
+      </blockquote>
+    ),
+    strong: ({ children }) => (
+      <strong className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+        {children}
+      </strong>
+    ),
+    em: ({ children }) => (
+      <em className="italic">{children}</em>
+    ),
+    hr: () => (
+      <hr className="my-6" style={{ borderColor: 'var(--border-light)' }} />
+    ),
+    code: ({ children }) => (
+      <code
+        className="px-1.5 py-0.5 rounded text-sm font-mono"
+        style={{ background: 'var(--bg-secondary)', color: 'var(--accent)' }}
+      >
+        {children}
+      </code>
+    ),
+    pre: ({ children }) => (
+      <pre
+        className="p-4 rounded-lg overflow-x-auto my-4"
+        style={{ background: 'var(--bg-secondary)' }}
+      >
+        {children}
+      </pre>
+    ),
+  };
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
@@ -130,11 +201,11 @@ export default async function ChapterPage({ params }: Props) {
           <div className="h-px flex-1" style={{ background: 'var(--border-light)' }} />
         </div>
 
-        {/* 正文 */}
+        {/* 正文 - Markdown渲染 */}
         <div className="reading-content">
-          {paragraphs.map((p, i) => (
-            <p key={i} style={{ color: 'var(--text-secondary)' }}>{p}</p>
-          ))}
+          <ReactMarkdown components={markdownComponents}>
+            {chapter.content || ''}
+          </ReactMarkdown>
         </div>
 
         {/* 分支选择 */}
