@@ -1,7 +1,15 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
-const dbPath = path.join(process.cwd(), 'data', 'novel.db');
+const dataDir = path.join(process.cwd(), 'data');
+const dbPath = path.join(dataDir, 'novel.db');
+
+// 确保 data 目录存在
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
 const db = new Database(dbPath);
 
 // 初始化数据库表

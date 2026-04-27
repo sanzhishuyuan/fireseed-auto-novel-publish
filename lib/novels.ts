@@ -2,6 +2,18 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
+// 小说元信息接口
+export interface NovelMeta {
+  title: string;
+  author?: string;
+  description?: string;
+  cover_url?: string;
+  status?: 'ongoing' | 'completed' | 'archived';
+  tags?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ChapterMeta {
   title: string;
   book: string;
@@ -37,13 +49,13 @@ export function getAllNovelIds(): string[] {
 }
 
 // 读取小说元信息
-export function getNovelMeta(novelId: string): any {
+export function getNovelMeta(novelId: string): NovelMeta | null {
   const metaPath = path.join(getNovelsDir(), novelId, 'meta.md');
   if (!fs.existsSync(metaPath)) {
     return null;
   }
   const content = fs.readFileSync(metaPath, 'utf-8');
-  return matter(content).data;
+  return matter(content).data as NovelMeta;
 }
 
 // 获取小说的所有章节
@@ -115,24 +127,34 @@ export function getBranchChapter(novelId: string, branch: string): Chapter | nul
 
 // 保存章节到文件
 export function saveChapter(novelId: string, chapterId: string, meta: ChapterMeta, content: string): void {
-  const chaptersDir = path.join(getNovelsDir(), novelId, 'chapters');
-  if (!fs.existsSync(chaptersDir)) {
-    fs.mkdirSync(chaptersDir, { recursive: true });
+  try {
+    const chaptersDir = path.join(getNovelsDir(), novelId, 'chapters');
+    if (!fs.existsSync(chaptersDir)) {
+      fs.mkdirSync(chaptersDir, { recursive: true });
+    }
+    
+    const filePath = path.join(chaptersDir, `${chapterId}.md`);
+    const fileContent = matter.stringify(content, meta);
+    fs.writeFileSync(filePath, fileContent, 'utf-8');
+  } catch (error) {
+    console.error(`保存章节失败: ${novelId}/${chapterId}`, error);
+    throw new Error(`保存章节失败: ${error instanceof Error ? error.message : '未知错误'}`);
   }
-  
-  const filePath = path.join(chaptersDir, `${chapterId}.md`);
-  const fileContent = matter.stringify(content, meta);
-  fs.writeFileSync(filePath, fileContent, 'utf-8');
 }
 
 // 保存支线章节
 export function saveBranchChapter(novelId: string, branch: string, meta: ChapterMeta, content: string): void {
-  const branchesDir = path.join(getNovelsDir(), novelId, 'branches');
-  if (!fs.existsSync(branchesDir)) {
-    fs.mkdirSync(branchesDir, { recursive: true });
+  try {
+    const branchesDir = path.join(getNovelsDir(), novelId, 'branches');
+    if (!fs.existsSync(branchesDir)) {
+      fs.mkdirSync(branchesDir, { recursive: true });
+    }
+    
+    const filePath = path.join(branchesDir, `${branch}.md`);
+    const fileContent = matter.stringify(content, meta);
+    fs.writeFileSync(filePath, fileContent, 'utf-8');
+  } catch (error) {
+    console.error(`保存支线章节失败: ${novelId}/${branch}`, error);
+    throw new Error(`保存支线章节失败: ${error instanceof Error ? error.message : '未知错误'}`);
   }
-  
-  const filePath = path.join(branchesDir, `${branch}.md`);
-  const fileContent = matter.stringify(content, meta);
-  fs.writeFileSync(filePath, fileContent, 'utf-8');
 }

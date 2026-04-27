@@ -1,8 +1,22 @@
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123456';
+// 生产环境必须设置这些环境变量
+const JWT_SECRET = process.env.JWT_SECRET;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+// 安全检查：生产环境禁止使用默认值
+if (!JWT_SECRET || !ADMIN_PASSWORD) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[安全错误] 生产环境必须设置 JWT_SECRET 和 ADMIN_PASSWORD 环境变量');
+  }
+  // 开发环境使用占位符
+  console.warn('[警告] 未设置 JWT_SECRET 或 ADMIN_PASSWORD，请创建 .env.local 文件');
+}
+
+// 开发环境回退值（仅用于本地开发）
+const DEV_JWT_SECRET = JWT_SECRET || 'dev-only-secret-do-not-use-in-production';
+const DEV_ADMIN_PASSWORD = ADMIN_PASSWORD || 'admin123';
 
 export interface TokenPayload {
   userId: string;
@@ -12,13 +26,13 @@ export interface TokenPayload {
 
 // 生成JWT Token
 export function generateToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, DEV_JWT_SECRET, { expiresIn: '7d' });
 }
 
 // 验证Token
 export function verifyToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    return jwt.verify(token, DEV_JWT_SECRET) as TokenPayload;
   } catch {
     return null;
   }
@@ -34,7 +48,7 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
 
 // 验证管理员密码
 export function verifyAdminPassword(password: string): boolean {
-  return password === ADMIN_PASSWORD;
+  return password === DEV_ADMIN_PASSWORD;
 }
 
 // 生成AI Token
@@ -46,5 +60,3 @@ export function generateAIToken(): string {
   }
   return result;
 }
-
-export { ADMIN_PASSWORD };
