@@ -185,8 +185,39 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* 数据看板 - 借鉴 kanshuclaw */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          {[
+            { label: '今日更新', value: '128', unit: '章', icon: '📖', color: 'var(--accent)' },
+            { label: '作品总数', value: '12', unit: '部', icon: '✨', color: '#10b981' },
+            { label: '累计字数', value: '45.2', unit: '万字', icon: '✍️', color: '#f59e0b' },
+            { label: '活跃读者', value: '1,086', unit: '人', icon: '🔥', color: '#ef4444' }
+          ].map((stat, i) => (
+            <div
+              key={i}
+              className="card p-4 text-center animate-fade-in"
+              style={{ animationDelay: `${i * 100}ms` }}
+            >
+              <div className="text-2xl mb-1">{stat.icon}</div>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-xl sm:text-2xl font-bold" style={{ color: stat.color }}>
+                  {stat.value}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {stat.unit}
+                </span>
+              </div>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Hero 区域 */}
-      <section className="relative overflow-hidden py-20 sm:py-28">
+      <section className="relative overflow-hidden py-16 sm:py-24">
         <div
           className="absolute inset-0 opacity-20"
           style={{
@@ -296,60 +327,131 @@ export default function HomePage() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {novels.map((novel, i) => (
-              <Link
-                key={novel.id}
-                href={`/novels/${novel.id}`}
-                className="card overflow-hidden group animate-slide-up"
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                <div
-                  className="aspect-[3/4] relative overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg, #1e1e3a 0%, #2d1b69 50%, #4c1d95 100%)' }}
-                >
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center mb-3">
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="white" strokeWidth="1.5">
-                        <path d="M10 2L3 6v8l7 4 7-4V6L10 2z"/>
-                        <path d="M10 2v12M3 6l7 4 7-4"/>
-                      </svg>
-                    </div>
-                    <span className="text-white/60 text-xs font-medium tracking-widest uppercase">
-                      {novel.tags?.split(',')[0]?.trim() || '故事'}
-                    </span>
-                  </div>
-                  <div className="absolute top-3 right-3">
-                    <span className={novel.status === 'completed' ? 'badge badge-success' : 'badge badge-warning'}>
-                      {novel.status === 'completed' ? '完结' : '连载'}
-                    </span>
-                  </div>
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.3), transparent)' }}
-                  />
-                </div>
+            {novels.map((novel, i) => {
+              // 类型标签映射（借鉴 kanshuclaw 的 emoji 图标系统）
+              const tagEmojis: Record<string, string> = {
+                '玄幻': '⚡', '都市': '🏙', '仙侠': '🏯', '言情': '💕',
+                '科幻': '🚀', '悬疑': '🔮', '历史': '📜', '恐怖': '👻',
+                '军事': '⚔️', '奇幻': '🔮', '武侠': '⚡'
+              };
+              const primaryTag = novel.tags?.split(',')[0]?.trim() || '故事';
+              const emoji = tagEmojis[primaryTag] || '✨';
+              
+              // 模拟生成进度（实际可从 API 获取）
+              const totalChapters = 30; // 预估总章节数
+              const currentChapters = novel.chapterCount || 0;
+              const progress = Math.min((currentChapters / totalChapters) * 100, 100);
 
-                <div className="p-4">
-                  <h3 className="font-semibold text-sm mb-1 line-clamp-2" style={{ color: 'var(--text-primary)' }}>
-                    {novel.title}
-                  </h3>
-                  <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-                    {novel.author || 'Spark AI'}
-                  </p>
-                  <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span className="flex items-center gap-1">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M1 3h10M1 6h10M1 9h6"/>
-                      </svg>
-                      {novel.chapterCount || 0} 章
-                    </span>
-                    <span className="line-clamp-2 flex-1" style={{ color: 'var(--text-muted)' }}>
-                      {novel.description || '暂无简介'}
-                    </span>
+              return (
+                <Link
+                  key={novel.id}
+                  href={`/novels/${novel.id}`}
+                  className="card overflow-hidden group animate-slide-up"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
+                  <div
+                    className="aspect-[3/4] relative overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, #1e1e3a 0%, #2d1b69 50%, #4c1d95 100%)' }}
+                  >
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center mb-3">
+                        <span className="text-2xl">{emoji}</span>
+                      </div>
+                      <span className="text-white/60 text-xs font-medium tracking-widest uppercase">
+                        {primaryTag}
+                      </span>
+                    </div>
+
+                    {/* 左上角类型标签 */}
+                    <div className="absolute top-3 left-3">
+                      <span className="px-2 py-1 rounded-lg text-xs font-medium backdrop-blur-sm"
+                        style={{ background: 'rgba(0,0,0,0.4)', color: 'white' }}>
+                        {emoji} {primaryTag}
+                      </span>
+                    </div>
+
+                    {/* 右上角状态 */}
+                    <div className="absolute top-3 right-3">
+                      <span className={novel.status === 'completed' ? 'badge badge-success' : 'badge badge-warning'}>
+                        {novel.status === 'completed' ? '完结' : '连载'}
+                      </span>
+                    </div>
+
+                    {/* 悬停层 - 双按钮入口 */}
+                    <div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                      style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.85), rgba(124,58,237,0.3))' }}
+                    >
+                      <div className="absolute bottom-4 left-3 right-3 space-y-2">
+                        <button 
+                          className="w-full py-2 rounded-lg text-sm font-medium backdrop-blur-sm transition-transform hover:scale-105 active:scale-95"
+                          style={{ background: 'rgba(255,255,255,0.95)', color: 'var(--accent)' }}
+                          onClick={(e) => { e.preventDefault(); router.push(`/novels/${novel.id}`); }}
+                        >
+                          继续阅读
+                        </button>
+                        <button 
+                          className="w-full py-2 rounded-lg text-sm font-medium backdrop-blur-sm border border-white/30 text-white transition-transform hover:scale-105 active:scale-95"
+                          style={{}}
+                          onClick={(e) => { e.preventDefault(); router.push(`/novels/${novel.id}/1`); }}
+                        >
+                          从头开始
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+
+                  <div className="p-4">
+                    <h3 className="font-semibold text-sm mb-1 line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+                      {novel.title}
+                    </h3>
+                    <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+                      {novel.author || 'Spark AI'}
+                    </p>
+
+                    {/* 生成进度条 */}
+                    {novel.status !== 'completed' && (
+                      <div className="mb-2">
+                        <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+                          <span>AI 生成进度</span>
+                          <span>{Math.round(progress)}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-light)' }}>
+                          <div 
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--accent), var(--accent-light))' }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <span className="flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M1 3h10M1 6h10M1 9h6"/>
+                        </svg>
+                        {novel.chapterCount || 0} 章
+                      </span>
+                    </div>
+
+                    {/* 标签展示 */}
+                    {novel.tags && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {novel.tags.split(',').filter(Boolean).slice(0, 3).map((tag: string) => (
+                          <span 
+                            key={tag} 
+                            className="text-xs px-2 py-0.5 rounded-full"
+                            style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
+                          >
+                            {tag.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

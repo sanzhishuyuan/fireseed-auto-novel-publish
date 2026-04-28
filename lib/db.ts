@@ -106,7 +106,24 @@ db.exec(`
     permissions TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_used DATETIME,
-    is_active INTEGER DEFAULT 1
+    is_active INTEGER DEFAULT 1,
+    quota_used INTEGER DEFAULT 0,
+    quota_limit INTEGER DEFAULT 50,
+    quota_reset_at DATETIME DEFAULT (date('now', '+1 day', 'start of day'))
+  );
+
+  CREATE TABLE IF NOT EXISTS ai_jobs (
+    id TEXT PRIMARY KEY,
+    token TEXT NOT NULL,
+    job_type TEXT NOT NULL,
+    novel_id TEXT,
+    chapter_id TEXT,
+    status TEXT DEFAULT 'queued',
+    stage TEXT DEFAULT 'queued',
+    result TEXT,
+    error TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS read_settings (
@@ -130,6 +147,54 @@ db.exec(`
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (novel_id) REFERENCES novels(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  -- 访客会话表
+  CREATE TABLE IF NOT EXISTS guest_sessions (
+    id TEXT PRIMARY KEY,
+    guest_id TEXT UNIQUE NOT NULL,
+    device_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_active DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 访客作品表（未认领）
+  CREATE TABLE IF NOT EXISTS guest_novels (
+    id TEXT PRIMARY KEY,
+    guest_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    author TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    status TEXT DEFAULT 'draft',
+    tags TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 访客章节表
+  CREATE TABLE IF NOT EXISTS guest_chapters (
+    id TEXT PRIMARY KEY,
+    guest_id TEXT NOT NULL,
+    guest_novel_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT,
+    order_num INTEGER,
+    branch TEXT DEFAULT 'main',
+    word_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 用户与 Token 关联表
+  CREATE TABLE IF NOT EXISTS user_tokens (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    token TEXT UNIQUE NOT NULL,
+    name TEXT,
+    permissions TEXT DEFAULT '["create_novel","create_chapter"]',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_used DATETIME,
+    is_active INTEGER DEFAULT 1,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -18,6 +18,7 @@ interface Novel {
   tags: string;
   status: string;
   chapterCount: number;
+  updatedAt?: string;
 }
 
 export default function NovelsPage() {
@@ -26,7 +27,64 @@ export default function NovelsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string>('全部');
+  const [activeSort, setActiveSort] = useState<string>('最新更新');
   const router = useRouter();
+
+  // 类型标签配置
+  const tagEmojis: Record<string, string> = {
+    '全部': '📚', '玄幻': '⚡', '都市': '🏙', '仙侠': '🏯', '言情': '💕',
+    '科幻': '🚀', '悬疑': '🔮', '历史': '📜', '恐怖': '👻',
+    '军事': '⚔️', '奇幻': '🔮', '武侠': '⚡'
+  };
+
+  // 排序选项
+  const sortOptions = [
+    { key: '最新更新', label: '🆕 最新更新' },
+    { key: '最多章节', label: '🔥 最多章节' },
+    { key: '新书上架', label: '✨ 新书上架' }
+  ];
+
+  // 获取所有可用分类
+  const categories = useMemo(() => {
+    const tags = new Set<string>(['全部']);
+    novels.forEach(novel => {
+      if (novel.tags) {
+        novel.tags.split(',').forEach(tag => {
+          const trimmed = tag.trim();
+          if (trimmed) tags.add(trimmed);
+        });
+      }
+    });
+    return Array.from(tags);
+  }, [novels]);
+
+  // 过滤和排序小说
+  const filteredNovels = useMemo(() => {
+    let filtered = [...novels];
+    
+    // 分类筛选
+    if (activeFilter !== '全部') {
+      filtered = filtered.filter(novel => 
+        novel.tags?.includes(activeFilter)
+      );
+    }
+    
+    // 排序
+    switch (activeSort) {
+      case '最新更新':
+        filtered.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+        break;
+      case '最多章节':
+        filtered.sort((a, b) => b.chapterCount - a.chapterCount);
+        break;
+      case '新书上架':
+        filtered.sort((a, b) => new Date(a.updatedAt || 0).getTime() - new Date(b.updatedAt || 0).getTime());
+        break;
+    }
+    
+    return filtered;
+  }, [novels, activeFilter, activeSort]);
 
   // 获取小说列表
   useEffect(() => {
@@ -34,7 +92,12 @@ export default function NovelsPage() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setNovels(data);
+          // 为每个小说添加随机更新时间模拟
+          const novelsWithTime = data.map((novel, i) => ({
+            ...novel,
+            updatedAt: new Date(Date.now() - i * 86400000).toISOString()
+          }));
+          setNovels(novelsWithTime);
         }
       })
       .catch(console.error)
@@ -186,6 +249,52 @@ export default function NovelsPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {/* 筛选与排序栏 - 借鉴 kanshuclaw */}
+        {!loading && novels.length > 0 && (
+          <div className="mb-8 space-y-4">
+            {/* 分类标签筛选 */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {categories.slice(0, 8).map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setActiveFilter(category)}
+                  className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all"
+                  style={{
+                    background: activeFilter === category ? 'var(--accent)' : 'var(--bg-secondary)',
+                    color: activeFilter === category ? 'white' : 'var(--text-secondary)',
+                    border: activeFilter === category ? 'none' : '1px solid var(--border)'
+                  }}
+                >
+                  {tagEmojis[category] || '📖'} {category}
+                </button>
+              ))}
+            </div>
+
+            {/* 排序选项 */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                共 <span className="font-medium" style={{ color: 'var(--accent)' }}>{filteredNovels.length}</span> 部作品
+              </p>
+              <div className="flex items-center gap-2">
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    onClick={() => setActiveSort(option.key)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      background: activeSort === option.key ? 'var(--accent)' : 'transparent',
+                      color: activeSort === option.key ? 'white' : 'var(--text-muted)',
+                      border: activeSort === option.key ? 'none' : '1px solid var(--border)'
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 加载中 */}
         {loading && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -202,69 +311,130 @@ export default function NovelsPage() {
         )}
 
         {/* 小说列表 */}
-        {!loading && novels.length > 0 && (
+        {!loading && filteredNovels.length > 0 && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {novels.map((novel, i) => (
-              <Link
-                key={novel.id}
-                href={`/novels/${novel.id}`}
-                className="card overflow-hidden group animate-slide-up"
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <div
-                  className="aspect-[3/4] relative overflow-hidden"
-                  style={{ background: 'linear-gradient(160deg, #1a1a3e 0%, #2d1b69 60%, #4c1d95 100%)' }}
+            {filteredNovels.map((novel, i) => {
+              const primaryTag = novel.tags?.split(',')[0]?.trim() || '故事';
+              const emoji = tagEmojis[primaryTag] || '✨';
+              const totalChapters = 30;
+              const progress = Math.min((novel.chapterCount / totalChapters) * 100, 100);
+
+              return (
+                <Link
+                  key={novel.id}
+                  href={`/novels/${novel.id}`}
+                  className="card overflow-hidden group animate-slide-up"
+                  style={{ animationDelay: `${i * 60}ms` }}
                 >
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="w-14 h-14 rounded-full border-2 border-white/20 flex items-center justify-center mb-3 opacity-60">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-                        <path d="M12 3L3 7.5v10L12 21l9-3.5V7.5L12 3z"/>
-                        <path d="M12 3v14M3 7.5l9 4 9-4"/>
-                      </svg>
+                  <div
+                    className="aspect-[3/4] relative overflow-hidden"
+                    style={{ background: 'linear-gradient(160deg, #1a1a3e 0%, #2d1b69 60%, #4c1d95 100%)' }}
+                  >
+                    {/* 左上角类型 emoji */}
+                    <div className="absolute top-3 left-3">
+                      <span className="px-2 py-1 rounded-lg text-sm backdrop-blur-sm"
+                        style={{ background: 'rgba(0,0,0,0.4)', color: 'white' }}>
+                        {emoji} {primaryTag}
+                      </span>
                     </div>
-                    <span className="text-white/40 text-xs font-medium tracking-widest uppercase">
-                      {novel.tags?.split(',')[0]?.trim() || 'STORY'}
-                    </span>
-                  </div>
 
-                  <div className="absolute top-3 right-3 flex gap-2">
-                    <span className={novel.status === 'completed' ? 'badge badge-success' : 'badge badge-warning'}>
-                      {novel.status === 'completed' ? '完结' : '连载'}
-                    </span>
-                  </div>
+                    {/* 右上角状态 */}
+                    <div className="absolute top-3 right-3">
+                      <span className={novel.status === 'completed' ? 'badge badge-success' : 'badge badge-warning'}>
+                        {novel.status === 'completed' ? '完结' : '连载'}
+                      </span>
+                    </div>
 
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.4), transparent 60%)' }}>
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <div className="w-full py-2 rounded-lg text-center text-sm font-medium" style={{ background: 'rgba(255,255,255,0.95)', color: 'var(--accent)' }}>
-                        开始阅读
+                    {/* 中心图标 */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="w-14 h-14 rounded-full border-2 border-white/20 flex items-center justify-center mb-3 opacity-60">
+                        <span className="text-2xl">{emoji}</span>
+                      </div>
+                      <span className="text-white/40 text-xs font-medium tracking-widest uppercase">
+                        {primaryTag}
+                      </span>
+                    </div>
+
+                    {/* 悬停双按钮 */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.85), rgba(124,58,237,0.3))' }}>
+                      <div className="absolute bottom-4 left-3 right-3 space-y-2">
+                        <button 
+                          className="w-full py-2 rounded-lg text-sm font-medium backdrop-blur-sm transition-transform hover:scale-105"
+                          style={{ background: 'rgba(255,255,255,0.95)', color: 'var(--accent)' }}
+                          onClick={(e) => { e.preventDefault(); router.push(`/novels/${novel.id}`); }}
+                        >
+                          继续阅读
+                        </button>
+                        <button 
+                          className="w-full py-2 rounded-lg text-sm font-medium backdrop-blur-sm border border-white/30 text-white transition-transform hover:scale-105"
+                          onClick={(e) => { e.preventDefault(); router.push(`/novels/${novel.id}/1`); }}
+                        >
+                          从头开始
+                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="p-4">
-                  <h3 className="font-semibold text-sm mb-1 line-clamp-2" style={{ color: 'var(--text-primary)' }}>
-                    {novel.title}
-                  </h3>
-                  <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-                    {novel.author || 'Spark AI'} · {novel.chapterCount} 章
-                  </p>
-                  <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {novel.description || '暂无简介'}
-                  </p>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-sm mb-1 line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+                      {novel.title}
+                    </h3>
+                    <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+                      {novel.author || 'Spark AI'} · {novel.chapterCount} 章
+                    </p>
 
-                  {novel.tags && (
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      {novel.tags.split(',').filter(Boolean).slice(0, 3).map((tag: string) => (
-                        <span key={tag} className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
-                          {tag.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
+                    {/* AI 生成进度条 */}
+                    {novel.status !== 'completed' && (
+                      <div className="mb-2">
+                        <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+                          <span>生成进度</span>
+                          <span>{Math.round(progress)}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-light)' }}>
+                          <div 
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--accent), var(--accent-light))' }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                      {novel.description || '暂无简介'}
+                    </p>
+
+                    {novel.tags && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {novel.tags.split(',').filter(Boolean).slice(0, 3).map((tag: string) => (
+                          <span key={tag} className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+                            {tag.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 空筛选结果 */}
+        {!loading && novels.length > 0 && filteredNovels.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
+              <span className="text-3xl">🔍</span>
+            </div>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>暂无匹配结果</h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+              没有找到 "{activeFilter}" 分类下的作品
+            </p>
+            <button 
+              onClick={() => setActiveFilter('全部')}
+              className="btn-primary text-sm"
+            >
+              查看全部作品
+            </button>
           </div>
         )}
 

@@ -130,6 +130,41 @@ export default function UserNav() {
               {/* 菜单项 */}
               <div className="py-1">
                 <Link 
+                  href="/my/novels"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/>
+                    <path d="M5 6h6M5 9h4"/>
+                  </svg>
+                  我的作品
+                </Link>
+                <Link 
+                  href="/my/tokens"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M13 6V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9"/>
+                    <path d="M9 3h4v3H9z"/>
+                  </svg>
+                  AI Token
+                </Link>
+                <Link 
+                  href="/my/claim"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 6l6-4 6 4v6l-6 4-6-4V6z"/>
+                  </svg>
+                  认领作品
+                </Link>
+                <Link 
                   href="/favorites"
                   className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                   style={{ color: 'var(--text-secondary)' }}
