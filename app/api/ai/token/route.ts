@@ -4,8 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import crypto from 'crypto';
 
-// Token 验证中间件
-export function verifyUserToken(request: NextRequest): { valid: boolean; userId?: string; token?: string } {
+// Token 验证中间件（仅供内部使用）
+function verifyUserToken(request: NextRequest): { valid: boolean; userId?: string; token?: string } {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return { valid: false };
