@@ -12,7 +12,7 @@ interface Params { params: Promise<{ novelId: string }>; }
 // 统一 Token 验证（支持 ai_tokens 和 user_tokens）
 function verifyAITokenRecord(request: NextRequest): { valid: boolean; token: string; record?: Record<string, unknown>; isUserToken: boolean } {
   const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return { valid: false, token: '' };
+  if (!authHeader?.startsWith('Bearer ')) return { valid: false, token: '', isUserToken: false };
   const token = authHeader.slice(7);
   
   // 优先检查 user_tokens（新系统）
@@ -27,7 +27,7 @@ function verifyAITokenRecord(request: NextRequest): { valid: boolean; token: str
   
   // 兼容旧 ai_tokens 表
   const record = db.prepare('SELECT * FROM ai_tokens WHERE token = ? AND is_active = 1').get(token) as Record<string, unknown> | undefined;
-  if (!record) return { valid: false, token };
+  if (!record) return { valid: false, token, isUserToken: false };
   const now = new Date();
   const resetAt = new Date(record.quota_reset_at as string);
   if (now >= resetAt) {
