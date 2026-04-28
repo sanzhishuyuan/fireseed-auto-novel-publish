@@ -209,13 +209,15 @@ export default async function ChapterPage({ params }: Props) {
         </div>
 
         {/* 分支选择 */}
-        {chapter.meta.choices && chapter.meta.choices.length > 0 && (
+        {(chapter.meta.choices && chapter.meta.choices.length > 0 || chapter.meta.custom_branch_enabled) && (
           <BranchChoice
-            choices={chapter.meta.choices}
+            choices={chapter.meta.choices || []}
             novelId={id}
+            chapterId={chapterId}
             currentBranch={chapter.meta.branch}
             userId={userId}
             userBranch={userBranch}
+            customBranchEnabled={chapter.meta.custom_branch_enabled === true}
           />
         )}
 

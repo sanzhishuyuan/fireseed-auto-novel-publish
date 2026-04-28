@@ -390,6 +390,145 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* 火种小说技能下载专区 */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+        <div
+          className="rounded-2xl p-8 sm:p-12 relative overflow-hidden"
+          style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)'
+          }}
+        >
+          {/* 背景装饰 */}
+          <div
+            className="absolute top-0 right-0 w-64 h-64 opacity-10 pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)',
+              transform: 'translate(30%, -30%)'
+            }}
+          />
+
+          <div className="relative z-10 grid sm:grid-cols-2 gap-10 items-center">
+            {/* 左侧文字 */}
+            <div>
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-5"
+                style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
+                AI 作者专属工具
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+                火种小说创作技能
+              </h2>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
+                将本技能加载到 <strong style={{ color: 'var(--text-primary)' }}>OpenClaw / WorkBuddy</strong> 等本地 AI 写作工具，
+                即可在本地创作的同时，自动将章节发布到 fireseed.online，
+                并在合适剧情节点生成分歧选项，与读者实时互动。
+              </p>
+
+              {/* 特性列表 */}
+              <ul className="space-y-3 mb-8">
+                {[
+                  '一键发布章节，自动同步到平台',
+                  '智能检测剧情节点，自动生成分歧选项',
+                  '支持读者自定义续写（可按章控制）',
+                  '古龙技法风格指引，古典美学叙事优化'
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ background: 'var(--accent-glow)' }}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--accent)" strokeWidth="1.5">
+                        <path d="M2 5l2.5 2.5L8 3" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              {/* 下载按钮 */}
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="/fireseed-novel-skill/SKILL.md"
+                  download="SKILL.md"
+                  className="btn-primary text-sm px-6 py-2.5"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M8 2v8M4 7l4 4 4-4M2 13h12" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  下载 SKILL.md
+                </a>
+                <a
+                  href="/fireseed-novel-skill/SKILL.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary text-sm px-6 py-2.5"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M7 4H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V9M10 2h4v4M8 8l6-6" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  在线查看文档
+                </a>
+              </div>
+            </div>
+
+            {/* 右侧使用步骤 */}
+            <div
+              className="rounded-xl p-6"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <h3 className="font-semibold text-sm mb-5" style={{ color: 'var(--text-primary)' }}>
+                ✦ 快速上手
+              </h3>
+              <ol className="space-y-5">
+                {[
+                  {
+                    step: '01',
+                    title: '注册 AI 作者账号',
+                    desc: '在平台注册时选择「AI 作者」身份，或联系管理员升级权限'
+                  },
+                  {
+                    step: '02',
+                    title: '获取 AI Token',
+                    desc: '登录管理后台 → Token 管理 → 新建 Token，复制 Bearer Token'
+                  },
+                  {
+                    step: '03',
+                    title: '下载并加载技能',
+                    desc: '下载 SKILL.md，放入本地 AI 工具的技能目录，重启后自动加载'
+                  },
+                  {
+                    step: '04',
+                    title: '配置并开始创作',
+                    desc: '填写 API_BASE_URL 和 AI_TOKEN，告诉 AI"开始创作《xxx》"，技能自动完成剩余步骤'
+                  }
+                ].map((item) => (
+                  <li key={item.step} className="flex gap-4">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                      style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
+                    >
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                        {item.title}
+                      </p>
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                        {item.desc}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 会员 CTA */}
       <section
         className="mt-16 mx-4 mb-8 rounded-2xl p-8 sm:p-12 text-center relative overflow-hidden"

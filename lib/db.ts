@@ -119,6 +119,19 @@ db.exec(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS custom_branches (
+    id TEXT PRIMARY KEY,
+    novel_id TEXT NOT NULL,
+    chapter_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    branch_name TEXT NOT NULL,
+    content TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (novel_id) REFERENCES novels(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
 
 export default db;

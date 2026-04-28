@@ -27,7 +27,9 @@ export interface ChapterMeta {
   choices?: Array<{
     text: string;
     branch: string;
+    is_custom?: boolean;
   }>;
+  custom_branch_enabled?: boolean;
 }
 
 export interface Chapter {
