@@ -78,16 +78,55 @@ export async function POST(request: NextRequest, { params }: Params) {
       }, { status: 429 });
     }
   }
+  
   try {
-    const body = await request.json();
+    // 检查请求体大小（最大 5MB）
+    const contentLength = parseInt(request.headers.get('content-length') || '0');
+    if (contentLength > 5 * 1024 * 1024) {
+      return NextResponse.json({
+        error: 'Payload too large',
+        detail: 'Chapter content exceeds 5MB limit',
+        received_length: contentLength
+      }, { status: 413 });
+    }
+    
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      // JSON 解析失败，尝试读取原始文本
+      const rawText = await request.text();
+      console.error('JSON parse error, raw length:', rawText?.length);
+      return NextResponse.json({
+        error: 'Invalid JSON format',
+        detail: 'Request body must be valid JSON. Check for special characters or encoding issues.',
+        received_length: rawText?.length,
+        received_preview: rawText?.substring(0, 200)
+      }, { status: 400 });
+    }
+    
     const { title, content, order, branch = 'main', choices = [], custom_branch_enabled = false } = body;
-    if (!title || !content) return NextResponse.json({ error: 'title and content required' }, { status: 400 });
+    
+    // 验证必填字段
+    if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
+    if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 });
+    
+    // 确保 content 是字符串类型
+    const contentStr = String(content);
+    if (contentStr.length < 10) {
+      return NextResponse.json({
+        error: 'content too short',
+        detail: 'Content must be at least 10 characters',
+        received_length: contentStr.length
+      }, { status: 400 });
+    }
+    
     const novel = db.prepare('SELECT id FROM novels WHERE id = ?').get(novelId);
     if (!novel) return NextResponse.json({ error: 'novel not found' }, { status: 404 });
 
     const chapterId = String(order || Date.now()) + '-' + Date.now();
     const dbChapterId = uuidv4();
-    const wordCount = content.replace(/\\s/g, '').length;
+    const wordCount = contentStr.replace(/\s/g, '').length;
 
     const finalChoices = [...choices];
     if (custom_branch_enabled) {
@@ -103,10 +142,10 @@ export async function POST(request: NextRequest, { params }: Params) {
       word_count: wordCount,
       created_at: new Date().toISOString()
     };
-    fs.writeFileSync(path.join(chaptersDir, chapterId + '.md'), matter.stringify(content, meta), 'utf-8');
+    fs.writeFileSync(path.join(chaptersDir, chapterId + '.md'), matter.stringify(contentStr, meta), 'utf-8');
 
     db.prepare('INSERT INTO chapters (id, novel_id, title, content, order_num, branch, word_count) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-      dbChapterId, novelId, title, content, order || 1, branch, wordCount
+      dbChapterId, novelId, title, contentStr, order || 1, branch, wordCount
     );
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
     db.prepare('UPDATE ai_tokens SET quota_used = quota_used + 1 WHERE token = ?').run(auth.token);
