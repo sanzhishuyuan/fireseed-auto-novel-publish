@@ -4,18 +4,40 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
 interface Params {
   params: Promise<{ novelId: string }>;
 }
 
-// 验证 AI Token
+// 验证 AI Token（支持 JWT / user_tokens / ai_tokens）
 function verifyAIToken(request: NextRequest): boolean {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return false;
   const token = authHeader.slice(7);
+
+  // 1. 优先验证 JWT Token
+  try {
+    jwt.verify(token, JWT_SECRET);
+    return true;
+  } catch {
+    // JWT 无效，继续
+  }
+
+  // 2. 检查 user_tokens
+  const userToken = db.prepare(
+    'SELECT id FROM user_tokens WHERE token = ? AND is_active = 1'
+  ).get(token);
+  if (userToken) {
+    db.prepare('UPDATE user_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
+    return true;
+  }
+
+  // 3. 兼容旧 ai_tokens
   const record = db.prepare('SELECT id FROM ai_tokens WHERE token = ? AND is_active = 1').get(token);
   if (!record) return false;
   db.prepare('UPDATE ai_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);

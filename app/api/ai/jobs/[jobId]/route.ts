@@ -1,13 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
 function verifyAIToken(request: NextRequest): { valid: boolean; token: string } {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return { valid: false, token: '' };
   const token = authHeader.slice(7);
+
+  // 1. 优先验证 JWT Token
+  try {
+    jwt.verify(token, JWT_SECRET);
+    return { valid: true, token };
+  } catch {
+    // JWT 无效，继续
+  }
+
+  // 2. 检查 user_tokens
+  const userToken = db.prepare(
+    'SELECT id FROM user_tokens WHERE token = ? AND is_active = 1'
+  ).get(token);
+  if (userToken) return { valid: true, token };
+
+  // 3. 兼容旧 ai_tokens
   const record = db.prepare('SELECT id FROM ai_tokens WHERE token = ? AND is_active = 1').get(token);
   if (!record) return { valid: false, token };
   return { valid: true, token };

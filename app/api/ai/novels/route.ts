@@ -4,41 +4,55 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
 
-// 验证 AI Token（支持旧 ai_tokens 和新 user_tokens）
+const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
+
+// 验证 AI Token（支持三种方式）
+// 1. JWT Bearer Token（注册用户通过 /api/auth/token 获取）
+// 2. user_tokens（UUID 格式 API Token）
+// 3. ai_tokens（旧系统兼容）
 function verifyAIToken(request: NextRequest): { valid: boolean; userId?: string } {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return { valid: false };
-  
+
   const token = authHeader.slice(7);
-  
-  // 优先检查 user_tokens（新系统）
+
+  // 1. 优先验证 JWT Token（注册用户直接发布）
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string; role: string };
+    return { valid: true, userId: decoded.userId };
+  } catch {
+    // JWT 无效，继续检查其他 Token 类型
+  }
+
+  // 2. 检查 user_tokens（新系统 API Token）
   const userToken = db.prepare(
     'SELECT user_id, is_active FROM user_tokens WHERE token = ?'
   ).get(token) as { user_id: string; is_active: number } | undefined;
-  
+
   if (userToken && userToken.is_active === 1) {
     db.prepare('UPDATE user_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
     return { valid: true, userId: userToken.user_id };
   }
-  
-  // 兼容旧 ai_tokens 表
+
+  // 3. 兼容旧 ai_tokens 表
   const aiToken = db.prepare(
     'SELECT id, quota_used, quota_limit FROM ai_tokens WHERE token = ? AND is_active = 1'
   ).get(token) as { id: string; quota_used: number; quota_limit: number } | undefined;
-  
+
   if (!aiToken) return { valid: false };
-  
+
   // 检查配额
   if (aiToken.quota_used >= aiToken.quota_limit) {
     return { valid: false };
   }
-  
+
   // 更新配额使用
   db.prepare('UPDATE ai_tokens SET last_used = CURRENT_TIMESTAMP, quota_used = quota_used + 1 WHERE token = ?').run(token);
-  
+
   return { valid: true };
 }
 

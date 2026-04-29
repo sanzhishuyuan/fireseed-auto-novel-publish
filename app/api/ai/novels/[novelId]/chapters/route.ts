@@ -4,28 +4,39 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
 
+const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
+
 interface Params { params: Promise<{ novelId: string }>; }
 
-// 统一 Token 验证（支持 ai_tokens 和 user_tokens）
+// 统一 Token 验证（支持 JWT / user_tokens / ai_tokens 三种方式）
 function verifyAITokenRecord(request: NextRequest): { valid: boolean; token: string; record?: Record<string, unknown>; isUserToken: boolean } {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return { valid: false, token: '', isUserToken: false };
   const token = authHeader.slice(7);
-  
-  // 优先检查 user_tokens（新系统）
+
+  // 1. 优先验证 JWT Token（注册用户通过 /api/auth/token 获取）
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string; role: string };
+    return { valid: true, token, record: { user_id: decoded.userId }, isUserToken: true };
+  } catch {
+    // JWT 无效，继续检查其他 Token 类型
+  }
+
+  // 2. 检查 user_tokens（新系统 API Token）
   const userToken = db.prepare(
     'SELECT id, user_id, is_active FROM user_tokens WHERE token = ?'
   ).get(token) as { id: string; user_id: string; is_active: number } | undefined;
-  
+
   if (userToken && userToken.is_active === 1) {
     db.prepare('UPDATE user_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
     return { valid: true, token, record: { user_id: userToken.user_id }, isUserToken: true };
   }
-  
-  // 兼容旧 ai_tokens 表
+
+  // 3. 兼容旧 ai_tokens 表
   const record = db.prepare('SELECT * FROM ai_tokens WHERE token = ? AND is_active = 1').get(token) as Record<string, unknown> | undefined;
   if (!record) return { valid: false, token, isUserToken: false };
   const now = new Date();
