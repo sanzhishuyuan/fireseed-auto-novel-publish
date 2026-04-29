@@ -1,114 +1,129 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
-import { ADMIN_PASSWORD } from '@/lib/auth';
-import { redirect } from 'next/navigation';
-import db from '@/lib/db';
-import { getAllNovelIds, getNovelChapters } from '@/lib/novels';
+import { useRouter } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
+interface AdminStats {
+  overview: {
+    totalUsers: number;
+    totalNovels: number;
+    totalChapters: number;
+    totalWords: number;
+  };
+  growth: {
+    newUsersToday: number;
+    newUsersThisWeek: number;
+    newUsersThisMonth: number;
+    newChaptersToday: number;
+    newWordsToday: number;
+  };
+  pendingTasks: {
+    deletedNovelsPending: number;
+    deletedNovelsReady: number;
+    pendingCustomBranches: number;
+  };
+  apiUsage: {
+    callsToday: number;
+    activeTokens: number;
+    usedTokensToday: number;
+  };
+  interaction: {
+    favorites: number;
+    comments: number;
+  };
+}
 
-export default async function AdminDashboard() {
-  const cookieStore = await cookies();
-  const isAdmin = cookieStore.get('admin_auth')?.value === ADMIN_PASSWORD;
+interface CleanupItem {
+  id: string;
+  title: string;
+  author: string;
+  deleted_at: string;
+  cleanup_date: string;
+  ready_to_cleanup: number;
+  days_since_deleted: number;
+}
 
-  if (!isAdmin) {
-    redirect('/admin');
+export default function EnhancedAdminDashboard() {
+  const router = useRouter();
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [cleanupList, setCleanupList] = useState<CleanupItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [cleaningUp, setCleaningUp] = useState(false);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      // 获取统计数据（依靠登录时设置的 admin_auth cookie 认证）
+      const statsRes = await fetch('/api/admin/stats');
+      if (!statsRes.ok) {
+        if (statsRes.status === 403) {
+          router.push('/admin');
+          return;
+        }
+        throw new Error('获取统计失败');
+      }
+      const statsData = await statsRes.json();
+      setStats(statsData.data);
+
+      // 获取待清理清单
+      const cleanupRes = await fetch('/api/admin/cleanup');
+      if (cleanupRes.ok) {
+        const cleanupData = await cleanupRes.json();
+        setCleanupList(cleanupData.data?.ready_to_cleanup || []);
+      }
+    } catch (err) {
+      setError('加载数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCleanup = async (novelId?: string) => {
+    if (!confirm('确认永久删除这些小说文件？此操作不可撤销！')) return;
+    
+    setCleaningUp(true);
+    try {
+      const url = novelId 
+        ? `/api/admin/cleanup?novel_id=${novelId}`
+        : '/api/admin/cleanup';
+      
+      const res = await fetch(url, { method: 'DELETE' });
+      const data = await res.json();
+      
+      if (data.success) {
+        alert(data.message);
+        fetchStats();
+      } else {
+        alert(data.error || '清理失败');
+      }
+    } catch {
+      alert('清理失败');
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}></div>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>加载中...</p>
+        </div>
+      </div>
+    );
   }
-
-  const novelList = getAllNovelIds();
-  const novels = novelList.map(novel => ({
-    ...novel,
-    chapterCount: getNovelChapters(novel.id).length
-  }));
-
-  const userCount = (db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number }).count;
-  const novelCount = novelList.length;
-  const chapterCount = novels.reduce((acc, n) => acc + n.chapterCount, 0);
-  const activeTokenCount = (db.prepare('SELECT COUNT(*) as count FROM ai_tokens WHERE is_active = 1').get() as { count: number }).count;
-
-  const stats = [
-    { label: '注册用户', value: userCount, icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="8" cy="6" r="3"/><circle cx="14" cy="8" r="2.5"/>
-        <path d="M2 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
-        <path d="M14 14c1.7 1 3 2.5 3 4"/>
-      </svg>
-    )},
-    { label: '小说总数', value: novelCount, icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 5h14M3 10h14M3 15h8"/>
-      </svg>
-    )},
-    { label: '章节总数', value: chapterCount, icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M4 3h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2z"/>
-        <path d="M7 7h6M7 10h6M7 13h4"/>
-      </svg>
-    )},
-    { label: '活跃Token', value: activeTokenCount, icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="3" y="8" width="14" height="10" rx="2"/>
-        <path d="M7 8V6a3 3 0 016 0v2"/>
-      </svg>
-    )},
-  ];
-
-  const menuItems = [
-    {
-      title: '小说管理',
-      desc: '新建 / 编辑小说信息',
-      href: '/admin/novels',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M12 3L3 7v12l9 4 9-4V7L12 3z"/>
-          <path d="M12 3v18M3 7l9 4 9-4"/>
-        </svg>
-      ),
-      color: 'var(--accent)'
-    },
-    {
-      title: '章节管理',
-      desc: '发布 / 编辑章节内容',
-      href: '/admin/chapters',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8L14 2z"/>
-          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-        </svg>
-      ),
-      color: '#10b981'
-    },
-    {
-      title: 'AI授权管理',
-      desc: '管理 AI 操作 Token',
-      href: '/admin/tokens',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="3" y="11" width="18" height="11" rx="2"/>
-          <path d="M7 11V7a5 5 0 0110 0v4"/>
-        </svg>
-      ),
-      color: '#f59e0b'
-    },
-    {
-      title: '系统设置',
-      desc: '全局配置与用户管理',
-      href: '/admin/users',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-        </svg>
-      ),
-      color: '#8b5cf6'
-    },
-  ];
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
       {/* 顶部导航 */}
       <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
               <svg width="16" height="16" viewBox="0 0 36 36" fill="none">
@@ -117,89 +132,262 @@ export default async function AdminDashboard() {
               </svg>
             </Link>
             <div>
-              <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>创作后台</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Spark AI 小说管理</p>
+              <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>管理面板</h1>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Spark AI 小说平台</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/" className="btn-ghost text-sm hide-mobile">查看前台</Link>
-            <form action="/api/admin/logout" method="POST">
-              <button type="submit" className="btn-ghost text-sm">退出</button>
-            </form>
+            <Link href="/admin/novels" className="btn-ghost text-sm">小说管理</Link>
+            <Link href="/admin/chapters" className="btn-ghost text-sm">章节管理</Link>
+            <Link href="/admin/tokens" className="btn-ghost text-sm">Token管理</Link>
+            <button onClick={() => router.push('/admin')} className="btn-ghost text-sm">退出</button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {/* 统计卡片 */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat, i) => (
-            <div key={i} className="card p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
-                  {stat.icon}
-                </div>
-              </div>
-              <div className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{stat.value}</div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* 功能菜单 */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {menuItems.map((item, i) => (
-            <Link
-              key={i}
-              href={item.href}
-              className="card p-5 group"
-            >
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110" style={{ background: `${item.color}18`, color: item.color }}>
-                {item.icon}
-              </div>
-              <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.desc}</p>
-            </Link>
-          ))}
-        </div>
-
-        {/* 小说列表 */}
-        <div className="card overflow-hidden">
-          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-light)' }}>
-            <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>小说列表</h2>
-            <Link href="/admin/novels" className="btn-primary text-xs py-1.5 px-3">
-              + 新建小说
-            </Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {error && (
+          <div className="mb-6 p-4 rounded-xl" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+            {error}
           </div>
+        )}
 
-          {novels.length > 0 ? (
-            <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-              {novels.map((novel) => (
-                <div key={novel.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-[var(--bg-secondary)] transition-colors">
-                  <div>
-                    <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{novel.title}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {novel.author || 'AI创作'} · {novel.chapterCount} 章
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={novel.status === 'completed' ? 'badge badge-success' : 'badge badge-warning'}>
-                      {novel.status === 'completed' ? '完结' : '连载'}
-                    </span>
-                    <Link href={`/admin/chapters?novel=${novel.id}`} className="text-xs" style={{ color: 'var(--accent)' }}>
-                      章节 →
-                    </Link>
-                  </div>
-                </div>
-              ))}
+        {/* 核心指标 */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>📊 核心指标</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard 
+              label="注册用户" 
+              value={stats?.overview.totalUsers || 0} 
+              sub={`今日 +${stats?.growth.newUsersToday || 0}`}
+              icon="👥"
+              color="#3b82f6"
+            />
+            <StatCard 
+              label="小说总数" 
+              value={stats?.overview.totalNovels || 0} 
+              sub={`${stats?.overview.totalChapters || 0} 章节`}
+              icon="📚"
+              color="#10b981"
+            />
+            <StatCard 
+              label="总字数" 
+              value={stats?.overview.totalWords || 0} 
+              displayValue={formatNumber(stats?.overview.totalWords || 0)}
+              sub={`今日 +${formatNumber(stats?.growth.newWordsToday || 0)}`}
+              icon="✍️"
+              color="#f59e0b"
+            />
+            <StatCard 
+              label="今日更新" 
+              value={stats?.growth.newChaptersToday || 0} 
+              sub="章节"
+              icon="📝"
+              color="#8b5cf6"
+            />
+          </div>
+        </div>
+
+        {/* 增长数据 */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>📈 增长趋势</h2>
+          <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
+            <MiniStat label="今日新增用户" value={stats?.growth.newUsersToday || 0} />
+            <MiniStat label="本周新增" value={stats?.growth.newUsersThisWeek || 0} />
+            <MiniStat label="本月新增" value={stats?.growth.newUsersThisMonth || 0} />
+            <MiniStat label="今日章节" value={stats?.growth.newChaptersToday || 0} />
+            <MiniStat label="今日字数" value={stats?.growth.newWordsToday || 0} displayValue={formatNumber(stats?.growth.newWordsToday || 0)} />
+            <MiniStat label="今日API调用" value={stats?.apiUsage.callsToday || 0} />
+          </div>
+        </div>
+
+        {/* 待处理任务 */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>⚠️ 待处理任务</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <TaskCard 
+              title="待清理小说" 
+              count={cleanupList.length}
+              ready={cleanupList.filter(n => n.ready_to_cleanup).length}
+              description="已软删除超过7天，可以永久清理"
+              action={
+                cleanupList.length > 0 ? (
+                  <button 
+                    onClick={() => handleCleanup()}
+                    disabled={cleaningUp}
+                    className="btn-primary text-sm"
+                  >
+                    {cleaningUp ? '清理中...' : '立即清理'}
+                  </button>
+                ) : null
+              }
+            />
+            <TaskCard 
+              title="待审核分支" 
+              count={stats?.pendingTasks.pendingCustomBranches || 0}
+              description="读者提交的自定义剧情分支"
+              action={
+                (stats?.pendingTasks.pendingCustomBranches || 0) > 0 ? (
+                  <Link href="/admin/chapters" className="btn-primary text-sm">去审核</Link>
+                ) : null
+              }
+            />
+            <TaskCard 
+              title="API Token" 
+              count={stats?.apiUsage.activeTokens || 0}
+              description={`今日已使用 ${stats?.apiUsage.usedTokensToday || 0} 次`}
+              action={
+                <Link href="/admin/tokens" className="btn-ghost text-sm">管理</Link>
+              }
+            />
+          </div>
+        </div>
+
+        {/* 待清理清单 */}
+        {cleanupList.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>🗑️ 待清理文件</h2>
+            <div className="card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>小说</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作者</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>删除时间</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>已过天数</th>
+                      <th className="text-right px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cleanupList.map((item) => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-primary)' }}>{item.title}</td>
+                        <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>{item.author}</td>
+                        <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>{new Date(item.deleted_at).toLocaleDateString('zh-CN')}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className="badge badge-warning">{item.days_since_deleted} 天</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button 
+                            onClick={() => handleCleanup(item.id)}
+                            disabled={cleaningUp}
+                            className="text-sm hover:underline"
+                            style={{ color: '#ef4444' }}
+                          >
+                            删除
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          ) : (
-            <div className="px-5 py-12 text-center">
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>暂无小说</p>
+          </div>
+        )}
+
+        {/* 读者互动 */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>💬 读者互动</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="card p-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: 'rgba(239,68,68,0.1)' }}>
+                ❤️
+              </div>
+              <div>
+                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{stats?.interaction.favorites || 0}</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>收藏数</p>
+              </div>
             </div>
-          )}
+            <div className="card p-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                💬
+              </div>
+              <div>
+                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{stats?.interaction.comments || 0}</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>评论数</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 快捷操作 */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>⚡ 快捷操作</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link href="/admin/novels" className="card p-4 hover:scale-[1.02] transition-transform">
+              <p className="text-lg mb-1">📚</p>
+              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>小说管理</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>新建/编辑小说</p>
+            </Link>
+            <Link href="/admin/chapters" className="card p-4 hover:scale-[1.02] transition-transform">
+              <p className="text-lg mb-1">📝</p>
+              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>章节管理</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>发布/编辑章节</p>
+            </Link>
+            <Link href="/admin/tokens" className="card p-4 hover:scale-[1.02] transition-transform">
+              <p className="text-lg mb-1">🔑</p>
+              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Token管理</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>AI授权管理</p>
+            </Link>
+            <a href="/" target="_blank" className="card p-4 hover:scale-[1.02] transition-transform">
+              <p className="text-lg mb-1">🌐</p>
+              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>访问前台</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>fireseed.online</p>
+            </a>
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function StatCard({ label, value, displayValue, sub, icon, color }: { label: string; value: number; displayValue?: string; sub: string; icon: string; color: string }) {
+  return (
+    <div className="card p-5">
+      <div className="flex items-start justify-between mb-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ background: `${color}18` }}>
+          {icon}
+        </div>
+      </div>
+      <div className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{displayValue || formatNumber(value)}</div>
+      <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
+      <div className="text-xs" style={{ color: 'var(--accent)' }}>{sub}</div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, displayValue }: { label: string; value: number; displayValue?: string }) {
+  return (
+    <div className="card p-3 text-center">
+      <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{displayValue || formatNumber(value)}</p>
+      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
+    </div>
+  );
+}
+
+function TaskCard({ title, count, description, action, ready }: { title: string; count: number; description: string; action?: React.ReactNode; ready?: number }) {
+  const hasReady = ready && ready > 0;
+  
+  return (
+    <div className="card p-5">
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        {hasReady && (
+          <span className="badge badge-warning text-xs">{ready} 可清理</span>
+        )}
+      </div>
+      <p className="text-3xl font-bold mb-2" style={{ color: count > 0 ? 'var(--accent)' : 'var(--text-muted)' }}>{count}</p>
+      <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{description}</p>
+      {action}
+    </div>
+  );
+}
+
+function formatNumber(num: number): string {
+  if (num >= 10000000) return (num / 10000000).toFixed(1) + 'kw';
+  if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+  return num.toString();
 }

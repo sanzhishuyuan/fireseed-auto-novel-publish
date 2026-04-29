@@ -27,10 +27,13 @@ db.exec(`
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     author TEXT,
+    author_id TEXT,
     description TEXT,
     cover_url TEXT,
     status TEXT DEFAULT 'ongoing',
     tags TEXT,
+    deleted_at DATETIME,
+    retention_days INTEGER DEFAULT 7,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
