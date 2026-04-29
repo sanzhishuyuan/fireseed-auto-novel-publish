@@ -1,6 +1,11 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function VIPPage() {
+  const [showNotice, setShowNotice] = useState(false);
+
   const plans = [
     {
       name: '免费用户',
@@ -9,7 +14,8 @@ export default function VIPPage() {
       features: ['免费阅读主线章节', '基础阅读设置', '章节点赞'],
       color: 'gray',
       button: '当前身份',
-      available: true
+      available: true,
+      action: 'free'
     },
     {
       name: '高级会员',
@@ -25,7 +31,8 @@ export default function VIPPage() {
       color: 'indigo',
       popular: true,
       button: '立即开通',
-      available: true
+      available: true,
+      action: 'monthly'
     },
     {
       name: '年度会员',
@@ -40,9 +47,19 @@ export default function VIPPage() {
       ],
       color: 'purple',
       button: '超值之选',
-      available: true
+      available: true,
+      action: 'yearly'
     }
   ];
+
+  const handlePlanClick = (action: string) => {
+    if (action === 'monthly') {
+      // 高级会员先跳转到登录
+      window.location.href = '/auth/login?redirect=/vip';
+    } else {
+      setShowNotice(true);
+    }
+  };
 
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
@@ -119,10 +136,10 @@ export default function VIPPage() {
                   ))}
                 </ul>
                 <button
+                  onClick={() => handlePlanClick(plan.action)}
                   className={`w-full py-2.5 rounded-lg text-sm font-medium ${
                     plan.popular ? 'btn-primary' : 'btn-secondary'
                   }`}
-                  disabled={!plan.popular}
                 >
                   {plan.button}
                 </button>
@@ -132,6 +149,38 @@ export default function VIPPage() {
         </div>
       </div>
 
+      {/* 提示弹窗 */}
+      {showNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="card max-w-sm w-full p-6 animate-fade-in">
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                  <path d="M2 17l10 5 10-5"/>
+                  <path d="M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>会员功能即将上线</h3>
+              <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+                会员系统正在开发中，请关注后续更新。注册后可第一时间收到通知。
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowNotice(false)}
+                  className="flex-1 btn-secondary"
+                >
+                  知道了
+                </button>
+                <Link href="/auth/register" className="flex-1 btn-primary text-center">
+                  立即注册
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* FAQ */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 mt-16">
         <h3 className="text-xl font-bold text-center mb-8" style={{ color: 'var(--text-primary)' }}>
@@ -139,7 +188,7 @@ export default function VIPPage() {
         </h3>
         <div className="space-y-3">
           {[
-            { q: '如何开通会员？', a: '点击上方「立即开通」按钮，选择支付方式完成支付即可。' },
+            { q: '如何开通会员？', a: '点击上方「立即开通」按钮登录后即可开通。会员系统正在上线中，敬请期待。' },
             { q: '会员权益何时生效？', a: '支付成功后，权益将立即生效，刷新页面即可体验。' },
             { q: '支持哪些支付方式？', a: '目前支持微信支付、支付宝等主流支付方式。' },
             { q: '可以退款吗？', a: '虚拟商品一经购买不支持退款，感谢理解。' }

@@ -16,6 +16,7 @@ export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [stats, setStats] = useState({ totalChapters: 0, totalNovels: 0, totalWords: 0 });
   const router = useRouter();
 
   // 获取小说列表
@@ -23,9 +24,18 @@ export default function HomePage() {
     fetch('/api/novels')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
-          setNovels(data);
-        }
+        // 兼容旧格式（直接返回数组）和新格式（{success, novels}）
+        const list = Array.isArray(data) ? data : (data?.novels || []);
+        setNovels(list);
+
+        // 从小说列表计算统计数据
+        const totalChapters = list.reduce((sum: number, n: any) => sum + (n.chapterCount || 0), 0);
+        const totalWords = totalChapters * 2000; // 估算：每章约2000字
+        setStats({
+          totalChapters,
+          totalNovels: list.length,
+          totalWords
+        });
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -185,14 +195,14 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* 数据看板 - 借鉴 kanshuclaw */}
+      {/* 数据看板 - 基于真实数据 */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { label: '今日更新', value: '128', unit: '章', icon: '📖', color: 'var(--accent)' },
-            { label: '作品总数', value: '12', unit: '部', icon: '✨', color: '#10b981' },
-            { label: '累计字数', value: '45.2', unit: '万字', icon: '✍️', color: '#f59e0b' },
-            { label: '活跃读者', value: '1,086', unit: '人', icon: '🔥', color: '#ef4444' }
+            { label: '作品总数', value: stats.totalNovels.toString(), unit: '部', icon: '📚', color: '#10b981' },
+            { label: '累计章节', value: stats.totalChapters.toString(), unit: '章', icon: '📖', color: 'var(--accent)' },
+            { label: '累计字数', value: stats.totalWords >= 10000 ? (stats.totalWords / 10000).toFixed(1) : stats.totalWords.toString(), unit: stats.totalWords >= 10000 ? '万字' : '字', icon: '✍️', color: '#f59e0b' },
+            { label: '互动分支', value: '-', unit: '条', icon: '🔥', color: '#ef4444' }
           ].map((stat, i) => (
             <div
               key={i}
@@ -671,7 +681,7 @@ export default function HomePage() {
           <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Spark</span>
         </div>
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          © 2024 Spark · AI 互动小说平台
+          © 2026 Spark · AI 互动小说平台
         </p>
       </footer>
     </div>
