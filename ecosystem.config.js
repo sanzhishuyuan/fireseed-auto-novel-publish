@@ -3,7 +3,7 @@ module.exports = {
     name: 'ai-novel',
     script: 'node_modules/.bin/next',
     args: 'start -p 3000',
-    cwd: '/root/ai-novel',
+    cwd: '/root/ai-novel-lite',
     instances: 1,
     autorestart: true,
     watch: false,
