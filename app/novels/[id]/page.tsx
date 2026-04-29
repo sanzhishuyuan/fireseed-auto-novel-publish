@@ -47,12 +47,16 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
       fetch(`/api/novels/${params.id}/chapters`).then(r => r.json())
     ])
       .then(([novelData, chaptersData]) => {
-        if (novelData.id) {
-          setNovel(novelData);
-          document.title = `${novelData.title} - Spark`;
+        // API 返回格式：{ success, data } 或直接是数据对象
+        const novel = novelData.data || novelData;
+        if (novel?.id) {
+          setNovel(novel);
+          document.title = `${novel.title} - Spark`;
         }
-        if (Array.isArray(chaptersData)) {
-          setChapters(chaptersData);
+        // 章节 API 返回格式：{ success, chapters } 或直接是数组
+        const chapters = chaptersData.chapters || chaptersData.data || (Array.isArray(chaptersData) ? chaptersData : []);
+        if (Array.isArray(chapters)) {
+          setChapters(chapters);
         }
       })
       .catch(console.error)
