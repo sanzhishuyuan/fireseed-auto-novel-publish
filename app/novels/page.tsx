@@ -91,14 +91,13 @@ export default function NovelsPage() {
     fetch('/api/novels')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
-          // 为每个小说添加随机更新时间模拟
-          const novelsWithTime = data.map((novel, i) => ({
-            ...novel,
-            updatedAt: new Date(Date.now() - i * 86400000).toISOString()
-          }));
-          setNovels(novelsWithTime);
-        }
+        // 兼容旧格式（直接返回数组）和新格式（{success, novels}）
+        const list = Array.isArray(data) ? data : (data?.novels || []);
+        const novelsWithTime = list.map((novel: Novel, i: number) => ({
+          ...novel,
+          updatedAt: novel.updatedAt || new Date(Date.now() - i * 86400000).toISOString()
+        }));
+        setNovels(novelsWithTime);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
