@@ -54,7 +54,6 @@ export default function VIPPage() {
 
   const handlePlanClick = (action: string) => {
     if (action === 'monthly') {
-      // 高级会员先跳转到登录
       window.location.href = '/auth/login?redirect=/vip';
     } else {
       setShowNotice(true);
