@@ -19,6 +19,9 @@ if (!ENV_JWT_SECRET || !ENV_ADMIN_PASSWORD) {
 const JWT_SECRET = ENV_JWT_SECRET || 'dev-only-secret-do-not-use-in-production';
 const ADMIN_PASSWORD = ENV_ADMIN_PASSWORD || 'admin123';
 
+// 导出给其他模块使用
+export { JWT_SECRET, ADMIN_PASSWORD };
+
 export interface TokenPayload {
   userId: string;
   username: string;
