@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { ADMIN_PASSWORD } from '@/lib/auth';
+import { verifyAdminToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import fs from 'fs';
@@ -9,7 +9,7 @@ import matter from 'gray-matter';
 
 export async function GET() {
   const cookieStore = await cookies();
-  if (cookieStore.get('admin_auth')?.value !== ADMIN_PASSWORD) {
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
     return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 
@@ -19,7 +19,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
-  if (cookieStore.get('admin_auth')?.value !== ADMIN_PASSWORD) {
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
     return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 

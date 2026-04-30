@@ -5,10 +5,10 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
 // 验证 AI Token（支持三种方式）
 // 1. JWT Bearer Token（注册用户通过 /api/auth/token 获取）
@@ -92,6 +92,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimit = checkRateLimit(request, undefined, 'aiWrite');
+  const rateLimitResponse_ = rateLimitResponse(rateLimit);
+  if (rateLimitResponse_) return rateLimitResponse_;
+
   const auth = verifyAIToken(request);
   if (!auth.valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -119,6 +123,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: novelId, title, reader_url: baseUrl + '/novels/' + novelId });
   } catch (error) {
     console.error('AI create novel error:', error);
-    return NextResponse.json({ error: 'Internal error', detail: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

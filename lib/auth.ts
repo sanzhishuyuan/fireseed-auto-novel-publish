@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
 
 // 生产环境必须设置这些环境变量
@@ -51,15 +52,25 @@ export function verifyAdminPassword(password: string): boolean {
   return password === DEV_ADMIN_PASSWORD;
 }
 
-// 生成AI Token
-export function generateAIToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < 64; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+// 生成 Admin JWT Token（替代明文密码 Cookie）
+export function generateAdminToken(): string {
+  return jwt.sign({ type: 'admin' }, DEV_JWT_SECRET, { expiresIn: '24h' });
 }
 
-// 导出 ADMIN_PASSWORD（供其他模块使用）
-export { DEV_ADMIN_PASSWORD as ADMIN_PASSWORD };
+// 验证 Admin JWT Token
+export function verifyAdminToken(token: string): boolean {
+  try {
+    const decoded = jwt.verify(token, DEV_JWT_SECRET) as { type: string };
+    return decoded.type === 'admin';
+  } catch {
+    return false;
+  }
+}
+
+// 生成AI Token（使用加密安全随机数）
+export function generateAIToken(): string {
+  return randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, '');
+}
+
+// 统一导出 JWT_SECRET（所有 API 路由必须从此处导入，禁止各自硬编码）
+export const JWT_SECRET = DEV_JWT_SECRET;

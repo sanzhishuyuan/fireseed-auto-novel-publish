@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
+import { JWT_SECRET } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // P0-4: 速率限制（每分钟最多10次登录尝试）
+  const rateLimit = checkRateLimit(request, undefined, 'auth');
+  const rateLimitResponse_ = rateLimitResponse(rateLimit);
+  if (rateLimitResponse_) return rateLimitResponse_;
+
   try {
     const { username, password } = await request.json();
 

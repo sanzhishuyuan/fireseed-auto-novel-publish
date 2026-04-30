@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyAdminPassword } from '@/lib/auth';
+import { verifyAdminToken } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
+
+function isAdminAuthed(request: NextRequest): boolean {
+  const url = new URL(request.url);
+  const adminKey = url.searchParams.get('admin_key');
+  const cookieAdminToken = request.cookies.get('admin_token')?.value;
+
+  if (adminKey && verifyAdminToken(adminKey)) return true;
+  if (cookieAdminToken && verifyAdminToken(cookieAdminToken)) return true;
+  return false;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -13,14 +25,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url);
-    const adminKey = url.searchParams.get('admin_key');
-    const cookieAuth = request.cookies.get('admin_auth')?.value;
-
-    const authed = (adminKey && verifyAdminPassword(adminKey))
-      || (cookieAuth && verifyAdminPassword(cookieAuth));
-
-    if (!authed) {
+    if (!isAdminAuthed(request)) {
       return NextResponse.json({ success: false, error: '无权限' }, { status: 403 });
     }
 

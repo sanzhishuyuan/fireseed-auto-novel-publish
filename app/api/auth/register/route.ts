@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // P0-4: 速率限制（每分钟最多10次注册尝试）
+  const rateLimit = checkRateLimit(request, undefined, 'auth');
+  const rateLimitResponse_ = rateLimitResponse(rateLimit);
+  if (rateLimitResponse_) return rateLimitResponse_;
+
   try {
     const { username, password } = await request.json();
 

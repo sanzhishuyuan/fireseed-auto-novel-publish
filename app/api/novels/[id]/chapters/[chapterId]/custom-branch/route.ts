@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
   } catch (error) {
     console.error('Custom branch error:', error);
-    return NextResponse.json({ error: '提交失败', detail: String(error) }, { status: 500 });
+    return NextResponse.json({ error: '提交失败' }, { status: 500 });
   }
 }
 

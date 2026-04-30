@@ -6,6 +6,146 @@
 
 ## 2026-04-30
 
+### 🔒 安全修复：全面安全审计与修复（P0 × 5 + P1 × 3）
+
+**背景**：本次会话通过前后端全面代码审查，发现并修复了多个安全风险。
+
+---
+
+### ✅ P0-1: JWT Secret 硬编码（7处 → 统一导入）
+
+**问题**：JWT Secret 在7个 API 文件中硬编码为 `'ai-novel-secret-key-2024'`，生产环境直接暴露。
+
+**涉及文件**：
+- `app/api/auth/login/route.ts`
+- `app/api/auth/token/route.ts`
+- `app/api/ai/novels/route.ts`
+- `app/api/ai/novels/upload-md/route.ts`
+- `app/api/ai/novels/[novelId]/chapters/route.ts`
+- `app/api/ai/novels/[novelId]/branches/route.ts`
+- `app/api/ai/jobs/[jobId]/route.ts`
+
+**修复**：统一改为从 `lib/auth.ts` 导入 `JWT_SECRET`，由环境变量控制。
+```typescript
+import { JWT_SECRET } from '@/lib/auth';
+```
+
+---
+
+### ✅ P0-2: Admin 认证架构重构（明文密码 Cookie → JWT Token）
+
+**问题**：Admin 登录成功后，明文密码存入 `admin_auth` Cookie，且后续所有 API 通过明文密码比较验证。
+
+**涉及文件**：
+- `app/api/admin/login/route.ts` — 改为签发 JWT Token
+- `app/api/admin/logout/route.ts` — 删除 `admin_token` Cookie
+- `app/api/admin/stats/route.ts`、`cleanup/`、`tokens/`、`tokens/[id]/`、`novels/`、`novels/[id]/chapters/` — 全部改用 JWT Token 验证
+- `lib/auth.ts` — 新增 `generateAdminToken()` 和 `verifyAdminToken()`
+
+**修复**：
+```typescript
+// 登录时签发 JWT Token（不再存明文密码）
+const adminToken = generateAdminToken(); // 24h 有效
+response.cookies.set('admin_token', adminToken, { httpOnly: true, ... });
+
+// 其他路由验证 Token
+if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
+  return NextResponse.json({ error: '未授权' }, { status: 401 });
+}
+```
+
+---
+
+### ✅ P0-3: 收藏功能表名错误（novels_meta → novels）
+
+**问题**：`app/api/user/favorites/route.ts` 使用不存在的表名 `novels_meta`，导致用户收藏列表查询失败。
+
+**修复**：`JOIN novels_meta` → `JOIN novels`
+
+---
+
+### ✅ P0-4: API 速率限制缺失（全新）
+
+**问题**：所有 API 路由（登录、注册、Token 获取、AI 发布）完全无速率限制，可被暴力破解或 DoS。
+
+**修复**：
+
+**1. 新建 `lib/rate-limit.ts`**（滑动窗口内存限流器）：
+- 敏感操作（登录/注册/Token）：每分钟最多 10 次
+- AI 写操作（发布章节/小说）：每分钟最多 30 次
+- 读操作：每分钟最多 120 次
+- 支持按 IP 追踪，HTTP 429 响应带 `Retry-After` 头
+
+**2. 应用到所有敏感端点**：
+- `POST /api/auth/login` — auth tier
+- `POST /api/auth/register` — auth tier
+- `POST /api/auth/token` — auth tier
+- `POST /api/admin/login` — auth tier（更严格）
+- `POST /api/ai/novels` — aiWrite tier
+- `POST /api/ai/novels/upload-md` — aiWrite tier
+- `POST /api/ai/novels/[id]/chapters` — aiWrite tier
+- `POST /api/ai/novels/[id]/branches` — aiWrite tier
+
+---
+
+### ✅ P0-5: 错误响应泄露内部信息
+
+**问题**：多处 API 使用 `detail: String(error)` 将完整错误对象暴露给客户端，泄露内部文件路径、变量名等。
+
+**修复**：移除所有 `detail: String(error)` 字段，保留用户友好的错误消息。
+
+---
+
+### ✅ P1-1: AI Token 生成不安全（Math.random() → crypto.randomUUID()）
+
+**问题**：`lib/auth.ts` 的 `generateAIToken()` 使用 `Math.random()`，可被预测。
+
+**修复**：
+```typescript
+// 修改前
+result += chars.charAt(Math.floor(Math.random() * chars.length));
+
+// 修改后（使用 Node.js crypto 模块）
+import { randomUUID } from 'crypto';
+export function generateAIToken(): string {
+  return randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, '');
+}
+```
+
+---
+
+### ✅ P1-2: 数据库缺失关键索引
+
+**问题**：`chapters`、`user_progress`、`ai_jobs`、`custom_branches` 等表无索引，高并发时全表扫描导致性能问题。
+
+**修复**：`lib/db.ts` 新增 6 条索引：
+```sql
+CREATE INDEX IF NOT EXISTS idx_chapters_novel_branch ON chapters(novel_id, branch, order_num);
+CREATE INDEX IF NOT EXISTS idx_user_progress_user_novel ON user_progress(user_id, novel_id);
+CREATE INDEX IF NOT EXISTS idx_ai_jobs_token_status ON ai_jobs(token, status);
+CREATE INDEX IF NOT EXISTS idx_custom_branches_lookup ON custom_branches(novel_id, chapter_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_novels_deleted ON novels(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+```
+
+---
+
+### ✅ P1-3: AI API 安全工具（新建）
+
+**新建 `lib/api-guard.ts`**：
+- `validateContentSize()` — 单章节最大 500KB 校验
+- `withTimeout()` — 异步操作超时包装器（默认 10s）
+
+---
+
+### ✅ 附带修复：Token 有效期缩短
+
+- `/api/auth/token` — JWT Token 有效期从 `30d` 缩短至 `7d`（降低 Token 泄露风险）
+
+---
+
+## 2026-04-30（早）
+
 ### 🐛 Bug 修复：小说详情页白屏（tags 字段类型不匹配）
 
 **问题表现**

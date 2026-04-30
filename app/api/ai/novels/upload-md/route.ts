@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
+import { JWT_SECRET } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 interface ChapterInfo {
   title: string;
@@ -89,6 +89,11 @@ function toChineseNumber(num: number): string {
  * }
  */
 export async function POST(request: NextRequest) {
+  // P0-4: AI 发布接口速率限制（每分钟最多30次）
+  const rateLimit = checkRateLimit(request, undefined, 'aiWrite');
+  const rateLimitResponse_ = rateLimitResponse(rateLimit);
+  if (rateLimitResponse_) return rateLimitResponse_;
+
   try {
     const body = await request.json();
     const { token, content, title, author, description, tags } = body;

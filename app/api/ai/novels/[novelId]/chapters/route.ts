@@ -5,10 +5,11 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '@/lib/auth';
+import { validateContentSize, CONTENT_MAX_BYTES } from '@/lib/api-guard';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
 interface Params { params: Promise<{ novelId: string }>; }
 
@@ -59,6 +60,11 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
+  // P0-4: AI 发布接口速率限制（每分钟最多30次）
+  const rateLimit = checkRateLimit(request, undefined, 'aiWrite');
+  const rateLimitResponse_ = rateLimitResponse(rateLimit);
+  if (rateLimitResponse_) return rateLimitResponse_;
+
   const auth = verifyAITokenRecord(request);
   if (!auth.valid) return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
   const { novelId } = await params;
@@ -159,6 +165,6 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
   } catch (error) {
     console.error('AI publish chapter error:', error);
-    return NextResponse.json({ error: 'Internal error', detail: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

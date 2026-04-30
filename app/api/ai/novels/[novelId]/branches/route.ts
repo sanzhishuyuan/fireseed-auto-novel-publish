@@ -5,10 +5,10 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
 interface Params {
   params: Promise<{ novelId: string }>;
@@ -56,6 +56,11 @@ function verifyAIToken(request: NextRequest): boolean {
  *   custom_branch_enabled?: boolean - 是否允许读者自定义续写
  */
 export async function POST(request: NextRequest, { params }: Params) {
+  // P0-4: AI 发布接口速率限制（每分钟最多30次）
+  const rateLimit = checkRateLimit(request, undefined, 'aiWrite');
+  const rateLimitResponse_ = rateLimitResponse(rateLimit);
+  if (rateLimitResponse_) return rateLimitResponse_;
+
   if (!verifyAIToken(request)) {
     return NextResponse.json({ error: '无效的 AI Token' }, { status: 401 });
   }
@@ -126,6 +131,6 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
   } catch (error) {
     console.error('AI publish branch error:', error);
-    return NextResponse.json({ error: '支线发布失败', detail: String(error) }, { status: 500 });
+    return NextResponse.json({ error: '支线发布失败' }, { status: 500 });
   }
 }

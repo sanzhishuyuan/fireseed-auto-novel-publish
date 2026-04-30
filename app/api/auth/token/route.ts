@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
+import { JWT_SECRET } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 /**
  * POST /api/auth/token
@@ -13,6 +13,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
  * return: { success, token, user }
  */
 export async function POST(request: NextRequest) {
+  // P0-4: 速率限制（每分钟最多10次 Token 获取）
+  const rateLimit = checkRateLimit(request, undefined, 'auth');
+  const rateLimitResponse_ = rateLimitResponse(rateLimit);
+  if (rateLimitResponse_) return rateLimitResponse_;
+
   try {
     const { username, password } = await request.json();
 
@@ -31,11 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '密码错误' }, { status: 401 });
     }
 
-    // 签发 JWT Token（供 API 发布使用）
+    // P0 fix: Token 有效期从 30d 缩短至 7d
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '7d' }
     );
 
     return NextResponse.json({

@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
 function verifyAIToken(request: NextRequest): { valid: boolean; token: string } {
   const authHeader = request.headers.get('Authorization');

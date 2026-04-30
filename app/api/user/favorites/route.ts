@@ -23,7 +23,7 @@ export async function GET() {
     const favorites = db.prepare(`
       SELECT f.id, f.novel_id, f.created_at, n.title, n.author, n.description, n.tags, n.status
       FROM favorites f
-      JOIN novels_meta n ON f.novel_id = n.id
+      JOIN novels n ON f.novel_id = n.id
       WHERE f.user_id = ?
       ORDER BY f.created_at DESC
     `).all(payload.userId);

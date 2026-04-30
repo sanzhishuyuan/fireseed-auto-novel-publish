@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { ADMIN_PASSWORD } from '@/lib/auth';
+import { verifyAdminToken } from '@/lib/auth';
 import db from '@/lib/db';
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 export async function PATCH(request: NextRequest, { params }: Props) {
   const { id } = await params;
   const cookieStore = await cookies();
-  if (cookieStore.get('admin_auth')?.value !== ADMIN_PASSWORD) {
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
     return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 
@@ -26,7 +26,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
 export async function DELETE(request: NextRequest, { params }: Props) {
   const { id } = await params;
   const cookieStore = await cookies();
-  if (cookieStore.get('admin_auth')?.value !== ADMIN_PASSWORD) {
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
     return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 

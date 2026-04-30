@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyAdminPassword } from '@/lib/auth';
+import { verifyAdminToken } from '@/lib/auth';
 import fs from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-function isAuthed(request: NextRequest): boolean {
+function isAdminAuthed(request: NextRequest): boolean {
   const url = new URL(request.url);
   const adminKey = url.searchParams.get('admin_key');
-  const cookieAuth = request.cookies.get('admin_auth')?.value;
-  return !!(
-    (adminKey && verifyAdminPassword(adminKey)) ||
-    (cookieAuth && verifyAdminPassword(cookieAuth))
-  );
+  const cookieAdminToken = request.cookies.get('admin_token')?.value;
+
+  if (adminKey && verifyAdminToken(adminKey)) return true;
+  if (cookieAdminToken && verifyAdminToken(cookieAdminToken)) return true;
+  return false;
 }
 
 /**
@@ -23,7 +23,7 @@ function isAuthed(request: NextRequest): boolean {
  */
 export async function GET(request: NextRequest) {
   try {
-    if (!isAuthed(request)) {
+    if (!isAdminAuthed(request)) {
       return NextResponse.json({ 
         success: false, 
         error: '无权限访问，请提供有效的管理员密钥' 
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    if (!isAuthed(request)) {
+    if (!isAdminAuthed(request)) {
       return NextResponse.json({ 
         success: false, 
         error: '无权限访问' 
