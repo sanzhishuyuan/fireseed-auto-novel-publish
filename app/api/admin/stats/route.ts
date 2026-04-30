@@ -14,8 +14,6 @@ function isAdminAuthed(request: NextRequest): boolean {
   return false;
 }
 
-export const dynamic = 'force-dynamic';
-
 /**
  * GET /api/admin/stats
  * 获取网站核心统计数据
