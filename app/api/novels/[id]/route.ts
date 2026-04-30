@@ -35,7 +35,8 @@ export async function GET(
           description: dbNovel.description || '',
           cover_url: dbNovel.cover_url || '',
           status: dbNovel.status || 'ongoing',
-          tags: dbNovel.tags ? dbNovel.tags.split(',').filter(Boolean) : [],
+          // 保持逗号分隔字符串格式，兼容前端 split(',') 处理
+          tags: dbNovel.tags || '',
           created_at: dbNovel.created_at,
           updated_at: dbNovel.updated_at,
           chapter_count: chaptersInfo.chapter_count,
