@@ -121,8 +121,11 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  // 过滤主线章节
-  const mainChapters = chapters.filter(c => c.meta?.branch === 'main');
+  // 过滤主线章节（兼容数据库格式 c.branch 和文件系统格式 c.meta?.branch）
+  const mainChapters = chapters.filter(c => {
+    const branch = (c as any).branch || c.meta?.branch;
+    return !branch || branch === 'main';
+  });
 
   if (loading) {
     return (
@@ -366,10 +369,18 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
 
               {mainChapters.length > 0 ? (
                 <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-                  {mainChapters.map((chapter, index) => (
+                  {mainChapters.map((chapter, index) => {
+                    // 兼容数据库格式（id/title/word_count）和文件系统格式（filePath/meta.title/content）
+                    const chapterAny = chapter as any;
+                    const chapterId = chapterAny.id || chapterAny.filePath;
+                    const chapterTitle = chapterAny.title || chapterAny.meta?.title || `第${index + 1}章`;
+                    const wordCount = chapterAny.word_count || chapterAny.content?.length || 0;
+                    const hasChoices = (chapterAny.choices && chapterAny.choices.length > 0) ||
+                                       (chapterAny.meta?.choices && chapterAny.meta.choices.length > 0);
+                    return (
                     <Link
-                      key={chapter.filePath}
-                      href={`/novels/${params.id}/${chapter.filePath}`}
+                      key={chapterId}
+                      href={`/novels/${params.id}/${chapterId}`}
                       className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--bg-secondary)] transition-colors"
                     >
                       <div
@@ -380,13 +391,13 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-                          {chapter.meta.title}
+                          {chapterTitle}
                         </p>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          {chapter.content?.length || 0} 字
+                          {wordCount} 字
                         </p>
                       </div>
-                      {chapter.meta.choices && chapter.meta.choices.length > 0 && (
+                      {hasChoices && (
                         <span className="badge badge-purple text-xs shrink-0">
                           分支
                         </span>
@@ -395,7 +406,8 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                         <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </Link>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="px-5 py-12 text-center">

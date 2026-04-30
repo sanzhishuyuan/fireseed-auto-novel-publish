@@ -11,19 +11,46 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const novel = getNovelMeta(params.id);
-    
-    if (!novel) {
+    // 优先从数据库读取（AI API 创建的小说没有 meta.md 文件）
+    const dbNovel = db.prepare('SELECT * FROM novels WHERE id = ?').get(params.id) as any;
+
+    if (dbNovel) {
+      // 检查是否已软删除
+      if (dbNovel.deleted_at) {
+        return NextResponse.json({ success: false, error: '小说不存在' }, { status: 404 });
+      }
+
+      // 从数据库查询章节数和总字数
+      const chaptersInfo = db.prepare(`
+        SELECT COUNT(*) as chapter_count, COALESCE(SUM(word_count), 0) as total_words
+        FROM chapters WHERE novel_id = ?
+      `).get(params.id) as { chapter_count: number; total_words: number };
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: dbNovel.id,
+          title: dbNovel.title,
+          author: dbNovel.author,
+          description: dbNovel.description || '',
+          cover_url: dbNovel.cover_url || '',
+          status: dbNovel.status || 'ongoing',
+          tags: dbNovel.tags ? dbNovel.tags.split(',').filter(Boolean) : [],
+          created_at: dbNovel.created_at,
+          updated_at: dbNovel.updated_at,
+          chapter_count: chaptersInfo.chapter_count,
+          total_words: chaptersInfo.total_words,
+        }
+      });
+    }
+
+    // 回退：从文件系统读取（兼容旧版内容目录小说）
+    const fileNovel = getNovelMeta(params.id);
+    if (!fileNovel) {
       return NextResponse.json({ success: false, error: '小说不存在' }, { status: 404 });
     }
 
-    // 检查是否已软删除
-    const dbNovel = db.prepare('SELECT deleted_at FROM novels WHERE id = ?').get(params.id) as { deleted_at: string | null } | undefined;
-    if (dbNovel?.deleted_at) {
-      return NextResponse.json({ success: false, error: '小说不存在' }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, data: novel });
+    return NextResponse.json({ success: true, data: fileNovel });
   } catch (error) {
     console.error('Get novel error:', error);
     return NextResponse.json({ success: false, error: '获取小说失败' }, { status: 500 });
