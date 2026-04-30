@@ -18,7 +18,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { novelId, branch, chapterId } = await request.json();
+    // 修复: request.json() 解析异常兼容
+    const bodyText = await request.text();
+    const { novelId, branch, chapterId } = JSON.parse(bodyText);
     const userId = payload.userId;
 
     const existing = db.prepare('SELECT id FROM user_progress WHERE user_id = ? AND novel_id = ?')

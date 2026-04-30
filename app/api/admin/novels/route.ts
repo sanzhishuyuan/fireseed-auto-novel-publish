@@ -24,7 +24,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { title, author, description, status, tags } = await request.json();
+    // 修复: request.json() 解析异常兼容
+    const bodyText = await request.text();
+    const { title, author, description, status, tags } = JSON.parse(bodyText);
     const id = uuidv4();
 
     // 保存到数据库

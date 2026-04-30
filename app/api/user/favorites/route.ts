@@ -50,7 +50,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '登录已过期' }, { status: 401 });
     }
 
-    const { novelId } = await request.json();
+    // 修复: request.json() 解析异常兼容
+    const bodyText = await request.text();
+    const { novelId } = JSON.parse(bodyText);
     if (!novelId) {
       return NextResponse.json({ error: '缺少小说ID' }, { status: 400 });
     }

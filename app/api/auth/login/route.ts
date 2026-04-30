@@ -12,7 +12,9 @@ export async function POST(request: NextRequest) {
   if (rateLimitResponse_) return rateLimitResponse_;
 
   try {
-    const { username, password } = await request.json();
+    // 修复: request.json() 在 Node 18 + Next 14 standalone 下解析异常
+    const body = await request.text();
+    const { username, password } = JSON.parse(body);
 
     if (!username || !password) {
       return NextResponse.json({ error: '请填写完整信息' }, { status: 400 });

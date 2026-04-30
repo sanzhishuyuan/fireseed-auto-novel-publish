@@ -35,7 +35,9 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { id: novelId, chapterId } = await params;
 
   try {
-    const { content } = await request.json();
+    // 修复: request.json() 解析异常兼容
+    const bodyText = await request.text();
+    const { content } = JSON.parse(bodyText);
 
     if (!content || content.trim().length < 10) {
       return NextResponse.json({ error: '自定义剧情内容至少10个字' }, { status: 400 });

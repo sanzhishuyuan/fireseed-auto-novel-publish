@@ -19,7 +19,9 @@ export async function POST(request: NextRequest, { params }: Props) {
   }
 
   try {
-    const { title, content, order, branch, choices } = await request.json();
+    // 修复: request.json() 解析异常兼容
+    const bodyText = await request.text();
+    const { title, content, order, branch, choices } = JSON.parse(bodyText);
     const chapterId = `${order}-${Date.now()}`;
 
     // 保存到文件系统

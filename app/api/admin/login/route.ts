@@ -9,7 +9,9 @@ export async function POST(request: NextRequest) {
   if (rateLimitResponse_) return rateLimitResponse_;
 
   try {
-    const { password } = await request.json();
+    // 修复: request.json() 在 Node 18 + Next 14 standalone 下解析异常
+    const body = await request.text();
+    const { password } = JSON.parse(body);
 
     if (!verifyAdminPassword(password)) {
       return NextResponse.json({ error: '密码错误' }, { status: 401 });

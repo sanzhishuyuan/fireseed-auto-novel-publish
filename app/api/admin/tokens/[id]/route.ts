@@ -15,7 +15,9 @@ export async function PATCH(request: NextRequest, { params }: Props) {
   }
 
   try {
-    const { is_active } = await request.json();
+    // 修复: request.json() 解析异常兼容
+    const bodyText = await request.text();
+    const { is_active } = JSON.parse(bodyText);
     db.prepare('UPDATE ai_tokens SET is_active = ? WHERE id = ?').run(is_active, id);
     return NextResponse.json({ success: true });
   } catch (error) {

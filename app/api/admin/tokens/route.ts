@@ -21,7 +21,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { name, permissions } = await request.json();
+    // 修复: request.json() 解析异常兼容
+    const bodyText = await request.text();
+    const { name, permissions } = JSON.parse(bodyText);
     const token = generateAIToken();
     const id = uuidv4();
 
