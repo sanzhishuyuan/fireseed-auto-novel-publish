@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# pre-merge-commit hook: 要求合并到 main 分支前更新 DEV_LOG.md
+# 安装方法: git config core.hooksPath .githooks
+#
+
+TARGET_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+MERGE_REF="${1:-main}"
+
+# 只在合并到 main 分支时检查
+if [ "$MERGE_REF" != "main" ]; then
+    exit 0
+fi
+
+# 检查当前分支是否有提交修改了 DEV_LOG.md
+HAS_LOG_UPDATE=$(git log "$MERGE_REF"..HEAD --oneline -- DEV_LOG.md 2>/dev/null)
+
+if [ -z "$HAS_LOG_UPDATE" ]; then
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "❌ 合并被拒绝：合并到 main 前必须更新 DEV_LOG.md"
+    echo ""
+    echo "请执行以下步骤："
+    echo "  1. 打开 DEV_LOG.md"
+    echo "  2. 在顶部添加本次变更记录（参考日志格式规范）"
+    echo "  3. git add DEV_LOG.md && git commit --amend --no-edit"
+    echo "  4. 重新执行合并"
+    echo ""
+    echo "DEV_LOG.md 路径: $PWD/DEV_LOG.md"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    exit 1
+fi
+
+echo "✅ DEV_LOG.md 已更新，合并检查通过"
+exit 0
