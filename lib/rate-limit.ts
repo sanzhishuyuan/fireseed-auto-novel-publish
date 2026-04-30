@@ -131,7 +131,8 @@ export function rateLimitResponse(result: RateLimitResult): Response | null {
 }
 
 function cleanupExpired(now: number): void {
-  for (const [key, entry] of store.entries()) {
+  const entries = Array.from(store.entries());
+  for (const [key, entry] of entries) {
     if (now > entry.resetAt) {
       store.delete(key);
     }
