@@ -30,13 +30,13 @@ export interface TokenPayload {
 
 // 生成JWT Token
 export function generateToken(payload: TokenPayload): string {
-  return jwt.sign(payload, DEV_JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
 // 验证Token
 export function verifyToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, DEV_JWT_SECRET) as TokenPayload;
+    return jwt.verify(token, JWT_SECRET) as TokenPayload;
   } catch {
     return null;
   }
@@ -52,18 +52,18 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
 
 // 验证管理员密码
 export function verifyAdminPassword(password: string): boolean {
-  return password === DEV_ADMIN_PASSWORD;
+  return password === ADMIN_PASSWORD;
 }
 
 // 生成 Admin JWT Token（替代明文密码 Cookie）
 export function generateAdminToken(): string {
-  return jwt.sign({ type: 'admin' }, DEV_JWT_SECRET, { expiresIn: '24h' });
+  return jwt.sign({ type: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
 }
 
 // 验证 Admin JWT Token
 export function verifyAdminToken(token: string): boolean {
   try {
-    const decoded = jwt.verify(token, DEV_JWT_SECRET) as { type: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { type: string };
     return decoded.type === 'admin';
   } catch {
     return false;
