@@ -17,6 +17,8 @@ const db = new Database(dbPath);
 try {
   db.pragma('journal_mode = WAL');
   db.pragma('synchronous = NORMAL');
+  // 单实例场景不需要外键约束，避免访客浏览时的 FOREIGN KEY 错误
+  db.pragma('foreign_keys = OFF');
 } catch (e) {
   // ignore - 数据库可能被其他进程持有
 }
