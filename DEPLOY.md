@@ -1,6 +1,12 @@
 # ai-novel-lite — 腾讯云部署与长期管理计划
 
-> 文档版本：v1.0 | 创建时间：2026-04-27
+> 文档版本：v1.3 | 创建时间：2026-04-27 | 更新：2026-04-30
+
+> ⚠️ **【重要】数据库保护警告**
+>
+> `npm run build` 会重新初始化 SQLite 数据库，**所有用户数据会丢失**。
+> 部署必须使用项目根目录下的 `build-and-deploy.sh` 脚本（自动备份+恢复）。
+> 详见章节 **4.3 上传项目**。
 
 ---
 
@@ -103,25 +109,30 @@ apt install -y git
 
 ### 4.3 上传项目
 
-**方式一（推荐）：SCP 上传构建产物**
+> ⚠️ **⚠️ 部署必须使用 `build-and-deploy.sh` 脚本！⚠️**
+>
+> `npm run build` 会重新初始化数据库。**必须先备份数据，否则所有用户数据（小说、用户、章节）会丢失！**
+>
+> **禁止直接运行 `npm run build` 后手动上传 standalone 目录！**
+
+**方式一（推荐）：服务器端一键部署**
 
 ```bash
-# 本地先构建
-cd E:\SaiBohuman\赛博卧龙\小说创作\ai-novel-lite
-npm install
-npm run build
-
-# 上传 standalone 构建产物
-scp -r .next/standalone root@YOUR_IP:/root/ai-novel
-scp -r public root@YOUR_IP:/root/ai-novel/public
-scp -r .next/static root@YOUR_IP:/root/ai-novel/.next/static
-
-# 上传内容和数据库
-scp -r content root@YOUR_IP:/root/ai-novel/content
-scp data/novel.db root@YOUR_IP:/root/ai-novel/data/novel.db
+# 服务器上运行（自动处理数据备份）
+cd /root/ai-novel-lite
+git pull  # 或上传修改后的文件
+./build-and-deploy.sh
 ```
 
-**方式二：使用 Git 拉代码**
+脚本功能：
+1. 自动备份当前数据库到 `/var/data/ai-novel/novel.db.rollback_YYYYMMDD_HHMMSS`
+2. 执行 `npm run build`
+3. 恢复数据库（覆盖构建产生的新 DB）
+4. 复制 `.next/static` 到 standalone 目录
+5. 设置符号链接
+6. 重启 PM2
+
+**方式二：使用 Git 拉代码 + 脚本**
 
 ```bash
 # 服务器上
@@ -129,7 +140,32 @@ cd /root
 git clone https://YOUR_REPO_URL ai-novel
 cd ai-novel
 npm install
+./build-and-deploy.sh
+```
+
+**方式三（不推荐，已废弃）**
+
+```bash
+# 本地先构建
+cd E:\SaiBohuman\赛博卧龙\小说创作\ai-novel-lite
+npm install
 npm run build
+
+# ⚠️ 必须手动备份数据库！
+# 从服务器下载备份：
+scp root@YOUR_IP:/var/data/ai-novel/data/novel.db ./data/novel.db.backup
+
+# 上传 standalone 构建产物
+scp -r .next/standalone root@YOUR_IP:/root/ai-novel-lite/
+
+# ⚠️ 恢复数据库（上传前先备份！）
+scp ./data/novel.db.backup root@YOUR_IP:/var/data/ai-novel/data/novel.db
+
+# ⚠️ 必须手动复制静态资源！
+scp -r .next/static root@YOUR_IP:/root/ai-novel-lite/.next/standalone/.next/
+
+# 重启
+pm2 restart ai-novel
 ```
 
 ### 4.4 配置环境变量
@@ -428,15 +464,28 @@ ufw allow 443/tcp
 
 ### 7.3 版本更新流程（SOP）
 
+> ⚠️ **`npm run build` 会重新初始化数据库！所有数据会丢失！必须使用脚本！**
+
 ```
 1. 本地开发测试
-   → 2. npm run build（确认无报错）
-   → 3. 手动备份数据库（/root/backup-novel.sh）
-   → 4. 上传新构建产物
-   → 5. pm2 reload ai-novel（零停机）
-   → 6. 访问网站验证功能正常
-   → 7. 观察日志 5 分钟确认无异常
+   → 2. 推送代码到服务器（或上传修改的文件）
+   → 3. 服务器端运行 ./build-and-deploy.sh（自动备份+构建+恢复+重启）
+   → 4. 访问网站验证功能正常
+   → 5. 观察 PM2 日志 5 分钟确认无异常
+
+回滚（如有问题）：
+   cp /var/data/ai-novel/novel.db.rollback_* /var/data/ai-novel/data/novel.db
+   pm2 restart ai-novel
 ```
+
+**⚠️ 常见踩坑：**
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| 构建后数据全部消失 | 直接 `npm run build` 后手动上传 standalone | 使用 `build-and-deploy.sh` |
+| CSS 样式丢失 | standalone 未复制 `.next/static` | 脚本自动处理 |
+| PM2 读取旧代码 | 未重启 PM2 | `pm2 restart ai-novel` |
+| 符号链接失效 | standalone 重装后 data 目录重建 | 脚本自动重建链接 |
 
 ### 7.4 内容更新流程（添加新小说/章节）
 

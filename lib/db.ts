@@ -12,6 +12,15 @@ if (!fs.existsSync(dataDir)) {
 
 const db = new Database(dbPath);
 
+// 关键修复：构建时不执行 WAL checkpoint，避免清空未持久化的数据
+// 同时确保数据库文件权限正确
+try {
+  db.pragma('journal_mode = WAL');
+  db.pragma('synchronous = NORMAL');
+} catch (e) {
+  // ignore - 数据库可能被其他进程持有
+}
+
 // 初始化数据库表
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (

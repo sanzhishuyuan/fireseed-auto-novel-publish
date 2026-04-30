@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getChapter, getNovelChapters, getNovelMeta } from '@/lib/novels';
 import db from '@/lib/db';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
@@ -16,18 +15,104 @@ interface Props {
   params: Promise<{ id: string; chapterId: string }>;
 }
 
+// 数据库章节标准化为兼容格式（兼容文件系统格式的 meta 嵌套）
+interface NormalizedChapter {
+  id: string;
+  filePath: string;
+  title: string;
+  branch: string;
+  content: string;
+  word_count: number;
+  order_num: number;
+  choices: any[];
+  custom_branch_enabled: boolean;
+  meta: {
+    title: string;
+    branch: string;
+    choices: any[];
+    custom_branch_enabled: boolean;
+  };
+}
+
 export default async function ChapterPage({ params }: Props) {
   const { id, chapterId } = await params;
-  const chapter = getChapter(id, chapterId);
-  const novel = getNovelMeta(id);
 
-  if (!chapter || !novel) {
+  // --- 优先从数据库读取小说信息 ---
+  const dbNovel = db.prepare('SELECT * FROM novels WHERE id = ?').get(id) as any;
+  if (!dbNovel) {
     notFound();
   }
 
+  // --- 优先从数据库读取章节信息 ---
+  const dbChapter = db.prepare('SELECT * FROM chapters WHERE id = ? AND novel_id = ?')
+    .get(chapterId, id) as any;
+  if (!dbChapter) {
+    notFound();
+  }
+
+  // 标准化为兼容格式
+  const chapter: NormalizedChapter = {
+    id: dbChapter.id,
+    filePath: dbChapter.id,
+    title: dbChapter.title,
+    branch: dbChapter.branch || 'main',
+    content: dbChapter.content || '',
+    word_count: dbChapter.word_count || 0,
+    order_num: dbChapter.order_num || 1,
+    choices: dbChapter.choices ? JSON.parse(dbChapter.choices) : [],
+    custom_branch_enabled: dbChapter.custom_branch_enabled === 1,
+    meta: {
+      title: dbChapter.title,
+      branch: dbChapter.branch || 'main',
+      choices: dbChapter.choices ? JSON.parse(dbChapter.choices) : [],
+      custom_branch_enabled: dbChapter.custom_branch_enabled === 1,
+    },
+  };
+
+  // 标准化小说信息
+  const novel = {
+    id: dbNovel.id,
+    title: dbNovel.title,
+    author: dbNovel.author,
+    description: dbNovel.description || '',
+    tags: dbNovel.tags || '',
+    status: dbNovel.status || 'ongoing',
+  };
+
+  // --- 从数据库读取所有章节 ---
+  const dbChapters = db.prepare(
+    'SELECT * FROM chapters WHERE novel_id = ? ORDER BY order_num ASC, created_at ASC'
+  ).all(id) as any[];
+
+  const allChapters: NormalizedChapter[] = dbChapters.map((c) => ({
+    id: c.id,
+    filePath: c.id,
+    title: c.title,
+    branch: c.branch || 'main',
+    content: c.content || '',
+    word_count: c.word_count || 0,
+    order_num: c.order_num || 1,
+    choices: c.choices ? JSON.parse(c.choices) : [],
+    custom_branch_enabled: c.custom_branch_enabled === 1,
+    meta: {
+      title: c.title,
+      branch: c.branch || 'main',
+      choices: c.choices ? JSON.parse(c.choices) : [],
+      custom_branch_enabled: c.custom_branch_enabled === 1,
+    },
+  }));
+
+  const mainChapters = allChapters.filter((c) => c.branch === 'main');
+  const currentIndex = mainChapters.findIndex((c) => c.id === chapterId);
+
+  const prevChapter = currentIndex > 0 ? mainChapters[currentIndex - 1] : null;
+  const nextChapter = currentIndex < mainChapters.length - 1 ? mainChapters[currentIndex + 1] : null;
+
+  // --- 记录阅读进度 ---
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
   let userId: string | null = null;
+  let userBranch: string | null | undefined = null;
 
   if (token) {
     const payload = verifyToken(token);
@@ -37,26 +122,15 @@ export default async function ChapterPage({ params }: Props) {
         .get(userId, id);
       if (existing) {
         db.prepare('UPDATE user_progress SET chapter_id = ?, branch = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND novel_id = ?')
-          .run(chapterId, chapter.meta.branch, userId, id);
+          .run(chapterId, chapter.branch, userId, id);
       } else {
         db.prepare('INSERT INTO user_progress (id, user_id, novel_id, chapter_id, branch) VALUES (?, ?, ?, ?, ?)')
-          .run(uuidv4(), userId, id, chapterId, chapter.meta.branch);
+          .run(uuidv4(), userId, id, chapterId, chapter.branch);
       }
+      const progress = db.prepare('SELECT branch FROM user_progress WHERE user_id = ? AND novel_id = ?')
+        .get(userId, id) as { branch: string } | undefined;
+      userBranch = progress?.branch;
     }
-  }
-
-  const allChapters = getNovelChapters(id);
-  const mainChapters = allChapters.filter(c => c.meta.branch === 'main');
-  const currentIndex = mainChapters.findIndex(c => c.filePath === chapterId);
-
-  const prevChapter = currentIndex > 0 ? mainChapters[currentIndex - 1] : null;
-  const nextChapter = currentIndex < mainChapters.length - 1 ? mainChapters[currentIndex + 1] : null;
-
-  let userBranch: string | null | undefined = null;
-  if (userId) {
-    const progress = db.prepare('SELECT branch FROM user_progress WHERE user_id = ? AND novel_id = ?')
-      .get(userId, id) as { branch: string } | undefined;
-    userBranch = progress?.branch;
   }
 
   // 自定义 Markdown 渲染组件
@@ -153,7 +227,7 @@ export default async function ChapterPage({ params }: Props) {
               <p className="text-sm font-medium truncate max-w-[200px]" style={{ color: 'var(--text-primary)' }}>
                 {novel.title}
               </p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{chapter.meta.title}</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{chapter.title}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -190,7 +264,7 @@ export default async function ChapterPage({ params }: Props) {
             第 {currentIndex + 1} 章
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold leading-snug" style={{ color: 'var(--text-primary)' }}>
-            {chapter.meta.title}
+            {chapter.title}
           </h1>
         </div>
 
@@ -209,15 +283,15 @@ export default async function ChapterPage({ params }: Props) {
         </div>
 
         {/* 分支选择 */}
-        {(chapter.meta.choices && chapter.meta.choices.length > 0 || chapter.meta.custom_branch_enabled) && (
+        {(chapter.choices && chapter.choices.length > 0 || chapter.custom_branch_enabled) && (
           <BranchChoice
-            choices={chapter.meta.choices || []}
+            choices={chapter.choices || []}
             novelId={id}
             chapterId={chapterId}
-            currentBranch={chapter.meta.branch}
+            currentBranch={chapter.branch}
             userId={userId}
             userBranch={userBranch}
-            customBranchEnabled={chapter.meta.custom_branch_enabled === true}
+            customBranchEnabled={chapter.custom_branch_enabled === true}
           />
         )}
 
@@ -228,14 +302,14 @@ export default async function ChapterPage({ params }: Props) {
         >
           {prevChapter ? (
             <Link
-              href={`/novels/${id}/${prevChapter.filePath}`}
+              href={`/novels/${id}/${prevChapter.id}`}
               className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm group"
               style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="group-hover:-translate-x-0.5 transition-transform">
                 <path d="M12 7H2M6 3L2 7l4 4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="max-w-[120px] truncate">{prevChapter.meta.title}</span>
+              <span className="max-w-[120px] truncate">{prevChapter.title}</span>
             </Link>
           ) : (
             <div />
@@ -243,10 +317,10 @@ export default async function ChapterPage({ params }: Props) {
 
           {nextChapter ? (
             <Link
-              href={`/novels/${id}/${nextChapter.filePath}`}
+              href={`/novels/${id}/${nextChapter.id}`}
               className="btn-primary text-sm py-2.5 px-4"
             >
-              <span className="max-w-[120px] truncate">{nextChapter.meta.title}</span>
+              <span className="max-w-[120px] truncate">{nextChapter.title}</span>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="group-hover:translate-x-0.5 transition-transform">
                 <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -265,7 +339,7 @@ export default async function ChapterPage({ params }: Props) {
       {/* 移动端底部导航 */}
       <div className="mobile-bottom-bar">
         <Link
-          href={prevChapter ? `/novels/${id}/${prevChapter.filePath}` : '#'}
+          href={prevChapter ? `/novels/${id}/${prevChapter.id}` : '#'}
           className={!prevChapter ? 'opacity-30 pointer-events-none' : ''}
         >
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -278,7 +352,7 @@ export default async function ChapterPage({ params }: Props) {
           </svg>
         </Link>
         <Link
-          href={nextChapter ? `/novels/${id}/${nextChapter.filePath}` : '#'}
+          href={nextChapter ? `/novels/${id}/${nextChapter.id}` : '#'}
           className={!nextChapter ? 'opacity-30 pointer-events-none' : ''}
         >
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">

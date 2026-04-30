@@ -343,7 +343,7 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
               {/* 开始阅读 */}
               {mainChapters.length > 0 && (
                 <Link
-                  href={`/novels/${params.id}/${mainChapters[0].filePath}`}
+                  href={`/novels/${params.id}/${(mainChapters[0] as any).id || mainChapters[0].filePath}`}
                   className="btn-primary w-full justify-center text-sm py-3"
                 >
                   开始阅读
