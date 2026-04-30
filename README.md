@@ -200,6 +200,39 @@ lsof -i:3000
 
 ## 📞 技术支持
 
-如有问题，请检查日志或提交Issue。
+如有问题，请查看 [DEV_LOG.md](DEV_LOG.md) 或提交 Issue。
 
 **技术栈**: Next.js 14 + React 18 + Tailwind CSS + SQLite + PM2 + Nginx
+
+---
+
+## 🔧 开发规范
+
+### Git Hooks（自动安装）
+```bash
+# 首次克隆后运行（设置 Git hooks 路径）
+git config core.hooksPath .githooks
+```
+
+### 分支策略
+```
+dev   ← 开发分支（日常开发在此）
+main  ← 稳定版分支（由 dev 合并而来）
+```
+
+### 合并流程（dev → main）
+1. 在 dev 分支完成开发
+2. 更新 `DEV_LOG.md`，记录本次变更
+3. `git add DEV_LOG.md && git commit`
+4. 发起 Pull Request 或直接合并到 main：
+   ```bash
+   git checkout main
+   git merge dev
+   ```
+5. **Hook 会自动检查**：如果没有提交修改过 DEV_LOG.md，合并将被拒绝 ❌
+
+### DEV_LOG.md 格式
+每次合并到 main 前，必须在 DEV_LOG.md 顶部添加记录：
+- 日期：`## YYYY-MM-DD`
+- 类型：🐛 Bug修复 / ✨ 新功能 / ⚠️ 警告 / 📝 文档
+- 问题 / 根因 / 修复 / 涉及文件 / 经验教训
