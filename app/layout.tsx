@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
   title: 'Spark - AI 互动小说平台',
@@ -15,8 +16,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-CN" className="dark">
+    <html lang="zh-CN" suppressHydrationWarning>
       <head>
+        {/* 在 React 渲染前读取 localStorage，避免闪烁 */}
+        <script dangerouslySetInnerHTML={{
+          __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.remove('dark');else document.documentElement.classList.add('dark')}catch(e){}})()`
+        }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -27,6 +32,12 @@ export default function RootLayout({
           跳转到主要内容
         </a>
         {children}
+        {/* 全局主题切换按钮 */}
+        <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 999 }}>
+          <div className="card" style={{ padding: 6, borderRadius: 30, boxShadow: 'var(--shadow-lg)' }}>
+            <ThemeToggle />
+          </div>
+        </div>
       </body>
     </html>
   );

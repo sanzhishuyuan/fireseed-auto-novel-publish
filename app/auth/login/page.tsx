@@ -71,7 +71,7 @@ export default function LoginPage() {
       {/* 左侧装饰 */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #2d1f10 0%, #5c3d1e 50%, #8b5e3c 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #5c3d1e 0%, #8b5e3c 50%, #c49a6c 100%)' }}
       >
         {/* 装饰 */}
         <div className="absolute top-10 right-10 w-64 h-64 rounded-full opacity-10 blur-3xl" style={{ background: 'white' }} />
