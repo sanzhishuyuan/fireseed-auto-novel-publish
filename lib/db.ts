@@ -23,17 +23,7 @@ try {
   // ignore - 数据库可能被其他进程持有
 }
 
-// 数据库索引（提升查询性能，避免全表扫描）
-db.exec(`
-  CREATE INDEX IF NOT EXISTS idx_chapters_novel_branch ON chapters(novel_id, branch, order_num);
-  CREATE INDEX IF NOT EXISTS idx_user_progress_user_novel ON user_progress(user_id, novel_id);
-  CREATE INDEX IF NOT EXISTS idx_ai_jobs_token_status ON ai_jobs(token, status);
-  CREATE INDEX IF NOT EXISTS idx_custom_branches_lookup ON custom_branches(novel_id, chapter_id, user_id);
-  CREATE INDEX IF NOT EXISTS idx_novels_deleted ON novels(deleted_at);
-  CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-`);
-
-// 初始化数据库表
+// 初始化数据库表（必须先于索引创建，否则空库重建会失败）
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -221,6 +211,16 @@ db.exec(`
     is_active INTEGER DEFAULT 1,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+`);
+
+// 数据库索引（必须在表创建之后执行，否则空库会报错）
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_chapters_novel_branch ON chapters(novel_id, branch, order_num);
+  CREATE INDEX IF NOT EXISTS idx_user_progress_user_novel ON user_progress(user_id, novel_id);
+  CREATE INDEX IF NOT EXISTS idx_ai_jobs_token_status ON ai_jobs(token, status);
+  CREATE INDEX IF NOT EXISTS idx_custom_branches_lookup ON custom_branches(novel_id, chapter_id, user_id);
+  CREATE INDEX IF NOT EXISTS idx_novels_deleted ON novels(deleted_at);
+  CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 `);
 
 export default db;
