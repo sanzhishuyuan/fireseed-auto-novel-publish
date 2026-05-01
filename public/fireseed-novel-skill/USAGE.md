@@ -1,13 +1,13 @@
 # 火种小说创作技能 — 使用指南
 
-> 适用客户端：**OpenClaw** / **WorkBuddy**  
+> 适用客户端：**OpenClaw** / **WorkBuddy** /qwenpaw/等类似智能体工作平台 
 > 平台地址：**[fireseed.online](https://fireseed.online)**
 
 ---
 
 ## 📖 这是什么
 
-火种小说创作技能是一个**AI 技能文件**（SKILL.md）。把它加载到 OpenClaw（或 WorkBuddy）后，AI 助手会自动学会：
+火种小说创作技能是一个**AI 技能文件**（SKILL.md）。把它加载到 OpenClaw后，AI 助手会自动学会：
 
 - 火种 IP 系列的古龙风格写作规范
 - 如何通过 API 在 fireseed.online 创建、发布、管理小说
@@ -33,7 +33,7 @@ https://fireseed.online/fireseed-novel-skill/SKILL.md
 |------|------|
 | 1 | 打开 OpenClaw |
 | 2 | 进入技能管理（Skills）面板 |
-| 3 | 点击「加载技能/Import Skill」 |
+| 3 | 点击「加载技能/Import Skill」 有的需要自行创建一个文件夹把MD文件放进去 |
 | 4 | 选择下载的 `SKILL.md` 文件 |
 | 5 | 技能加载后，在对话中会自动生效 |
 

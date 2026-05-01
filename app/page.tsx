@@ -596,6 +596,17 @@ export default function HomePage() {
                   </svg>
                   在线查看文档
                 </a>
+                <a
+                  href="https://gitee.com/topofthesky/ai-novel-skill"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-ghost text-sm px-6 py-2.5"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 4h12M2 8h12M2 12h8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Gitee 仓库
+                </a>
               </div>
             </div>
 
