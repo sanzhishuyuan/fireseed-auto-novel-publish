@@ -38,7 +38,19 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (res.ok) {
-        router.push('/auth/login?registered=true');
+        // 注册成功，自动登录
+        const loginRes = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: form.username, password: form.password })
+        });
+
+        if (loginRes.ok) {
+          router.push('/novels');
+          router.refresh();
+        } else {
+          router.push('/auth/login?registered=true');
+        }
       } else {
         setError(data.error || '注册失败，请稍后重试');
       }

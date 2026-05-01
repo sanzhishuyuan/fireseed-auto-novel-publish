@@ -195,18 +195,6 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* 测试账号 */}
-          <div
-            className="mt-6 p-4 rounded-xl"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-          >
-            <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>测试账号</p>
-            <div className="flex items-center justify-between text-sm">
-              <span style={{ color: 'var(--text-secondary)' }}>用户名：testuser</span>
-              <span style={{ color: 'var(--text-secondary)' }}>密码：test123456</span>
-            </div>
-          </div>
-
           <div className="mt-8 text-center">
             <Link href="/" className="text-xs" style={{ color: 'var(--text-muted)' }}>
               ← 返回首页
