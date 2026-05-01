@@ -35,19 +35,30 @@ export async function POST(
     const queryKey = request.nextUrl?.searchParams?.get('admin_key');
     const bodyKey = body.admin_key;
     const token = body.token;
+    const authHeader = request.headers.get('Authorization');
 
     let authed = false;
+    let tokenUserId: string | null = null;
+
+    // 尝试从 JWT 获取用户 ID（支持 token 字段 + Authorization 头）
+    const tryDecode = (t: string) => {
+      try {
+        const d = jwt.verify(t, JWT_SECRET) as any;
+        if (d && d.userId) return d.userId;
+      } catch { /* ignore */ }
+      return null;
+    };
+    if (token) tokenUserId = tryDecode(token);
+    if (!tokenUserId && authHeader?.startsWith('Bearer ')) {
+      tokenUserId = tryDecode(authHeader.slice(7));
+    }
+
     const adminPassword = process.env.ADMIN_PASSWORD;
     if (queryKey && adminPassword && queryKey === adminPassword) authed = true;
     if (bodyKey && adminPassword && bodyKey === adminPassword) authed = true;
     if (!authed && queryKey && verifyAdminToken(queryKey)) authed = true;
     if (!authed && bodyKey && verifyAdminToken(bodyKey)) authed = true;
-    if (!authed && token) {
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
-        if (decoded && decoded.userId === novel.author_id) authed = true;
-      } catch { /* ignore */ }
-    }
+    if (!authed && tokenUserId && tokenUserId === novel.author_id) authed = true;
 
     if (!authed) {
       return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 403 });

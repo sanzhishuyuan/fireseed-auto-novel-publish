@@ -107,8 +107,8 @@ export async function POST(request: NextRequest) {
     const existing = db.prepare('SELECT id FROM novels WHERE id = ?').get(novelId);
     if (existing) return NextResponse.json({ error: 'novel ID exists', id: novelId }, { status: 409 });
 
-    db.prepare('INSERT INTO novels (id, title, author, description, cover_url, status, tags) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-      novelId, title, author || 'AI', description || '', cover_url || '', status || 'ongoing', tags || ''
+    db.prepare('INSERT INTO novels (id, title, author, author_id, description, cover_url, status, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+      novelId, title, author || 'AI', auth.userId || null, description || '', cover_url || '', status || 'ongoing', tags || ''
     );
     const novelsDir = path.join(process.cwd(), 'content', 'novels', novelId);
     fs.mkdirSync(path.join(novelsDir, 'chapters'), { recursive: true });
