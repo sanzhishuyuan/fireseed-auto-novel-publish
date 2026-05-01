@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 interface User {
   id: string;
   username: string;
+  nickname?: string;
   role: string;
 }
 
@@ -111,10 +112,10 @@ export default function HomePage() {
                     className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
                     style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}
                   >
-                    {user.username.charAt(0).toUpperCase()}
+                    {(user.nickname || user.username).charAt(0).toUpperCase()}
                   </div>
                   <span className="text-sm font-medium hide-mobile">
-                    {user.username}
+                    {user.nickname || user.username}
                   </span>
                   <svg 
                     width="16" 
@@ -142,13 +143,25 @@ export default function HomePage() {
                     >
                       <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
                         <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {user.username}
+                          {user.nickname || user.username}
                         </p>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          {user.role === 'admin' ? '管理员' : '普通用户'}
+                          @{user.username} · {user.role === 'admin' ? '管理员' : '普通用户'}
                         </p>
                       </div>
                       <div className="py-1">
+                        <Link 
+                          href="/my/settings"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                          style={{ color: 'var(--text-secondary)' }}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <circle cx="8" cy="8" r="2"/>
+                            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41"/>
+                          </svg>
+                          个人设置
+                        </Link>
                         {user.role === 'admin' && (
                           <Link 
                             href="/admin"

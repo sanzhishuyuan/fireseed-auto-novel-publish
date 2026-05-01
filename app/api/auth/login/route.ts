@@ -32,14 +32,14 @@ export async function POST(request: NextRequest) {
     }
 
     const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role },
+      { userId: user.id, username: user.username, nickname: user.nickname || user.username, role: user.role },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     const response = NextResponse.json({ 
       success: true, 
-      user: { id: user.id, username: user.username, role: user.role }
+      user: { id: user.id, username: user.username, nickname: user.nickname || user.username, role: user.role }
     });
 
     response.cookies.set('auth_token', token, {

@@ -26,6 +26,7 @@ export { JWT_SECRET, ADMIN_PASSWORD };
 export interface TokenPayload {
   userId: string;
   username: string;
+  nickname?: string;
   role: string;
 }
 

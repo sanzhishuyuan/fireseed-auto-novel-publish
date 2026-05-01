@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // P0 fix: Token 有效期从 30d 缩短至 7d
     const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role },
+      { userId: user.id, username: user.username, nickname: user.nickname || user.username, role: user.role },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       token,
-      user: { id: user.id, username: user.username, role: user.role }
+      user: { id: user.id, username: user.username, nickname: user.nickname || user.username, role: user.role }
     });
   } catch (error) {
     console.error('Auth token error:', error);

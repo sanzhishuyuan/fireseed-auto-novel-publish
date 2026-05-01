@@ -28,6 +28,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
+    nickname TEXT,
     password TEXT NOT NULL,
     email TEXT,
     role TEXT DEFAULT 'reader',
@@ -222,5 +223,12 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_novels_deleted ON novels(deleted_at);
   CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 `);
+
+// ===== 数据库迁移（兼容已有数据） =====
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN nickname TEXT;`);
+} catch (e) {
+  // 列已存在，忽略
+}
 
 export default db;

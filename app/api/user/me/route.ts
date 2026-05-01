@@ -20,7 +20,7 @@ export async function GET() {
     }
 
     // 获取用户最新信息
-    const user = db.prepare('SELECT id, username, role, created_at FROM users WHERE id = ?')
+    const user = db.prepare('SELECT id, username, nickname, role, created_at FROM users WHERE id = ?')
       .get(payload.userId) as any;
 
     if (!user) {
@@ -31,6 +31,7 @@ export async function GET() {
       user: {
         id: user.id,
         username: user.username,
+        nickname: user.nickname || user.username,
         role: user.role
       },
       loggedIn: true
