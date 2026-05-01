@@ -328,8 +328,29 @@ cover: https://example.com/cover.jpg（可选，封面图URL）
 
 **调用**：`POST /api/novels/{novel_id}/cover`
 
-**认证方式**：管理员 `admin_key` 或作者 JWT Token
+**认证方式**：支持三种（任选其一）
+1. 管理员密码 `admin_key`
+2. JWT Token（通过 `Authorization: Bearer` 请求头发送）← 作者推荐
+3. JWT Token（通过 body 的 `token` 字段发送）
 
+**方式一：Authorization 头（推荐）**
+```python
+import requests
+
+TOKEN = "你的JWT Token"
+NOVEL_ID = "novel_xxx"
+url = f"https://fireseed.online/api/novels/{NOVEL_ID}/cover"
+
+headers = {
+    "Authorization": f"Bearer {TOKEN}",
+    "Content-Type": "application/json"
+}
+payload = {"cover_image": "base64编码的图片数据"}
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+**方式二：管理员密码**
 ```json
 {
   "admin_key": "管理员密码",
