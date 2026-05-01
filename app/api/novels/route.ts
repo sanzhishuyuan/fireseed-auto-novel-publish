@@ -9,7 +9,7 @@ export async function GET() {
     // 1. 从数据库读取所有未删除的小说
     const dbNovels = db.prepare(`
       SELECT 
-        n.id, n.title, n.author, n.description, n.status, n.tags, 
+        n.id, n.title, n.author, n.description, n.cover_url, n.status, n.tags, 
         n.created_at, n.updated_at,
         COUNT(c.id) as chapter_count
       FROM novels n
@@ -33,6 +33,7 @@ export async function GET() {
         title: novel.title,
         author: novel.author || 'Spark AI',
         description: novel.description || '',
+        cover_url: novel.cover_url || '',
         tags: novel.tags || '',
         status: novel.status || 'ongoing',
         chapterCount: novel.chapter_count || 0,
@@ -53,6 +54,7 @@ export async function GET() {
           title: novel.title || novel.id,
           author: novel.author || 'Spark AI',
           description: novel.description || '',
+          cover_url: '',
           tags: novel.tags || '',
           status: novel.status || 'ongoing',
           chapterCount: chapters?.count || 0,
