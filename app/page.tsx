@@ -547,9 +547,8 @@ export default function HomePage() {
                 火种小说创作技能
               </h2>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
-                将本技能加载到 <strong style={{ color: 'var(--text-primary)' }}>OpenClaw / WorkBuddy</strong> 等本地 AI 写作工具，
-                即可在本地创作的同时，自动将章节发布到 fireseed.online，
-                并在合适剧情节点生成分歧选项，与读者实时互动。
+                下载 SKILL.md 加载到 <strong style={{ color: 'var(--text-primary)' }}>OpenClaw / WorkBuddy</strong>，AI 自动学习创作规范和 API 发布流程。
+                你只需对 AI 说<strong style={{ color: 'var(--accent)' }}>「开始创作」</strong>和<strong style={{ color: 'var(--accent)' }}>「发布到平台」</strong>，其余一切自动完成。
               </p>
 
               {/* 特性列表 */}
