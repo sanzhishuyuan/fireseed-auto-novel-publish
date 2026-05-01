@@ -688,6 +688,41 @@ export default function HomePage() {
         <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/5" />
       </section>
 
+      {/* 手机扫码访问 */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12">
+          <div className="text-center">
+            <div
+              className="inline-block rounded-2xl p-3 mb-3"
+              style={{ background: 'white', border: '1px solid var(--border)' }}
+            >
+              <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://fireseed.online"
+                alt="扫码访问 fireseed.online"
+                width="160"
+                height="160"
+                className="block"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              扫码访问
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              浏览器或微信扫一扫，手机直接看
+            </p>
+          </div>
+          <div className="text-center sm:text-left">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              随时随地，打开手机就能读
+            </p>
+            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              AI 驱动 · 互动叙事 · 你的选择改写故事结局
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* 页脚 */}
       <footer className="py-8 text-center" style={{ borderTop: '1px solid var(--border-light)' }}>
         <div className="flex items-center justify-center gap-2 mb-3">
