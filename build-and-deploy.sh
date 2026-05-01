@@ -1,9 +1,10 @@
 #!/bin/bash
-# build-and-deploy.sh (v4 - 生产版，带可靠数据保护)
+# build-and-deploy.sh (v5 - 正式版，数据库保护 + native模块自修复)
 # 构建部署脚本，构建前自动备份数据库，构建后自动恢复
+# 注意：数据库禁止自动重建！备份失败或数据库不存在时中止部署
 # 用法: ./build-and-deploy.sh
 
-set -e
+set -euo pipefail
 
 PROJECT_DIR="/root/ai-novel-lite"
 DB_FILE="$PROJECT_DIR/data/novel.db"
@@ -12,15 +13,32 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/novel.db.$TIMESTAMP"
 
 echo "=========================================="
-echo "  Fireseed 部署脚本 (v4 - 生产版)"
+echo "  Fireseed 部署脚本 (v5 - 正式版)"
 echo "=========================================="
 
 cd "$PROJECT_DIR"
 
-# ===== 步骤1: 备份数据库 =====
+# ===== 步骤0: 清理与预热 =====
+echo ""
+echo "[0/5] 清理 untracked 文件 & 重编 native 模块..."
+git clean -fd
+echo "  ✅ untracked 文件已清理"
+
+npm rebuild better-sqlite3
+echo "  ✅ native 模块已重编译"
+
+# ===== 步骤1: 备份数据库（数据库不存在则中止！）=====
 echo ""
 echo "[1/5] 备份数据库..."
 mkdir -p "$BACKUP_DIR"
+
+if [ ! -f "$DB_FILE" ]; then
+  echo "  ❌ 错误：数据库文件不存在！"
+  echo "  ❌ 生产数据库禁止重建，部署中止。"
+  echo "  ❌ 如需恢复请执行: cp <备份文件> $DB_FILE"
+  exit 1
+fi
+
 cp "$DB_FILE" "$BACKUP_FILE"
 echo "  ✅ 备份已保存: $BACKUP_FILE"
 RECORD_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM novels;" 2>/dev/null || echo "0")
@@ -71,8 +89,8 @@ echo "=========================================="
 echo "  验证结果"
 echo "=========================================="
 RECORD_AFTER=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM novels;" 2>/dev/null || echo "?")
-echo "  小说数量: $RECORD_AFTER"
-echo "  服务地址: https://fireseed.online"
+echo "  小说数: $RECORD_AFTER"
+echo "  服务: https://fireseed.online"
 echo "=========================================="
 echo ""
 echo "🎉 部署完成！回滚命令:"
