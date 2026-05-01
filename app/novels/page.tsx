@@ -15,6 +15,7 @@ interface Novel {
   title: string;
   author: string;
   description: string;
+  cover_url?: string;
   tags: string;
   status: string;
   chapterCount: number;
