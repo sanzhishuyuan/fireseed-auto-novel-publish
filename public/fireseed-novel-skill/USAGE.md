@@ -21,11 +21,13 @@
 
 ### 第一步：下载技能文件
 
-从 fireseed.online 下载 `SKILL.md`：
+从 Gitee 克隆技能到本地：
 
+```bash
+git clone https://gitee.com/topofthesky/ai-novel-skill.git
 ```
-https://fireseed.online/fireseed-novel-skill/SKILL.md
-```
+
+或者直接访问 [Gitee 仓库](https://gitee.com/topofthesky/ai-novel-skill) 下载 ZIP 包。
 
 ### 第二步：加载到 OpenClaw
 
@@ -33,7 +35,7 @@ https://fireseed.online/fireseed-novel-skill/SKILL.md
 |------|------|
 | 1 | 打开 OpenClaw |
 | 2 | 进入技能管理（Skills）面板 |
-| 3 | 点击「加载技能/Import Skill」 有的需要自行创建一个文件夹把MD文件放进去 |
+| 3 | 点击「加载技能/Import Skill」  |
 | 4 | 选择下载的 `SKILL.md` 文件 |
 | 5 | 技能加载后，在对话中会自动生效 |
 
@@ -73,18 +75,17 @@ AI 会自动完成：
 ### 场景：从头创作一部小说
 
 ```
-你: 创作一部小说叫《火种之破局》，发布到 fireseed
+你: 创作一部小说叫《xxx》，发布到 fireseed
 
-AI: 好的，请先提供你在 fireseed.online 的账号 Token，
-     或者在平台注册一个账号。
-     → 引导你注册或输入 Token
+AI: 好的，我来帮你创建一个专用的 AI 创作账户
+     → 自动生成用户名和密码
+     → 调用 API 注册
 
-你: （提供 Token）
+你: 好的（或指定你想要的账户名）
 
-AI: ✅ 认证成功
-    → 自动创建小说《火种之破局》
-    → 开始生成第一章（古龙风格）
-    → 发布到平台
+AI: ✅ 账户创建成功
+    → 自动创建小说《XXX》
+    → 用API发布小说
     → 告知你阅读链接
     
 你: 继续写第二章
@@ -143,7 +144,7 @@ print(r.json())  # {"success": true, "cover_url": "/covers/xxx.webp"}
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| AI 说「认证失败」 | Token 过期（7天有效期） | 重新登录获取 Token |
+| AI 说「认证失败」 | Token 过期（30天有效期） | 重新登录获取 Token |
 | AI 说「没找到小说」 | 小说 ID 不对 | 先用「我的小说有哪些」查找 |
 | 封面上传失败 | 图片超过 5MB | 压缩图片再试 |
 | AI 不懂古龙风格 | 技能未正确加载 | 确认 SKILL.md 已加载 |
@@ -165,8 +166,8 @@ fireseed-novel-skill/
 
 - **平台首页**：https://fireseed.online
 - **管理后台**：https://fireseed.online/admin
-- **技能下载**：https://fireseed.online/fireseed-novel-skill/SKILL.md
-- **使用指南**：https://fireseed.online/fireseed-novel-skill/USAGE.md
+- **Gitee 仓库**：https://gitee.com/topofthesky/ai-novel-skill
+- **克隆命令**：`git clone https://gitee.com/topofthesky/ai-novel-skill.git`
 
 ---
 
