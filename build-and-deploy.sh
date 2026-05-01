@@ -6,11 +6,12 @@
 set -e
 
 PROJECT_DIR="/root/ai-novel-lite"
-DATA_DIR="/var/data/ai-novel"   # 持久化目录（/var/data/ai-novel/data/ = novel.db 实际位置）
-DB_FILE="$DATA_DIR/data/novel.db"
-BACKUP_FILE="$DATA_DIR/novel.db.backup"
+# 数据库在项目 data 目录（由 lib/db.ts 的 process.cwd() + '/data/novel.db' 决定）
+DB_DIR="$PROJECT_DIR/data"
+DB_FILE="$DB_DIR/novel.db"
+ROLLBACK_DIR="/var/data/ai-novel"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-ROLLBACK_FILE="$DATA_DIR/novel.db.rollback_$TIMESTAMP"
+ROLLBACK_FILE="$ROLLBACK_DIR/novel.db.rollback_$TIMESTAMP"
 
 echo "=========================================="
 echo "  Fireseed 部署脚本 (v2 - 带数据保护)"
@@ -22,6 +23,7 @@ cd "$PROJECT_DIR"
 echo ""
 echo "[1/6] 备份数据库..."
 if [ -f "$DB_FILE" ]; then
+    mkdir -p "$ROLLBACK_DIR"
     cp "$DB_FILE" "$ROLLBACK_FILE"
     echo "  ✅ 备份已保存: $ROLLBACK_FILE"
     RECORD_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM novels;" 2>/dev/null || echo "0")
@@ -40,15 +42,15 @@ echo "  ✅ 构建完成"
 echo ""
 echo "[3/6] 恢复数据库..."
 if [ -f "$ROLLBACK_FILE" ]; then
-    # 先确保 data 目录存在
-    mkdir -p "$DATA_DIR/data"
+    # 确保 data 目录存在
+    mkdir -p "$DB_DIR"
 
     # 恢复备份（覆盖构建产生的新 DB）
     cp "$ROLLBACK_FILE" "$DB_FILE"
     echo "  ✅ 数据库已恢复（$RECORD_COUNT 条记录）"
 
     # 清理过期回滚文件（保留最近3个）
-    ls -t "$DATA_DIR"/novel.db.rollback_* 2>/dev/null | tail -n +4 | xargs -r rm
+    ls -t "$ROLLBACK_DIR"/novel.db.rollback_* 2>/dev/null | tail -n +4 | xargs -r rm
     echo "  🧹 过期回滚文件已清理"
 else
     echo "  ⚠️  无备份文件，跳过恢复"
@@ -63,16 +65,12 @@ echo "  ✅ 静态资源已同步"
 # ===== 步骤4: 设置符号链接 =====
 echo ""
 echo "[5/6] 设置符号链接..."
-# 为 standalone 目录设置 data 和 content 符号链接
-if [ ! -L "$PROJECT_DIR/.next/standalone/data" ]; then
-    rm -rf "$PROJECT_DIR/.next/standalone/data"
-    ln -sf "$DATA_DIR/data" "$PROJECT_DIR/.next/standalone/data"
-fi
-if [ ! -L "$PROJECT_DIR/.next/standalone/content" ]; then
-    rm -rf "$PROJECT_DIR/.next/standalone/content"
-    ln -sf "$DATA_DIR/content" "$PROJECT_DIR/.next/standalone/content"
-fi
-echo "  ✅ 符号链接已设置"
+# 替换 standalone 目录下的空数据库为符号链接（指向项目 data 目录的真实 DB）
+# 构建过程会创建新的空 data/ 目录，必须替换为符号链接才能读取真实数据
+STANDALONE_DATA="$PROJECT_DIR/.next/standalone/data"
+rm -rf "$STANDALONE_DATA/novel.db"
+ln -sf "$DB_FILE" "$STANDALONE_DATA/novel.db"
+echo "  ✅ 符号链接已设置: $STANDALONE_DATA/novel.db → $DB_FILE"
 
 # ===== 步骤5: 重启 PM2 =====
 echo ""
