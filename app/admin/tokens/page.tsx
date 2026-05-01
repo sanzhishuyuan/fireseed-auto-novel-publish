@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { ADMIN_PASSWORD } from '@/lib/auth';
+import { verifyAdminToken } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import db from '@/lib/db';
 import TokenManager from './TokenManager';
@@ -18,7 +18,8 @@ interface Token {
 
 export default async function TokensPage() {
   const cookieStore = await cookies();
-  const isAdmin = cookieStore.get('admin_auth')?.value === ADMIN_PASSWORD;
+  const adminToken = cookieStore.get('admin_token')?.value;
+  const isAdmin = verifyAdminToken(adminToken || '');
 
   if (!isAdmin) {
     redirect('/admin');

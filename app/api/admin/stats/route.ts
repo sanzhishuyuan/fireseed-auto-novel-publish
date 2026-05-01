@@ -1,25 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyAdminToken } from '@/lib/auth';
+import { isAdminAuthed } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
-
-function isAdminAuthed(request: NextRequest): boolean {
-  const url = new URL(request.url);
-  const adminKey = url.searchParams.get('admin_key');
-  const cookieAdminToken = request.cookies.get('admin_token')?.value;
-
-  if (adminKey && verifyAdminToken(adminKey)) return true;
-  if (cookieAdminToken && verifyAdminToken(cookieAdminToken)) return true;
-  return false;
-}
 
 /**
  * GET /api/admin/stats
  * 获取网站核心统计数据
- * 支持两种认证方式:
- *   1. ?admin_key=xxx  查询参数
- *   2. admin_auth cookie (登录后自动携带)
  */
 export async function GET(request: NextRequest) {
   try {

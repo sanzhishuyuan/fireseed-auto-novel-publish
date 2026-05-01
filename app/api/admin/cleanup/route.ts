@@ -1,25 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyAdminToken } from '@/lib/auth';
+import { isAdminAuthed } from '@/lib/auth';
 import fs from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-function isAdminAuthed(request: NextRequest): boolean {
-  const url = new URL(request.url);
-  const adminKey = url.searchParams.get('admin_key');
-  const cookieAdminToken = request.cookies.get('admin_token')?.value;
-
-  if (adminKey && verifyAdminToken(adminKey)) return true;
-  if (cookieAdminToken && verifyAdminToken(cookieAdminToken)) return true;
-  return false;
-}
-
 /**
  * GET /api/admin/cleanup
  * 列出待清理的小说（已软删除超过保留期）
- * 支持 ?admin_key=xxx 或 admin_auth cookie
  */
 export async function GET(request: NextRequest) {
   try {
@@ -97,7 +86,6 @@ export async function GET(request: NextRequest) {
 /**
  * DELETE /api/admin/cleanup
  * 执行清理：永久删除已过保留期的小说
- * 支持 ?admin_key=xxx 或 admin_auth cookie
  * 可选参数: novel_id - 只清理指定小说
  */
 export async function DELETE(request: NextRequest) {

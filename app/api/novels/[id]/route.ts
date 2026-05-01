@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getNovelMeta } from '@/lib/novels';
 import db from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
-import { verifyAdminPassword } from '@/lib/auth';
+import { getCurrentUser, verifyAdminToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,9 +77,9 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: '小说已在待删除状态' }, { status: 400 });
     }
 
-    // 权限检查：作者本人或管理员
+    // 权限检查：作者本人或管理员（JWT Token 验证）
     const isAuthor = user && novel.author_id === user.userId;
-    const isAdmin = adminKey && verifyAdminPassword(adminKey);
+    const isAdmin = adminKey && verifyAdminToken(adminKey);
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json({ 

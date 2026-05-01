@@ -1,20 +1,22 @@
 import { cookies } from 'next/headers';
-import { ADMIN_PASSWORD } from '@/lib/auth';
+import { verifyAdminToken } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { getAllNovelIds } from '@/lib/novels';
+import db from '@/lib/db';
 import ChapterEditor from './ChapterEditor';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ChaptersPage() {
   const cookieStore = await cookies();
-  const isAdmin = cookieStore.get('admin_auth')?.value === ADMIN_PASSWORD;
+  const adminToken = cookieStore.get('admin_token')?.value;
+  const isAdmin = verifyAdminToken(adminToken || '');
 
   if (!isAdmin) {
     redirect('/admin');
   }
 
-  const novels = getAllNovelIds();
+  // 数据库优先（兼容 API 上传的小说）
+  const novels = db.prepare('SELECT id, title FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all();
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>

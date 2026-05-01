@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { verifyAdminPassword, generateAdminToken } from '@/lib/auth';
+import db from '@/lib/db';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
@@ -13,7 +15,25 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const { password } = JSON.parse(body);
 
-    if (!verifyAdminPassword(password)) {
+    let authed = false;
+
+    // 方式1: ADMIN_PASSWORD 环境变量（兼容现有方式）
+    if (verifyAdminPassword(password)) {
+      authed = true;
+    }
+
+    // 方式2: 数据库中 role='admin' 的用户（使用 bcrypt 密码）
+    if (!authed) {
+      const adminUsers = db.prepare('SELECT * FROM users WHERE role = ?').all('admin') as any[];
+      for (const user of adminUsers) {
+        if (await bcrypt.compare(password, user.password)) {
+          authed = true;
+          break;
+        }
+      }
+    }
+
+    if (!authed) {
       return NextResponse.json({ error: '密码错误' }, { status: 401 });
     }
 
@@ -29,6 +49,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
+    console.error('Admin login error:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
   }
 }

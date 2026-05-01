@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
 
 // 生产环境必须设置这些环境变量
 const ENV_JWT_SECRET = process.env.JWT_SECRET;
@@ -73,4 +74,18 @@ export function verifyAdminToken(token: string): boolean {
 // 生成AI Token（使用加密安全随机数）
 export function generateAIToken(): string {
   return randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, '');
+}
+
+/**
+ * 统一管理员权限检查
+ * 支持两种认证方式：
+ *   1. Cookie: admin_token（浏览器登录后自动携带）
+ *   2. Query Param: ?admin_key=<token>（外部/自动化调用）
+ */
+export function isAdminAuthed(request: NextRequest): boolean {
+  const adminKey = request.nextUrl?.searchParams?.get('admin_key');
+  const cookieAdminToken = request.cookies.get('admin_token')?.value;
+  if (adminKey && verifyAdminToken(adminKey)) return true;
+  if (cookieAdminToken && verifyAdminToken(cookieAdminToken)) return true;
+  return false;
 }
