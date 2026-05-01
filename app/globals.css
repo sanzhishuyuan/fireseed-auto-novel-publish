@@ -4,17 +4,17 @@
 
 :root {
   --bg-primary: #ffffff;
-  --bg-secondary: #f8f7fc;
+  --bg-secondary: #f5f2ee;
   --bg-card: #ffffff;
-  --text-primary: #1a1a2e;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-  --accent: #7c3aed;
-  --accent-light: #8b5cf6;
-  --accent-dark: #6d28d9;
-  --accent-glow: rgba(124, 58, 237, 0.15);
-  --border: #e5e7eb;
-  --border-light: #f3f4f6;
+  --text-primary: #1a1410;
+  --text-secondary: #6b5d50;
+  --text-muted: #9c8d7e;
+  --accent: #f59e0b;
+  --accent-light: #fbbf24;
+  --accent-dark: #d97706;
+  --accent-glow: rgba(245, 158, 11, 0.12);
+  --border: #e8e0d8;
+  --border-light: #f0ebe5;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
@@ -259,10 +259,10 @@ select:focus-visible {
 
 /* === Glass Effect === */
 .glass {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 .dark .glass {
   background: rgba(45, 37, 32, 0.85);
