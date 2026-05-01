@@ -54,7 +54,7 @@ export default function RegisterPage() {
       {/* 左侧装饰 */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1a1a3e 0%, #2d1b69 50%, #4c1d95 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #2d1f10 0%, #5c3d1e 50%, #8b5e3c 100%)' }}
       >
         <div className="absolute top-10 left-10 w-48 h-48 rounded-full opacity-10 blur-3xl" style={{ background: 'white' }} />
         <div className="absolute bottom-20 right-10 w-32 h-32 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent-light)' }} />

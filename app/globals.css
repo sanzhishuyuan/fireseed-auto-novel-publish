@@ -23,18 +23,18 @@
 }
 
 .dark {
-  --bg-primary: #0f0f1a;
-  --bg-secondary: #16162a;
-  --bg-card: #1e1e36;
-  --text-primary: #f0f0f5;
-  --text-secondary: #a0a0b8;
-  --text-muted: #6b6b80;
-  --accent: #a78bfa;
-  --accent-light: #c4b5fd;
-  --accent-dark: #7c3aed;
-  --accent-glow: rgba(167, 139, 250, 0.15);
-  --border: #2d2d4a;
-  --border-light: #232338;
+  --bg-primary: #1a1410;
+  --bg-secondary: #241e18;
+  --bg-card: #2d2520;
+  --text-primary: #f5f0eb;
+  --text-secondary: #b8a89a;
+  --text-muted: #8a7a6a;
+  --accent: #f59e0b;
+  --accent-light: #fbbf24;
+  --accent-dark: #d97706;
+  --accent-glow: rgba(245, 158, 11, 0.15);
+  --border: #3d322a;
+  --border-light: #2d2520;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
@@ -265,8 +265,8 @@ select:focus-visible {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 .dark .glass {
-  background: rgba(30, 30, 54, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(45, 37, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* === Gradient Text === */

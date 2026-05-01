@@ -361,7 +361,7 @@ export default function HomePage() {
                 >
                   <div
                     className="aspect-[3/4] relative overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, #1e1e3a 0%, #2d1b69 50%, #4c1d95 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #2d1f10 0%, #5c3d1e 50%, #8b5e3c 100%)' }}
                   >
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center mb-3">

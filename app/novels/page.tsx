@@ -327,7 +327,7 @@ export default function NovelsPage() {
                 >
                   <div
                     className="aspect-[3/4] relative overflow-hidden"
-                    style={{ background: 'linear-gradient(160deg, #1a1a3e 0%, #2d1b69 60%, #4c1d95 100%)' }}
+                    style={{ background: 'linear-gradient(160deg, #2d1f10 0%, #5c3d1e 60%, #8b5e3c 100%)' }}
                   >
                     {/* 左上角类型 emoji */}
                     <div className="absolute top-3 left-3">

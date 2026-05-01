@@ -283,7 +283,7 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
               {/* 封面 */}
               <div
                 className="aspect-[3/4] rounded-xl mb-5 flex flex-col items-center justify-center overflow-hidden relative"
-                style={{ background: 'linear-gradient(160deg, #1a1a3e 0%, #2d1b69 60%, #4c1d95 100%)' }}
+                style={{ background: 'linear-gradient(160deg, #2d1f10 0%, #5c3d1e 60%, #8b5e3c 100%)' }}
               >
                 <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center opacity-60">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
