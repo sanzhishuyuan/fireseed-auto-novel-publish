@@ -547,7 +547,7 @@ export default function HomePage() {
                 火种小说创作技能
               </h2>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
-                下载 SKILL.md 加载到 <strong style={{ color: 'var(--text-primary)' }}>OpenClaw / WorkBuddy</strong>，AI 自动学习创作规范和 API 发布流程。
+                从 <strong style={{ color: 'var(--accent)' }}>Gitee</strong> 克隆技能到本地，加载到 <strong style={{ color: 'var(--text-primary)' }}>OpenClaw / WorkBuddy</strong> 后，AI 自动学习创作规范和 API 发布流程。
                 你只需对 AI 说<strong style={{ color: 'var(--accent)' }}>「开始创作」</strong>和<strong style={{ color: 'var(--accent)' }}>「发布到平台」</strong>，其余一切自动完成。
               </p>
 
@@ -576,37 +576,30 @@ export default function HomePage() {
               {/* 下载按钮 */}
               <div className="flex flex-wrap gap-3">
                 <a
-                  href="/fireseed-novel-skill/SKILL.md"
-                  download="SKILL.md"
-                  className="btn-primary text-sm px-6 py-2.5"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M8 2v8M4 7l4 4 4-4M2 13h12" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  下载 SKILL.md
-                </a>
-                <a
-                  href="/fireseed-novel-skill/SKILL.md"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary text-sm px-6 py-2.5"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M7 4H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V9M10 2h4v4M8 8l6-6" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  在线查看文档
-                </a>
-                <a
                   href="https://gitee.com/topofthesky/ai-novel-skill"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-ghost text-sm px-6 py-2.5"
+                  className="btn-primary text-sm px-6 py-2.5"
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M2 4h12M2 8h12M2 12h8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  Gitee 仓库
+                  前往 Gitee 下载技能
                 </a>
+              </div>
+
+              {/* 克隆命令 */}
+              <div
+                className="mt-4 rounded-lg p-3 text-xs font-mono"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M4 8l4-4 4 4M4 12l4-4 4 4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span style={{ color: 'var(--text-muted)' }}>下载命令</span>
+                </div>
+                <code style={{ color: 'var(--accent)' }}>git clone https://gitee.com/topofthesky/ai-novel-skill.git</code>
               </div>
             </div>
 
@@ -616,29 +609,24 @@ export default function HomePage() {
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
             >
               <h3 className="font-semibold text-sm mb-5" style={{ color: 'var(--text-primary)' }}>
-                ✦ 快速上手
+                ✦ 使用说明
               </h3>
               <ol className="space-y-5">
                 {[
                   {
                     step: '01',
-                    title: '注册 AI 作者账号',
-                    desc: '在平台注册时选择「AI 作者」身份，或联系管理员升级权限'
+                    title: '下载技能到本地',
+                    desc: '使用上方命令将技能克隆到 OpenClaw 或类似 AI 工具的 skills 文件夹中'
                   },
                   {
                     step: '02',
-                    title: '获取 AI Token',
-                    desc: '登录管理后台 → Token 管理 → 新建 Token，复制 Bearer Token'
+                    title: '测试技能并创建小说账户',
+                    desc: '让 OpenClaw 测试技能并建立小说账户（账户名、密码可自行指定，由 AI 代为管理）'
                   },
                   {
                     step: '03',
-                    title: '下载并加载技能',
-                    desc: '下载 SKILL.md，放入本地 AI 工具的技能目录，重启后自动加载'
-                  },
-                  {
-                    step: '04',
-                    title: '配置并开始创作',
-                    desc: '填写 API_BASE_URL 和 AI_TOKEN，告诉 AI"开始创作《xxx》"，技能自动完成剩余步骤'
+                    title: '创作小说并自动发布',
+                    desc: '让 OpenClaw 创作小说并发布到网站。可以设定 AI 每天发布 3 章的计划，AI 将自动按计划执行'
                   }
                 ].map((item) => (
                   <li key={item.step} className="flex gap-4">
