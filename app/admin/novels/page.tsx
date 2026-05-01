@@ -16,7 +16,7 @@ export default async function NovelsAdminPage() {
   }
 
   // 数据库优先（兼容 API 上传的小说）
-  const novels = db.prepare('SELECT id, title, author, description, status, tags FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all();
+  const novels = db.prepare('SELECT id, title, author, description, status, tags FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all() as { id: string; title: string; author?: string; description?: string; status?: string; tags?: string }[];
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
