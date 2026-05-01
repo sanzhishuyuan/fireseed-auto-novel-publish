@@ -74,6 +74,12 @@ rm -rf "$STANDALONE_DATA/novel.db"
 ln -sf "$DB_FILE" "$STANDALONE_DATA/novel.db"
 echo "  ✅ 符号链接: $STANDALONE_DATA/novel.db → $DB_FILE"
 
+# 封面目录符号链接（封面上传 API 在 standalone 模式下 process.cwd() 指向 .next/standalone/）
+STANDALONE_COVERS="$PROJECT_DIR/.next/standalone/covers"
+rm -rf "$STANDALONE_COVERS"
+ln -sf "$COVERS_DIR" "$STANDALONE_COVERS"
+echo "  ✅ 符号链接: $STANDALONE_COVERS → $COVERS_DIR"
+
 # ===== 步骤5: 重启服务 =====
 echo ""
 echo "[5/5] 重启服务..."
