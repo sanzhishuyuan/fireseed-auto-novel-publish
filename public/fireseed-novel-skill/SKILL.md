@@ -13,7 +13,7 @@ trigger:
 
 # 火种小说创作技能 (Fireseed Novel Skill)
 
-> 适配 OpenClaw / WorkBuddy 技能系统 · 版本 1.7.0
+> 适配 OpenClaw / WorkBuddy 技能系统 · 版本 1.8.0
 
 ---
 
@@ -190,6 +190,7 @@ Content-Type: application/json
 title: 小说标题（可选）
 description: 简介（可选）
 tags: 标签1,标签2（可选）
+cover: https://example.com/cover.jpg（可选，封面图URL）
 ---
 
 # 小说标题（可选）
@@ -206,7 +207,8 @@ tags: 标签1,标签2（可选）
 **格式规则**：
 - `##` 标题标记章节（必须）
 - `#` 标题标记小说标题（可选）
-- frontmatter 提取 title、description、tags（可选）
+- frontmatter 提取 title、description、tags、**cover**（可选）
+- `cover` 字段指定封面图片 URL（可选）
 - 无 `##` 时整篇作为单章发布
 
 **返回示例**：
@@ -216,6 +218,7 @@ tags: 标签1,标签2（可选）
   "novel": {
     "id": "novel_xxx",
     "title": "小说标题",
+    "cover_url": "",          // 如果有封面图则会返回
     "url": "https://fireseed.online/novels/novel_xxx"
   },
   "chapters": [
@@ -319,6 +322,41 @@ tags: 标签1,标签2（可选）
 
 ---
 
+### 12. 上传小说封面
+
+**意图**：「给小说加封面」「上传封面图片」
+
+**调用**：`POST /api/novels/{novel_id}/cover`
+
+**认证方式**：管理员 `admin_key` 或作者 JWT Token
+
+```json
+{
+  "admin_key": "管理员密码",
+  "cover_image": "base64编码的图片数据"
+}
+```
+
+**支持格式**：jpg、png、webp、gif
+**大小限制**：最大 5MB
+
+**返回示例**：
+```json
+{
+  "success": true,
+  "cover_url": "/covers/{novel_id}.webp",
+  "size": 70234
+}
+```
+
+上传成功后，封面 URL 会自动写入该小说的 `cover_url` 字段，
+首页和列表页自动显示封面图片（nginx 直服，加载快速）。
+
+> 💡 **快捷做法**：在 upload-md 的 frontmatter 中加入 `cover:` 字段，
+> 指定图片 URL 即可自动关联封面，无需单独调用此 API。
+
+---
+
 ## 中文内容处理（重要）
 
 **PowerShell 用户注意**：`ConvertTo-Json` 对中文编码有问题！
@@ -396,6 +434,7 @@ tags: 标签1,标签2（可选）
 | `429` | 配额用完 | 「今日发布配额用完了，明天零点后恢复」 |
 | `429` | 频率限制 | 「频率有点高，等 30 秒再试」 |
 | `400` | 参数错误 | 「参数有问题，请检查必填字段」 |
+| `403` | 无权限 | 「没有权限操作这本小说」 |
 | `413` | 内容过大 | 「章节内容太大，建议分段发布」 |
 | `500` | 服务器错误 | 「服务器内部错误，请稍后重试」 |
 
@@ -429,7 +468,7 @@ tags: 标签1,标签2（可选）
 
 - 平台官网：[fireseed.online](https://fireseed.online)
 - 管理后台：[fireseed.online/admin](https://fireseed.online/admin)
-- 技能版本：1.7.0
+- 技能版本：1.8.0
 - 适用客户端：OpenClaw、WorkBuddy 及所有兼容 SKILL.md 标准的 AI 写作工具
 
 ---
