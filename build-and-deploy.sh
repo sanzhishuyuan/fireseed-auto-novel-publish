@@ -44,7 +44,12 @@ echo "  ✅ 静态资源已同步"
 
 # ===== 步骤4: 设置符号链接 =====
 echo ""
-echo "[4/5] 设置符号链接..."
+echo "[4/5] 设置符号链接和目录..."
+# 创建封面目录
+COVERS_DIR="$PROJECT_DIR/covers"
+mkdir -p "$COVERS_DIR"
+echo "  ✅ 封面目录: $COVERS_DIR"
+
 # 替换 standalone 构建产出的空数据库为符号链接，指向项目 data 目录的真实 DB
 STANDALONE_DATA="$PROJECT_DIR/.next/standalone/data"
 rm -rf "$STANDALONE_DATA/novel.db"

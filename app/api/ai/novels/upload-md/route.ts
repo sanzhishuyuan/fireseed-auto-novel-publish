@@ -144,15 +144,16 @@ export async function POST(request: NextRequest) {
     const novelTitle = title || frontmatter.title || parsed.title || '未命名小说';
     const novelTags = tags || frontmatter.tags || '';
     const novelDescription = description || frontmatter.description || '';
+    const novelCover = frontmatter.cover || frontmatter.cover_url || '';
 
     // 创建小说
     const novelId = `novel_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const now = new Date().toISOString();
 
     db.prepare(`
-      INSERT INTO novels (id, title, author, author_id, description, tags, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(novelId, novelTitle, author, decoded.userId, novelDescription, novelTags, now, now);
+      INSERT INTO novels (id, title, author, author_id, description, cover_url, tags, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(novelId, novelTitle, author, decoded.userId, novelDescription, novelCover, novelTags, now, now);
 
     // 发布所有章节
     const publishedChapters: any[] = [];
@@ -182,6 +183,7 @@ export async function POST(request: NextRequest) {
         title: novelTitle,
         author,
         description: novelDescription,
+        cover_url: novelCover,
         tags: novelTags,
         url: `https://fireseed.online/novels/${novelId}`
       },

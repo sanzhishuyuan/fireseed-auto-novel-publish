@@ -359,18 +359,31 @@ export default function HomePage() {
                   className="card overflow-hidden group animate-slide-up"
                   style={{ animationDelay: `${i * 80}ms` }}
                 >
-                  <div
-                    className="aspect-[3/4] relative overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, #5c3d1e 0%, #8b5e3c 50%, #c49a6c 100%)' }}
-                  >
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center mb-3">
-                        <span className="text-2xl">{emoji}</span>
+                  <div className="aspect-[3/4] relative overflow-hidden">
+                    {/* 封面图（有 cover_url 时显示） */}
+                    {novel.cover_url ? (
+                      <img
+                        src={novel.cover_url}
+                        alt={novel.title}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      /* 无封面时：渐变色后备 */
+                      <div
+                        className="absolute inset-0"
+                        style={{ background: 'linear-gradient(135deg, #5c3d1e 0%, #8b5e3c 50%, #c49a6c 100%)' }}
+                      >
+                        <div className="w-full h-full flex flex-col items-center justify-center">
+                          <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center mb-3">
+                            <span className="text-2xl">{emoji}</span>
+                          </div>
+                          <span className="text-white/60 text-xs font-medium tracking-widest uppercase">
+                            {primaryTag}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-white/60 text-xs font-medium tracking-widest uppercase">
-                        {primaryTag}
-                      </span>
-                    </div>
+                    )}
 
                     {/* 左上角类型标签 */}
                     <div className="absolute top-3 left-3">
@@ -390,7 +403,7 @@ export default function HomePage() {
                     {/* 悬停层 - 双按钮入口 */}
                     <div
                       className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
-                      style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.85), rgba(124,58,237,0.3))' }}
+                      style={{ background: 'linear-gradient(to top, rgba(245,158,11,0.85), rgba(245,158,11,0.3))' }}
                     >
                       <div className="absolute bottom-4 left-3 right-3 space-y-2">
                         <button 

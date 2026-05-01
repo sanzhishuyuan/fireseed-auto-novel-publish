@@ -325,11 +325,33 @@ export default function NovelsPage() {
                   className="card overflow-hidden group animate-slide-up"
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
-                  <div
-                    className="aspect-[3/4] relative overflow-hidden"
-                    style={{ background: 'linear-gradient(160deg, #5c3d1e 0%, #8b5e3c 60%, #c49a6c 100%)' }}
-                  >
-                    {/* 左上角类型 emoji */}
+                  <div className="aspect-[3/4] relative overflow-hidden">
+                    {/* 封面图（有 cover_url 时显示） */}
+                    {novel.cover_url ? (
+                      <img
+                        src={novel.cover_url}
+                        alt={novel.title}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div
+                        className="absolute inset-0"
+                        style={{ background: 'linear-gradient(160deg, #5c3d1e 0%, #8b5e3c 60%, #c49a6c 100%)' }}
+                      >
+                        {/* 中心图标 */}
+                        <div className="w-full h-full flex flex-col items-center justify-center">
+                          <div className="w-14 h-14 rounded-full border-2 border-white/20 flex items-center justify-center mb-3 opacity-60">
+                            <span className="text-2xl">{emoji}</span>
+                          </div>
+                          <span className="text-white/40 text-xs font-medium tracking-widest uppercase">
+                            {primaryTag}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 左上角类型标签 */}
                     <div className="absolute top-3 left-3">
                       <span className="px-2 py-1 rounded-lg text-sm backdrop-blur-sm"
                         style={{ background: 'rgba(0,0,0,0.4)', color: 'white' }}>
@@ -344,18 +366,8 @@ export default function NovelsPage() {
                       </span>
                     </div>
 
-                    {/* 中心图标 */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="w-14 h-14 rounded-full border-2 border-white/20 flex items-center justify-center mb-3 opacity-60">
-                        <span className="text-2xl">{emoji}</span>
-                      </div>
-                      <span className="text-white/40 text-xs font-medium tracking-widest uppercase">
-                        {primaryTag}
-                      </span>
-                    </div>
-
                     {/* 悬停双按钮 */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.85), rgba(124,58,237,0.3))' }}>
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(245,158,11,0.85), rgba(245,158,11,0.3))' }}>
                       <div className="absolute bottom-4 left-3 right-3 space-y-2">
                         <button 
                           className="w-full py-2 rounded-lg text-sm font-medium backdrop-blur-sm transition-transform hover:scale-105"
