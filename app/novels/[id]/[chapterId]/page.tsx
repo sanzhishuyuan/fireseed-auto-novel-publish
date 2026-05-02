@@ -334,6 +334,8 @@ export default async function ChapterPage({ params }: Props) {
             </Link>
           )}
         </div>
+        {/* 移动端底部留白：防止文章末尾被底部固定栏遮挡 */}
+        <div className="mobile-bottom-spacer" />
       </article>
 
       {/* 移动端底部导航 */}
