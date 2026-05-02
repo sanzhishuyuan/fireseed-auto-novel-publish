@@ -10,18 +10,12 @@ export const dynamic = 'force-dynamic';
 
 interface Params { params: Promise<{ novelId: string; chapterId: string }>; }
 
-// 统一 Token 验证（复用章节创建 API 的逻辑）
-function verifyTokenInternal(request: NextRequest): { valid: boolean; token: string; userId?: string } {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return { valid: false, token: '' };
-  const token = authHeader.slice(7);
-
+// 验证 token 字符串
+function verifyTokenString(token: string): { valid: boolean; token: string; userId?: string } {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string; role: string };
     return { valid: true, token, userId: decoded.userId };
-  } catch {
-    // JWT 无效，检查其他 Token
-  }
+  } catch { /* JWT 无效 */ }
 
   const userToken = db.prepare(
     'SELECT id, user_id, is_active FROM user_tokens WHERE token = ?'
@@ -40,6 +34,20 @@ function verifyTokenInternal(request: NextRequest): { valid: boolean; token: str
   return { valid: false, token };
 }
 
+// 统一 Token 验证：Header Bearer 优先，Body token 回退
+function verifyToken(request: NextRequest, bodyToken?: string): { valid: boolean; token: string; userId?: string } {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const result = verifyTokenString(authHeader.slice(7));
+    if (result.valid) return result;
+  }
+  if (bodyToken) {
+    const result = verifyTokenString(bodyToken);
+    if (result.valid) return result;
+  }
+  return { valid: false, token: '' };
+}
+
 /**
  * PUT /api/ai/novels/{novelId}/chapters/{chapterId}
  * 修改已有章节
@@ -55,21 +63,24 @@ function verifyTokenInternal(request: NextRequest): { valid: boolean; token: str
  * }
  */
 export async function PUT(request: NextRequest, { params }: Params) {
-  const auth = verifyTokenInternal(request);
+  const { novelId, chapterId } = await params;
+
+  // 先读取 body 获取可能的内嵌 token
+  let bodyToken: string | undefined;
+  let body: any;
+  try {
+    body = await request.json();
+    bodyToken = body?.token;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const auth = verifyToken(request, bodyToken);
   if (!auth.valid) {
     return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
   }
 
-  const { novelId, chapterId } = await params;
-
   try {
-    // 验证请求体大小
-    const contentLength = parseInt(request.headers.get('content-length') || '0');
-    if (contentLength > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Payload too large' }, { status: 413 });
-    }
-
-    const body = await request.json();
     const { title, content, order, branch, choices, custom_branch_enabled } = body;
 
     if (!content) {

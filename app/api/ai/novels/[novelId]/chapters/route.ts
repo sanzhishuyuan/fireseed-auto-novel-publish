@@ -13,31 +13,26 @@ export const dynamic = 'force-dynamic';
 
 interface Params { params: Promise<{ novelId: string }>; }
 
-// 统一 Token 验证（支持 JWT / user_tokens / ai_tokens 三种方式）
-function verifyAITokenRecord(request: NextRequest): { valid: boolean; token: string; record?: Record<string, unknown>; isUserToken: boolean } {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return { valid: false, token: '', isUserToken: false };
-  const token = authHeader.slice(7);
-
-  // 1. 优先验证 JWT Token（注册用户通过 /api/auth/token 获取）
+// 验证 token 字符串（支持 JWT / user_tokens / ai_tokens 三种方式）
+function verifyTokenString(token: string): { valid: boolean; token: string; record?: Record<string, unknown>; isUserToken: boolean } {
+  // 1. JWT Token
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string; role: string };
     return { valid: true, token, record: { user_id: decoded.userId }, isUserToken: true };
   } catch {
-    // JWT 无效，继续检查其他 Token 类型
+    // JWT 无效，继续
   }
 
-  // 2. 检查 user_tokens（新系统 API Token）
+  // 2. user_tokens
   const userToken = db.prepare(
     'SELECT id, user_id, is_active FROM user_tokens WHERE token = ?'
   ).get(token) as { id: string; user_id: string; is_active: number } | undefined;
-
   if (userToken && userToken.is_active === 1) {
     db.prepare('UPDATE user_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
     return { valid: true, token, record: { user_id: userToken.user_id }, isUserToken: true };
   }
 
-  // 3. 兼容旧 ai_tokens 表
+  // 3. ai_tokens
   const record = db.prepare('SELECT * FROM ai_tokens WHERE token = ? AND is_active = 1').get(token) as Record<string, unknown> | undefined;
   if (!record) return { valid: false, token, isUserToken: false };
   const now = new Date();
@@ -49,6 +44,24 @@ function verifyAITokenRecord(request: NextRequest): { valid: boolean; token: str
   }
   db.prepare('UPDATE ai_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
   return { valid: true, token, record, isUserToken: false };
+}
+
+// 统一 Token 验证：先尝试 Header，再尝试 Body
+function verifyAITokenRecord(request: NextRequest, bodyToken?: string): { valid: boolean; token: string; record?: Record<string, unknown>; isUserToken: boolean } {
+  // 1. 优先 Header Bearer Token
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const result = verifyTokenString(authHeader.slice(7));
+    if (result.valid) return result;
+  }
+
+  // 2. 回退 Body token（兼容 upload-md 风格）
+  if (bodyToken) {
+    const result = verifyTokenString(bodyToken);
+    if (result.valid) return result;
+  }
+
+  return { valid: false, token: '', isUserToken: false };
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
@@ -65,7 +78,24 @@ export async function POST(request: NextRequest, { params }: Params) {
   const rateLimitResponse_ = rateLimitResponse(rateLimit);
   if (rateLimitResponse_) return rateLimitResponse_;
 
-  const auth = verifyAITokenRecord(request);
+  // 先解析 body 获取可能的内嵌 token（兼容 upload-md 风格 body 传 token）
+  let bodyToken: string | undefined;
+  let body: any;
+  try {
+    const rawText = await request.text();
+    try {
+      body = JSON.parse(rawText);
+      bodyToken = body?.token;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+    // 重新构造 request 给后续用（实际上后续直接用 body 变量）
+  } catch {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  }
+
+  // 验证：Header Bearer 优先，Body token 回退
+  const auth = verifyAITokenRecord(request, bodyToken);
   if (!auth.valid) return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
   const { novelId } = await params;
   const record = auth.record!;
@@ -86,32 +116,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
   
   try {
-    // 检查请求体大小（最大 5MB）
-    const contentLength = parseInt(request.headers.get('content-length') || '0');
-    if (contentLength > 5 * 1024 * 1024) {
-      return NextResponse.json({
-        error: 'Payload too large',
-        detail: 'Chapter content exceeds 5MB limit',
-        received_length: contentLength
-      }, { status: 413 });
-    }
-    
-    let body;
-    try {
-      body = await request.json();
-    } catch (parseError) {
-      // JSON 解析失败，尝试读取原始文本
-      const rawText = await request.text();
-      console.error('JSON parse error, raw length:', rawText?.length);
-      return NextResponse.json({
-        error: 'Invalid JSON format',
-        detail: 'Request body must be valid JSON. Check for special characters or encoding issues.',
-        received_length: rawText?.length,
-        received_preview: rawText?.substring(0, 200)
-      }, { status: 400 });
-    }
-    
-    const { title, content, order, branch = 'main', choices = [], custom_branch_enabled = false } = body;
+    const { title, content, order, branch = 'main', choices = [], custom_branch_enabled = false } = body || {};
     
     // 验证必填字段
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
