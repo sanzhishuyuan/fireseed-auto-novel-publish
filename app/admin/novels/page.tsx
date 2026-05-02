@@ -1,10 +1,21 @@
 import { cookies } from 'next/headers';
 import { verifyAdminToken } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { getAllNovelIds } from '@/lib/novels';
 import db from '@/lib/db';
 import NovelEditor from './NovelEditor';
 
 export const dynamic = 'force-dynamic';
+
+interface NovelItem {
+  id: string;
+  title: string;
+  author?: string;
+  description?: string;
+  status?: string;
+  tags?: string;
+  orphan?: boolean; // 标记：只有文件系统记录，无数据库记录
+}
 
 export default async function NovelsAdminPage() {
   const cookieStore = await cookies();
@@ -15,8 +26,26 @@ export default async function NovelsAdminPage() {
     redirect('/admin');
   }
 
-  // 数据库优先（兼容 API 上传的小说）
-  const novels = db.prepare('SELECT id, title, author, description, status, tags FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all() as { id: string; title: string; author?: string; description?: string; status?: string; tags?: string }[];
+  // 1. 数据库小说
+  const dbNovels = db.prepare('SELECT id, title, author, description, status, tags FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all() as { id: string; title: string; author?: string; description?: string; status?: string; tags?: string }[];
+  const dbNovelIds = new Set(dbNovels.map(n => n.id));
+
+  // 2. 文件系统小说（排除已在数据库中的）
+  const fileNovels = getAllNovelIds();
+  const orphanNovels: NovelItem[] = fileNovels
+    .filter(n => !dbNovelIds.has(n.id))
+    .map(n => ({
+      id: n.id,
+      title: n.title || n.id,
+      author: n.author || 'AI创作',
+      description: n.description || '',
+      status: n.status || 'ongoing',
+      tags: n.tags || '',
+      orphan: true
+    }));
+
+  // 3. 合并：数据库小说在前，孤立小说在后
+  const novels: NovelItem[] = [...dbNovels, ...orphanNovels];
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>

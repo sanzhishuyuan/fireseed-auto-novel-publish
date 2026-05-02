@@ -10,6 +10,7 @@ interface Novel {
   description?: string;
   status?: string;
   tags?: string;
+  orphan?: boolean;
 }
 
 interface Props {
@@ -148,7 +149,12 @@ export default function NovelEditor({ novels }: Props) {
           {novels.map((novel) => (
             <div key={novel.id} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
               <div>
-                <div className="font-bold text-gray-800 dark:text-white">{novel.title}</div>
+                <div className="font-bold text-gray-800 dark:text-white">
+                    {novel.title}
+                    {novel.orphan && (
+                      <span className="ml-2 px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700">仅文件系统</span>
+                    )}
+                  </div>
                 <div className="text-sm text-gray-500 mt-1">
                   {novel.author || 'AI创作'} · 
                   <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
