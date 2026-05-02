@@ -27,6 +27,19 @@ export default function NovelEditor({ novels }: Props) {
     tags: ''
   });
 
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`确认删除小说「${title}」？\n\n删除后将在保留期（7天）后自动清理，期间可在后台进行恢复。`)) return;
+
+    const res = await fetch(`/api/admin/novels/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      alert(`小说「${title}」已标记为删除`);
+      router.refresh();
+    } else {
+      const data = await res.json();
+      alert(data.error || '删除失败');
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.title) {
       alert('请填写书名');
@@ -159,6 +172,12 @@ export default function NovelEditor({ novels }: Props) {
                 >
                   预览
                 </a>
+                <button
+                  onClick={() => handleDelete(novel.id, novel.title)}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200"
+                >
+                  删除
+                </button>
               </div>
             </div>
           ))}

@@ -47,6 +47,21 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
     });
   };
 
+  const handleDeleteChapter = async (id: string, title: string) => {
+    if (!confirm(`确认删除章节「${title}」？\n\n删除后不可恢复！`)) return;
+
+    const res = await fetch(`/api/admin/chapters/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      alert(`章节「${title}」已删除`);
+      // 刷新章节列表
+      const data = await fetch(`/api/novels/${selectedNovel}/chapters`).then(r => r.json());
+      setChapters(data.chapters || []);
+    } else {
+      const data = await res.json();
+      alert(data.error || '删除失败');
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selectedNovel || !form.title || !form.content) {
       alert('请填写完整信息');
@@ -218,29 +233,49 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
           )}
 
           <div className="divide-y dark:divide-gray-700">
-            {chapters.map((chapter, index) => (
-              <div key={chapter.filePath} className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-800 dark:text-white">
-                    {chapter.meta.title}
+            {chapters.map((chapter) => {
+              // 兼容数据库章节和文件系统章节两种格式
+              const chapterId = chapter.id || chapter.filePath?.replace(/\.md$/, '');
+              const chapterTitle = chapter.title || chapter.meta?.title || '未命名章节';
+              const chapterBranch = chapter.branch || chapter.meta?.branch || 'main';
+              const chapterWords = chapter.word_count || chapter.content?.length || 0;
+              const chapterChoices = chapter.meta?.choices?.length || 0;
+              const hasDbId = !!chapter.id;
+
+              return (
+                <div key={chapter.filePath || chapter.id} className="p-4 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-gray-800 dark:text-white">
+                      {chapterTitle}
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      {chapterBranch === 'main' ? '主线' : '支线'} · 
+                      {chapterWords} 字
+                      {chapterChoices > 0 && (
+                        <span className="ml-2 text-purple-600">🔀 {chapterChoices}个分支</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {chapter.meta.branch === 'main' ? '主线' : '支线'} · 
-                    {chapter.content?.length || 0} 字
-                    {chapter.meta.choices?.length > 0 && (
-                      <span className="ml-2 text-purple-600">🔀 {chapter.meta.choices.length}个分支</span>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`/novels/${selectedNovel}/${chapter.filePath || chapter.id}`}
+                      target="_blank"
+                      className="text-indigo-600 hover:underline text-sm"
+                    >
+                      预览
+                    </a>
+                    {hasDbId && (
+                      <button
+                        onClick={() => handleDeleteChapter(chapter.id, chapterTitle)}
+                        className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200"
+                      >
+                        删除
+                      </button>
                     )}
                   </div>
                 </div>
-                <a
-                  href={`/novels/${selectedNovel}/${chapter.filePath}`}
-                  target="_blank"
-                  className="text-indigo-600 hover:underline text-sm"
-                >
-                  预览
-                </a>
-              </div>
-            ))}
+              );
+            })}
             {chapters.length === 0 && (
               <div className="p-8 text-center text-gray-500">
                 暂无章节
