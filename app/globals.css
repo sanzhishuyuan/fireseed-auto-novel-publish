@@ -354,8 +354,11 @@ select:focus-visible {
 
 /* === Responsive === */
 @media (max-width: 640px) {
+  :root {
+    --reading-font-size: 24px !important;
+  }
   .reading-content {
-    font-size: 18px;
+    font-size: var(--reading-font-size);
     line-height: 1.85;
   }
   .hide-mobile {
