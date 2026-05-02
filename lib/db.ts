@@ -231,4 +231,16 @@ try {
   // 列已存在，忽略
 }
 
+try {
+  db.exec(`ALTER TABLE chapters ADD COLUMN choices TEXT DEFAULT '';`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE chapters ADD COLUMN custom_branch_enabled INTEGER DEFAULT 0;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
 export default db;

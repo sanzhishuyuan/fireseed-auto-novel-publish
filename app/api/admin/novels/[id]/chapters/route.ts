@@ -42,10 +42,11 @@ export async function POST(request: NextRequest, { params }: Props) {
 
     // 保存到数据库
     const dbChapterId = uuidv4();
+    const choicesJson = JSON.stringify(choices || []);
     db.prepare(`
-      INSERT INTO chapters (id, novel_id, title, content, order_num, branch, word_count)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(dbChapterId, novelId, title, content, order, branch || 'main', content?.length || 0);
+      INSERT INTO chapters (id, novel_id, title, content, order_num, branch, word_count, choices)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(dbChapterId, novelId, title, content, order, branch || 'main', content?.length || 0, choicesJson);
 
     return NextResponse.json({ success: true, chapterId });
   } catch (error) {

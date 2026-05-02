@@ -150,8 +150,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     };
     fs.writeFileSync(path.join(chaptersDir, chapterId + '.md'), matter.stringify(contentStr, meta), 'utf-8');
 
-    db.prepare('INSERT INTO chapters (id, novel_id, title, content, order_num, branch, word_count) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-      dbChapterId, novelId, title, contentStr, order || 1, branch, wordCount
+    const choicesJson = JSON.stringify(finalChoices);
+    db.prepare('INSERT INTO chapters (id, novel_id, title, content, order_num, branch, word_count, choices, custom_branch_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+      dbChapterId, novelId, title, contentStr, order || 1, branch, wordCount, choicesJson, custom_branch_enabled ? 1 : 0
     );
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
     db.prepare('UPDATE ai_tokens SET quota_used = quota_used + 1 WHERE token = ?').run(auth.token);

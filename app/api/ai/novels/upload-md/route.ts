@@ -163,8 +163,8 @@ export async function POST(request: NextRequest) {
       const wordCount = chapter.content.length;
 
       db.prepare(`
-        INSERT INTO chapters (id, novel_id, title, content, word_count, branch, order_num, created_at)
-        VALUES (?, ?, ?, ?, ?, 'main', ?, ?)
+        INSERT INTO chapters (id, novel_id, title, content, word_count, branch, order_num, created_at, choices)
+        VALUES (?, ?, ?, ?, ?, 'main', ?, ?, '[]')
       `).run(chapterId, novelId, chapter.title, chapter.content, wordCount, chapter.order, now);
 
       publishedChapters.push({
