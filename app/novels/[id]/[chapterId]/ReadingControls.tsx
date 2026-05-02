@@ -10,7 +10,7 @@ interface ReadSettings {
 
 export default function ReadingControls() {
   const [settings, setSettings] = useState<ReadSettings>({
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 1.9,
     theme: 'light'
   });

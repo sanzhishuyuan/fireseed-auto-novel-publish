@@ -355,8 +355,8 @@ select:focus-visible {
 /* === Responsive === */
 @media (max-width: 640px) {
   .reading-content {
-    font-size: 16px !important;
-    line-height: 1.85 !important;
+    font-size: 18px;
+    line-height: 1.85;
   }
   .hide-mobile {
     display: none !important;

@@ -63,10 +63,15 @@ echo "  ✅ 静态资源已同步"
 # ===== 步骤4: 设置符号链接 =====
 echo ""
 echo "[4/5] 设置符号链接和目录..."
-# 创建封面目录
+# 封面目录：统一到 /var/data/ai-novel/covers/（nginx 也使用此路径）
+NGINX_COVERS_DIR="/var/data/ai-novel/covers"
+mkdir -p "$NGINX_COVERS_DIR"
 COVERS_DIR="$PROJECT_DIR/covers"
-mkdir -p "$COVERS_DIR"
-echo "  ✅ 封面目录: $COVERS_DIR"
+if [ ! -L "$COVERS_DIR" ]; then
+  rm -rf "$COVERS_DIR"
+  ln -sf "$NGINX_COVERS_DIR" "$COVERS_DIR"
+fi
+echo "  ✅ 封面目录（nginx统一路径）: $NGINX_COVERS_DIR"
 
 # 替换 standalone 构建产出的空数据库为符号链接，指向项目 data 目录的真实 DB
 STANDALONE_DATA="$PROJECT_DIR/.next/standalone/data"
