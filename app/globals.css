@@ -311,8 +311,9 @@ select:focus-visible {
     bottom: 0;
     left: 0;
     right: 0;
-    height: calc(56px + env(safe-area-inset-bottom, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: 72px;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+    box-sizing: content-box;
     background: var(--bg-card);
     border-top: 1px solid var(--border);
     z-index: 50;
@@ -324,9 +325,9 @@ select:focus-visible {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
+    padding: 14px 8px;
     color: var(--text-secondary);
-    font-size: 20px;
+    font-size: 22px;
     text-decoration: none;
     background: none;
     border: none;
@@ -334,6 +335,10 @@ select:focus-visible {
   }
   .mobile-bottom-bar a.active, .mobile-bottom-bar button.active {
     color: var(--accent);
+  }
+  /* 文章末尾留出底部空间，防止内容被导航栏挡住 */
+  article {
+    padding-bottom: 80px;
   }
 }
 
