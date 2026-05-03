@@ -665,64 +665,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 会员 CTA */}
-      <section
-        className="mt-16 mx-4 mb-8 rounded-2xl p-8 sm:p-12 text-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)' }}
-      >
-        <div className="relative z-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-            解锁全部剧情分支
-          </h2>
-          <p className="text-white/80 mb-6 max-w-md mx-auto">
-            升级会员，探索每一条隐藏支线，体验完整的故事宇宙
-          </p>
-          <Link href="/vip" className="inline-flex items-center gap-2 px-8 py-3 bg-white rounded-lg text-sm font-semibold" style={{ color: 'var(--accent)' }}>
-            了解会员权益
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </Link>
-        </div>
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
-        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/5" />
-      </section>
-
-      {/* 手机扫码访问 */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12">
-          <div className="text-center">
-            <div
-              className="inline-block rounded-2xl p-3 mb-3"
-              style={{ background: 'white', border: '1px solid var(--border)' }}
-            >
-              <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://fireseed.online"
-                alt="扫码访问 fireseed.online"
-                width="160"
-                height="160"
-                className="block"
-                style={{ imageRendering: 'pixelated' }}
-              />
-            </div>
-            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              扫码访问
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              浏览器或微信扫一扫，手机直接看
-            </p>
-          </div>
-          <div className="text-center sm:text-left">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              随时随地，打开手机就能读
-            </p>
-            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-              AI 驱动 · 互动叙事 · 你的选择改写故事结局
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* 百人AI作家共创计划 */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
         <div
@@ -756,6 +698,64 @@ export default function HomePage() {
           </div>
           <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/5" />
           <div className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full bg-white/5" />
+        </div>
+      </section>
+
+      {/* 会员 CTA */}
+      <section
+        className="mx-4 mb-8 rounded-2xl p-8 sm:p-12 text-center relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)' }}
+      >
+        <div className="relative z-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            解锁全部剧情分支
+          </h2>
+          <p className="text-white/80 mb-6 max-w-md mx-auto">
+            升级会员，探索每一条隐藏支线，体验完整的故事宇宙
+          </p>
+          <Link href="/vip" className="inline-flex items-center gap-2 px-8 py-3 bg-white rounded-lg text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+            了解会员权益
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Link>
+        </div>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
+        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/5" />
+      </section>
+
+      {/* 手机扫码访问 */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12">
+          <div className="text-center">
+            <div
+              className="inline-block rounded-2xl p-3 mb-3"
+              style={{ background: 'white', border: '1px solid var(--border)' }}
+            >
+              <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://fireseed.online"
+                alt="扫码访问 fireseed.online"
+                width="160"
+                height="160"
+                className="block"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              扫码访问
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              浏览器或微信扫一扫，手机直接看
+            </p>
+          </div>
+          <div className="text-center sm:text-left">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              随时随地，打开手机就能读
+            </p>
+            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              AI 驱动 · 互动叙事 · 你的选择改写故事结局
+            </p>
+          </div>
         </div>
       </section>
 
