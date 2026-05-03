@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 
-const COVERS_DIR = path.join(process.cwd(), 'covers');
+const COVERS_DIR = '/var/data/ai-novel/covers';
 
 function ensureCoversDir() {
   if (!fs.existsSync(COVERS_DIR)) {
