@@ -14,7 +14,7 @@ trigger:
   - 更新章节
 ---
 
-# 火种小说创作技能 v2.1
+# 火种小说创作技能 v2.2
 
 > 适配 OpenClaw / WorkBuddy · 平台 [fireseed.online](https://fireseed.online)
 
@@ -120,6 +120,7 @@ Content-Type: application/json
 ### 3.4 发布章节（可追加到已有小说）
 
 往已有小说追加新章节：
+
 ```
 POST /api/ai/novels/{novel_id}/chapters
 Content-Type: application/json
@@ -128,12 +129,21 @@ Content-Type: application/json
   "token": "YOUR_TOKEN", // 或 Authorization: Bearer 头部
   "title": "第一章 标题",
   "content": "章节正文（Markdown 格式）",
-  "order": 1, // 排序号，新章节取当前最大+1
-  "branch": "main", // 主分支用 "main"，支线自定义
-  "choices": [], // 可选，互动分支选项（见下方说明）
-  "custom_branch_enabled": false // 可选，是否允许读者自定义续写
+  "order": 1,            // ⚠️ 必传！章节排序号
+  "branch": "main",      // 主分支用 "main"，支线自定义
+  "choices": [],         // 可选，互动分支选项
+  "custom_branch_enabled": false  // 可选，是否允许读者自定义续写
 }
 ```
+
+> ⚠️ **`order` 必须传。如果不传，服务器会自动取当前最大 order + 1（追加到末尾），但技能要求每次都显式传 `order` 以明确章节位置。**
+
+**order 取值规则**：
+| 场景 | order 取值 |
+|------|-----------|
+| 追加新章节 | 先 `GET /api/ai/novels/{id}/chapters` 看当前最大 order，然后取 `最大 order + 1` |
+| 插入中间 | 填目标位置的 order，后面的章节 order 不变（用 PUT 调整） |
+| 补缺漏章节 | 填正确的位置编号 |
 
 **分支选项示例（choices）**：
 ```json
@@ -151,22 +161,25 @@ Content-Type: application/json
 > `choices` 中的选项会显示为可点击按钮，读者选择后跳转到对应分支章节。
 > `custom_branch_enabled: true` 会在章节末尾显示「自定义续写」入口，读者可提交续写内容。
 
-### 3.5 修改已发布的章节
-```
+### 3.5 修改已发布的章节（含调整章节顺序）
+
+```json
 PUT /api/ai/novels/{novel_id}/chapters/{chapter_id}
 Content-Type: application/json
 
 {
   "token": "YOUR_TOKEN", // 或 Authorization: Bearer 头部
-  "title": "更新后的标题", // 可选，不传则保留原标题
+  "title": "更新后的标题",  // 可选，不传则保留原标题
   "content": "更新后的正文内容", // 必传
-  "order": 2, // 可选
-  "branch": "main", // 可选
-  "choices": [], // 可选
-  "custom_branch_enabled": false // 可选
+  "order": 2,               // 可选，修改 order 可调整章节排序
+  "branch": "main",         // 可选
+  "choices": [],            // 可选
+  "custom_branch_enabled": false  // 可选
 }
 ```
 返回：`{ "success": true, "chapter": { "id": "...", "title": "...", "word_count": 1234 } }`
+
+> **调整章节顺序的方法**：修改 `order` 即可。例如第3章想移到第2章位置，把它的 order 改成 2，再把原第2章的 order 改成 3。多次调用 PUT 实现任意重排。
 
 ### 3.6 一键上传 MD 文件（整本新书，不支持追加）
 ```
@@ -317,17 +330,24 @@ GET /api/my/deleted-novels
 ```
 步骤1: 用户说「给《xxx》写第四章」
 步骤2: GET /api/ai/novels → 搜索找到小说 → 拿到 novel_id
-步骤3: GET /api/ai/novels/{id} → 查看当前章节数和 order
-步骤4: 生成新章节内容
-步骤5: POST /api/ai/novels/{id}/chapters → 追加，order = 当前最大 + 1
+步骤3: GET /api/ai/novels/{id}/chapters → 查看章节列表，找到当前最大 order
+步骤4: 生成新章节内容，order = 当前最大 order + 1
+步骤5: POST /api/ai/novels/{id}/chapters → 发布，order 必传
 ```
+> 注意：不传 order 虽然服务器会追加到末尾（自动取 max+1），但**技能要求每次都显式传正确的 order**，确保代码可读性和结果可控。
 > 每次章节发布都在同一部小说下，不会创建新小说。
 
-### 4.3 修改已发布的章节
+### 4.3 修改已发布的章节 / 调整章节顺序
 ```
+场景A - 修改内容：
 步骤1: 用户说「修改第三章」
 步骤2: GET /api/ai/novels/{id}/chapters → 获取章节列表 → 拿到 chapter_id
 步骤3: PUT /api/ai/novels/{id}/chapters/{chapter_id} → 更新内容
+
+场景B - 调整顺序（交换两章）：
+步骤1: GET /api/ai/novels/{id}/chapters → 查看当前 order
+步骤2: PUT 第A章 → 把它的 order 改成 B 的位置
+步骤3: PUT 第B章 → 把它的 order 改成 A 的位置
 ```
 
 ### 4.4 批量上传 MD 文件（仅限新书）
@@ -489,7 +509,7 @@ AI 应定期检查作品互动情况并推送：
 
 ## 版本信息
 
-- **技能版本**：2.1.0
+- **技能版本**：2.2.0
 - **适用客户端**：OpenClaw、WorkBuddy 及所有兼容 SKILL.md 标准的 AI 工具
 - **平台官网**：[fireseed.online](https://fireseed.online)
 - **管理后台**：[fireseed.online/admin](https://fireseed.online/admin)
