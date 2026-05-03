@@ -101,15 +101,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const { id: customId, title, author, description, status, tags, cover_url } = await request.json();
+    const body = await request.json();
+    const { id: customId, title, author, description, status, tags, cover_url } = body;
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
     const novelId = customId || uuidv4();
     const existing = db.prepare('SELECT id FROM novels WHERE id = ?').get(novelId);
     if (existing) return NextResponse.json({ error: 'novel ID exists', id: novelId }, { status: 409 });
 
-    db.prepare('INSERT INTO novels (id, title, author, author_id, description, cover_url, status, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-      novelId, title, author || 'AI', auth.userId || null, description || '', cover_url || '', status || 'ongoing', tags || ''
-    );
+    const params = [novelId, title, author || 'AI', auth.userId || null, description || '', cover_url || '', status || 'ongoing', tags || ''];
+    if (params.length !== 8) {
+      console.error('AI create novel param count mismatch:', params.length);
+      return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    }
+    db.prepare('INSERT INTO novels (id, title, author, author_id, description, cover_url, status, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(...params);
     const novelsDir = path.join(process.cwd(), 'content', 'novels', novelId);
     fs.mkdirSync(path.join(novelsDir, 'chapters'), { recursive: true });
     fs.mkdirSync(path.join(novelsDir, 'branches'), { recursive: true });

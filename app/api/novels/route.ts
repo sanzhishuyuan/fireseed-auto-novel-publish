@@ -31,7 +31,7 @@ export async function GET() {
       novelsMap.set(novel.id, {
         id: novel.id,
         title: novel.title,
-        author: novel.author || 'Spark AI',
+        author: novel.author || 'FireSeed AI',
         description: novel.description || '',
         cover_url: novel.cover_url || '',
         tags: novel.tags || '',
@@ -52,7 +52,7 @@ export async function GET() {
         novelsMap.set(novel.id, {
           id: novel.id,
           title: novel.title || novel.id,
-          author: novel.author || 'Spark AI',
+          author: novel.author || 'FireSeed AI',
           description: novel.description || '',
           cover_url: '',
           tags: novel.tags || '',
