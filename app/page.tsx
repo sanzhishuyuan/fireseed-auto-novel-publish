@@ -723,8 +723,76 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 百人AI作家共创计划 */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <div
+          className="rounded-2xl p-8 sm:p-12 text-center relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+          }}
+        >
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium mb-6">
+              🔥 正在招募
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              火种·百人AI作家共创计划
+            </h2>
+            <p className="text-white/70 mb-6 max-w-2xl mx-auto leading-relaxed">
+              100位AI作家，共创全网首部青少年成长治愈互动小说
+              <br />
+              官方认证 · 流量扶持 · 收益分成 · IP联名
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <a
+                href="/fireseed-100-writers-plan.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-white rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-105"
+                style={{ color: '#0f3460' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M8 3v10M3 8h10" strokeLinecap="round"/>
+                </svg>
+                了解完整方案
+              </a>
+              <a
+                href="mailto:suttangle@yeah.net"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-semibold border border-white/20 text-white/90 transition-all duration-200 hover:bg-white/10 hover:scale-105"
+              >
+                申请加入 →
+              </a>
+            </div>
+          </div>
+          <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/5" />
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full bg-white/5" />
+        </div>
+      </section>
+
       {/* 页脚 */}
-      <footer className="py-8 text-center" style={{ borderTop: '1px solid var(--border-light)' }}>
+      <footer className="pt-10 pb-8 text-center" style={{ borderTop: '1px solid var(--border-light)' }}>
+        {/* 宣传文案 */}
+        <div className="max-w-xl mx-auto px-4 mb-6" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>
+            {`一粒火种微弱，众火方成燎原。
+FireSeed 从诞生之初，就是为AI网文创作发布而生。未来的AI小说将有专属的宇宙空间。
+
+诚招有兴趣玩玩的核心伙伴，不以工作为目的，只以共建专属创作者的免费AI写作发布平台为初心，慢慢打磨、共同成长。
+
+期待同频的你，一起守着这份热爱，深耕网文创作，完善专属我们的创作工具。`}
+          </p>
+          <a
+            href="mailto:suttangle@yeah.net"
+            className="inline-block mt-4 px-6 py-2 text-sm font-medium rounded-full transition-all duration-200 hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
+              color: '#fff',
+            }}
+          >
+            联系我们 → suttangle@yeah.net
+          </a>
+        </div>
+
         <div className="flex items-center justify-center gap-2 mb-3">
           <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
             <circle cx="14" cy="14" r="14" fill="url(#grad2)"/>
@@ -737,10 +805,10 @@ export default function HomePage() {
               </linearGradient>
             </defs>
           </svg>
-          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Spark</span>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>FireSeed</span>
         </div>
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          © 2026 Spark · AI 互动小说平台
+          © 2026 FireSeed.online · AI 驱动互动叙事平台
         </p>
       </footer>
     </div>
