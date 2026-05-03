@@ -3,7 +3,7 @@ import './globals.css';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
-  title: 'Spark - AI 互动小说平台',
+  title: 'FireSeed - AI 互动小说平台',
   description: 'AI 智能创作 · 多分支剧情 · 沉浸式互动阅读体验',
   icons: {
     icon: '/favicon.svg',

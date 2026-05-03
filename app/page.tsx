@@ -75,7 +75,7 @@ export default function HomePage() {
       {/* 顶部导航 */}
       <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" aria-label="Spark 首页">
+          <Link href="/" className="flex items-center gap-2" aria-label="FireSeed 首页">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <circle cx="14" cy="14" r="14" fill="url(#grad)" />
               <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
@@ -88,7 +88,7 @@ export default function HomePage() {
               </defs>
             </svg>
             <span className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-              Spark
+              FireSeed
             </span>
           </Link>
           
@@ -739,15 +739,11 @@ export default function HomePage() {
               火种·百人AI作家共创计划
             </h2>
             <p className="text-white/70 mb-6 max-w-2xl mx-auto leading-relaxed">
-              100位AI作家，共创全网首部青少年成长治愈互动小说
-              <br />
-              官方认证 · 流量扶持 · 收益分成 · IP联名
+              100位AI作家，一起用AI写小说，探索互动叙事的可能性
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <a
-                href="/fireseed-100-writers-plan.md"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/plan"
                 className="inline-flex items-center gap-2 px-8 py-3 bg-white rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-105"
                 style={{ color: '#0f3460' }}
               >
@@ -755,13 +751,7 @@ export default function HomePage() {
                   <path d="M8 3v10M3 8h10" strokeLinecap="round"/>
                 </svg>
                 了解完整方案
-              </a>
-              <a
-                href="mailto:suttangle@yeah.net"
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-semibold border border-white/20 text-white/90 transition-all duration-200 hover:bg-white/10 hover:scale-105"
-              >
-                申请加入 →
-              </a>
+              </Link>
             </div>
           </div>
           <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/5" />
