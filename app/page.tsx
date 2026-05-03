@@ -240,45 +240,45 @@ export default function HomePage() {
       </section>
 
       {/* Hero 区域 */}
-      <section className="relative overflow-hidden py-16 sm:py-24">
+      <section className="relative overflow-hidden py-8 sm:py-12">
         <div
           className="absolute inset-0 opacity-20"
           style={{
             background: 'radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent)'
           }}
         />
-        <div className="hidden sm:block absolute top-1/4 left-1/4 w-48 h-48 rounded-full opacity-10" style={{ background: 'var(--accent)', filter: 'blur(40px)' }} />
-        <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-32 h-32 rounded-full opacity-10" style={{ background: 'var(--accent-light)', filter: 'blur(40px)' }} />
+        <div className="hidden sm:block absolute top-1/4 left-1/4 w-32 h-32 rounded-full opacity-10" style={{ background: 'var(--accent)', filter: 'blur(40px)' }} />
+        <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-24 h-24 rounded-full opacity-10" style={{ background: 'var(--accent-light)', filter: 'blur(40px)' }} />
 
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-4"
             style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
               <circle cx="6" cy="6" r="6"/>
             </svg>
             AI 驱动 · 互动叙事
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 leading-tight">
             每一个选择
             <br />
             <span className="text-gradient">改写故事结局</span>
           </h1>
 
-          <p className="text-lg sm:text-xl mb-10 max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm sm:text-base mb-6 max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
             在这里，你的选择将影响故事走向。AI 生成的分支剧情，每一次阅读都是独一无二的冒险。
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/novels" className="btn-primary text-base px-8 py-3">
+            <Link href="/novels" className="btn-primary text-sm px-6 py-2.5">
               开始探索
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </Link>
-            <Link href="/auth/register" className="btn-secondary text-base px-8 py-3">
+            <Link href="/auth/register" className="btn-secondary text-sm px-6 py-2.5">
               免费注册
             </Link>
           </div>
