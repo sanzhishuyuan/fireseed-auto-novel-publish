@@ -14,7 +14,7 @@ trigger:
   - 更新章节
 ---
 
-# 火种小说创作技能 v2.3
+# 火种小说创作技能 v2.4
 
 > 适配 OpenClaw / WorkBuddy · 平台 [fireseed.online](https://fireseed.online)
 
@@ -138,6 +138,11 @@ Content-Type: application/json
 
 > ⚠️ **`order` 必须传。如果不传，服务器会自动取当前最大 order + 1（追加到末尾），但技能要求每次都显式传 `order` 以明确章节位置。**
 >
+> 📏 **每章字数要求：3000~5000 字（去除空白字符后）。**
+> - 少于 3000 字 → 服务器返回 400 错误：「章节字数不足」
+> - 超过 5000 字 → 服务器返回 400 错误：「章节字数过多」
+> - **请确保 AI 生成的每章内容充实，达到最低字数门槛。** 3000 字约等于一个完整情节推进 + 细节描写的体量。建议按「开篇钩子→冲突展开→细节描写→转折收尾」的结构组织内容。
+>
 > 🔄 **自动后移**：当插入的 order 与现有章节冲突时，服务器会自动将目标位置及之后的章节顺序后移。例如当前有 order=1,2,3，插入 order=2 的新章后，原有 2→3, 3→4，新章占 2。**插入中间章节永远安全，不会覆盖或弄乱顺序。**
 
 **order 取值规则**：
@@ -180,6 +185,8 @@ Content-Type: application/json
 }
 ```
 返回：`{ "success": true, "chapter": { "id": "...", "title": "...", "word_count": 1234 } }`
+
+> 📏 **字数约束同 3.4**：修改内容也需满足 3000~5000 字的范围，字数不足或过多都会被拒绝。
 
 > **调整章节顺序的方法**：修改 `order` 即可。例如第3章想移到第2章位置，把它的 order 改成 2，再把原第2章的 order 改成 3。多次调用 PUT 实现任意重排。
 
@@ -353,8 +360,8 @@ Content-Type: application/json
 步骤1: 用户说「创作《xxx》并发布」
 步骤2: AI 获取/确认 Token
 步骤3: POST /api/ai/novels → 创建小说 → 拿到 novel_id
-步骤4: 逐章生成内容
-步骤5: POST /api/ai/novels/{id}/chapters → 逐章发布
+步骤4: 逐章生成内容（**每章确保 3000~5000 字**）
+步骤5: POST /api/ai/novels/{id}/chapters → 逐章发布（字数不足会被拒绝）
 步骤6: POST /api/novels/{id}/cover → 上传封面（可选）
 步骤7: 告知用户阅读链接
 ```
@@ -364,7 +371,7 @@ Content-Type: application/json
 步骤1: 用户说「给《xxx》写第四章」
 步骤2: GET /api/ai/novels → 搜索找到小说 → 拿到 novel_id
 步骤3: GET /api/ai/novels/{id}/chapters → 查看章节列表，找到当前最大 order
-步骤4: 生成新章节内容，order = 当前最大 order + 1
+步骤4: 生成新章节内容（**确保 3000~5000 字**），order = 当前最大 order + 1
 步骤5: POST /api/ai/novels/{id}/chapters → 发布，order 必传
 ```
 > 注意：不传 order 虽然服务器会追加到末尾（自动取 max+1），但**技能要求每次都显式传正确的 order**，确保代码可读性和结果可控。
@@ -389,6 +396,7 @@ Content-Type: application/json
 步骤2: POST /api/ai/novels/upload-md → 一次性创建小说+发布全部章节
 ```
 > ⚠️ upload-md 每次创建新书，不能追加到已有小说。
+> 📏 upload-md 同样会逐章检查字数，每章均需满足 3000~5000 字。
 
 ### 4.5 添加封面
 ```
@@ -477,6 +485,8 @@ Content-Type: application/json
 - 所有 API 请求以 **`https://fireseed.online`** 为 Base URL
 - 认证方式：`Authorization: Bearer` 头部 或 body 中的 `token` 字段，二选一
 - `upload-md` 每次创建新小说，**不支持追加**；追加请用 chapters API
+- 📏 **每章字数严格限制在 3000~5000 字**（去除空白字符），字数不足或过多服务器会直接拒绝
+- 💡 **内容质量标准**：单章应包含情节推进、细节描写和情感转折，避免空洞的水字数。3000 字的最低门槛确保了读者能获得充实的阅读体验
 
 ---
 
@@ -489,7 +499,7 @@ Content-Type: application/json
 AI 加载本技能后，**必须立即**执行以下两步：
 
 ```text
-步骤1: GET /api/ai/skill/ping?version=2.2.0
+步骤1: GET /api/ai/skill/ping?version=2.4.0
        → 记录本次技能激活，获取用户状态
 
 步骤2: GET /api/ai/skill/feed
@@ -509,6 +519,10 @@ AI 加载本技能后，**必须立即**执行以下两步：
 
 流失用户（30天未活跃）→ 优先推送：
   「⏰ 你的作品还在连载中」
+
+所有用户都可能收到（type=update_notice）：
+  「🔄 技能版本更新提醒」
+  当有新版本发布时，建议推送此任务给用户
 ```
 
 ### 9.2 创作完成后（必做）
@@ -542,6 +556,31 @@ AI 加载本技能后，**必须立即**执行以下两步：
 🔗 阅读链接：{reader_url}
 📊 当前：{章节数}章 / {总字数}字
 💬 快去看看，也可以分享给朋友！
+```
+
+### 9.5 技能版本更新提醒
+
+> 🔄 feed 可能返回 `type: "update_notice"` 的任务，AI 应在合适时机通知用户。
+
+当用户主动询问「技能更新」「有什么新功能」「版本号多少」时，AI **必须**引导用户关注以下官方更新源：
+
+| 平台 | 地址 | 说明 |
+|------|------|------|
+| 📦 **ClawHub** | `fireseed-novel-auto-publish` | 技能发布主站，直接搜索安装最新版 |
+| 🐙 **GitHub** | [sanzhishuyuan/fireseed-auto-novel-publish](https://github.com/sanzhishuyuan/fireseed-auto-novel-publish) | 开源仓库，发布记录与变更日志 |
+| 🐉 **Gitee** | [topofthesky/ai-novel-skill](https://gitee.com/topofthesky/ai-novel-skill) | 国内镜像，同步更新 |
+| 🌐 **平台官网** | [fireseed.online/plan](https://fireseed.online/plan) | 平台公告与创作计划 |
+
+**推送话术参考：**
+```text
+🔄 技能版本更新提醒
+
+当前版本：2.4.0
+更新方式：
+1. ClawHub：搜索安装「fireseed-novel-auto-publish」
+2. GitHub / Gitee：查看开源仓库的 Release
+
+📢 新功能与修复会定期发布在以上渠道，建议关注！
 ```
 
 ---
@@ -598,7 +637,7 @@ AI 应定期检查作品互动情况并推送：
 
 ## 版本信息
 
-- **技能版本**：2.3.1
+- **技能版本**：2.4.0
 - **适用客户端**：OpenClaw、WorkBuddy 及所有兼容 SKILL.md 标准的 AI 工具
 - **平台官网**：[fireseed.online](https://fireseed.online)
 - **管理后台**：[fireseed.online/admin](https://fireseed.online/admin)
