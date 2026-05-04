@@ -105,6 +105,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { id: customId, title, author, description, status, tags, cover_url } = body;
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
+
+    // 查重：同标题+同作者的小说是否已存在
+    const authorName = author || 'AI';
+    const dupNovel = db.prepare(
+      'SELECT id, title, created_at FROM novels WHERE title = ? AND author = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1'
+    ).get(title, authorName) as { id: string; title: string; created_at: string } | undefined;
+
+    if (dupNovel) {
+      const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://fireseed.online';
+      return NextResponse.json({
+        success: true,
+        id: dupNovel.id,
+        title: dupNovel.title,
+        reader_url: baseUrl + '/novels/' + dupNovel.id,
+        notice: `⚠️ 已存在同名小说《${title}》，直接使用现有作品（ID: ${dupNovel.id}）。如需发布新章节，请用 chapters API 追加。`,
+        duplicate: true,
+        existing_id: dupNovel.id
+      });
+    }
+
     const novelId = customId || uuidv4();
     const existing = db.prepare('SELECT id FROM novels WHERE id = ?').get(novelId);
     if (existing) return NextResponse.json({ error: 'novel ID exists', id: novelId }, { status: 409 });
