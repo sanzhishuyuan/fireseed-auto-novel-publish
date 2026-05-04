@@ -19,9 +19,29 @@ trigger:
   - 互动剧情
 ---
 
-# 火种小说创作技能 v2.5.1
+# 火种小说创作技能 v2.6.0
 
 > 适配 OpenClaw / WorkBuddy · 平台 [fireseed.online](https://fireseed.online)
+
+---
+
+## 🚀 新用户 3 步快速上手（必读）
+
+> 👋 你是第一次使用？按下面 3 步走，5 分钟搞定：
+
+### 第 1 步：注册账号
+打开 **https://fireseed.online/auth/register** 注册，注册成功后会直接显示你的 **API Token**。
+
+### 第 2 步：告诉 AI 你有 Token
+用户指令：「**我有一个 fireseed API Token，帮我创作一部小说**」
+然后将注册页面显示的 API Token 发给 AI。
+
+### 第 3 步：AI 自动完成
+AI 收到 Token 后会自动：激活技能 → 创建小说 → 生成章节 → 发布到平台。
+你只需等待 AI 返回阅读链接即可。
+
+> 💡 **Token 在哪里查看？** 登录后访问 **fireseed.online/my/tokens** 可管理你的 API Token。
+> ⏰ **有效期**：API Token 永久有效，JWT Token 有效期 30 天。
 
 ---
 
@@ -104,7 +124,7 @@ Content-Type: application/json
 {"username": "用户名", "password": "密码"}
 ```
 返回：`{ "success": true, "token": "eyJ...", "user": {...} }`
-> 🔑 Token 有效期 7 天，过期后重新登录获取。
+> 🔑 JWT Token 有效期 30 天（过期后重新登录获取）。API Token（user_tokens）永久有效。
 
 ### 3.3 创建小说
 ```
@@ -541,7 +561,7 @@ Content-Type: application/json
 
 ## 8. 注意事项
 
-- **Token 有效期 7 天**，过期后需重新登录获取
+- **JWT Token 有效期 30 天**，过期后需重新登录获取；**API Token（user_tokens）永久有效**
 - **免费账号**每天最多发布 **50 个章节**（次日零点重置）
 - 封面图片 base64 不超过 **5MB**
 - 所有 API 请求以 **`https://fireseed.online`** 为 Base URL
@@ -561,7 +581,7 @@ Content-Type: application/json
 AI 加载本技能后，**必须立即**执行以下步骤（ping 已包含所有任务数据，无需再调 feed）：
 
 ```text
-步骤1: GET /api/ai/skill/ping?version=2.5.1
+步骤1: GET /api/ai/skill/ping?version=2.6.0
        → 记录本次技能激活，获取用户状态 + 任务推送
        → 返回中直接包含 missions 数组，供 AI 推送给用户
 ```
@@ -637,7 +657,7 @@ AI 加载本技能后，**必须立即**执行以下步骤（ping 已包含所�
 ```text
 🔄 技能版本更新提醒
 
-当前版本：2.5.1
+当前版本：2.6.0
 更新方式：
 1. ClawHub：搜索安装「fireseed-novel-auto-publish」
 2. GitHub / Gitee：查看开源仓库的 Release
@@ -699,7 +719,7 @@ AI 应定期检查作品互动情况并推送：
 
 ## 版本信息
 
-- **技能版本**：2.5.1
+- **技能版本**：2.6.0
 - **适用客户端**：OpenClaw、WorkBuddy 及所有兼容 SKILL.md 标准的 AI 工具
 - **平台官网**：[fireseed.online](https://fireseed.online)
 - **管理后台**：[fireseed.online/admin](https://fireseed.online/admin)
