@@ -35,8 +35,8 @@ export default function DownloadPage() {
       name: 'ClawHub 命令行',
       desc: '一行命令安装，自动保持最新',
       cmd: 'npx clawhub install fireseed-novel-auto-publish',
-      link: 'https://clawhub.ai',
-      linkText: 'ClawHub 搜索安装 →'
+      link: 'https://clawhub.ai/sanzhishuyuan/fireseed-novel-auto-publish',
+      linkText: 'ClawHub 直接跳转 →'
     },
     {
       id: 'gitee-clone',
