@@ -33,9 +33,23 @@ export async function GET() {
   const eventsToday = (db.prepare("SELECT COUNT(*) as c FROM skill_events WHERE date(created_at) = date('now')").get() as { c: number }).c;
   const totalNovels = (db.prepare('SELECT COUNT(*) as c FROM novels WHERE deleted_at IS NULL').get() as { c: number }).c;
 
+  // 最近活跃用户（每个用户最近一次激活时间，取100个）
+  const activeUsers = db.prepare(`
+    SELECT u.id, u.username, u.nickname, u.created_at as registered_at,
+      MAX(sa.created_at) as last_active_at,
+      COUNT(sa.id) as activation_count,
+      (SELECT COUNT(*) FROM novels WHERE author_id = u.id AND deleted_at IS NULL) as novels_count
+    FROM skill_activations sa
+    JOIN users u ON sa.user_id = u.id
+    GROUP BY u.id
+    ORDER BY last_active_at DESC
+    LIMIT 100
+  `).all() as any[];
+
   return NextResponse.json({
     missions,
     activationStats: { total, today, this_week: thisWeek, by_version: byVersion, recent, totalUsers, authorsWithNovels: usersWithNovels, eventsToday },
+    activeUsers,
     conversion: {
       totalUsers,
       usersWithNovels,

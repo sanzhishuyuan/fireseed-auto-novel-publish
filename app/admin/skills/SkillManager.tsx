@@ -28,6 +28,7 @@ interface ActivationStats {
 interface Props {
   missions: Mission[];
   activationStats: ActivationStats;
+  activeUsers?: any[];
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -44,7 +45,7 @@ const FILTER_LABELS: Record<string, string> = {
   inactive: '流失用户',
 };
 
-export default function SkillManager({ missions, activationStats }: Props) {
+export default function SkillManager({ missions, activationStats, activeUsers }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<'missions' | 'activations'>('missions');
   const [showForm, setShowForm] = useState(false);
@@ -297,6 +298,47 @@ export default function SkillManager({ missions, activationStats }: Props) {
                         <td className="px-4 py-3" style={{ color: 'var(--text-primary)' }}>{a.username || a.user_id?.substring(0, 12) + '...'}</td>
                         <td className="px-4 py-3"><span className="badge">{a.skill_version}</span></td>
                         <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{a.client_type || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* 最近活跃用户 */}
+          <div className="card overflow-hidden">
+            <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-light)' }}>
+              <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>👥 最近活跃用户（{activeUsers?.length || 0}个）</h2>
+            </div>
+            {!activeUsers || activeUsers.length === 0 ? (
+              <div className="px-5 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>暂无活跃用户</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户名</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>昵称</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>最近活跃</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>激活次数</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作品数</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>注册时间</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeUsers.map((u: any) => (
+                      <tr key={u.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{u.username}</td>
+                        <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{u.nickname || '-'}</td>
+                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--accent)' }}>{new Date(u.last_active_at).toLocaleString('zh-CN')}</td>
+                        <td className="px-4 py-3"><span className="badge">{u.activation_count}</span></td>
+                        <td className="px-4 py-3">
+                          <span className={`badge ${parseInt(u.novels_count) > 0 ? 'bg-green-100 text-green-700' : ''}`}>
+                            {u.novels_count}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(u.registered_at).toLocaleString('zh-CN')}</td>
                       </tr>
                     ))}
                   </tbody>

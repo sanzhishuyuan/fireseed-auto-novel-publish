@@ -52,7 +52,7 @@ export default function EnhancedAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cleaningUp, setCleaningUp] = useState(false);
-  const [skillData, setSkillData] = useState<{ missions: any[]; activationStats: any } | null>(null);
+  const [skillData, setSkillData] = useState<{ missions: any[]; activationStats: any; activeUsers?: any[] } | null>(null);
   const [skillExpanded, setSkillExpanded] = useState(true);
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export default function EnhancedAdminDashboard() {
 
       if (skillRes.ok) {
         const skillData = await skillRes.json();
-        setSkillData({ missions: skillData.missions, activationStats: skillData.activationStats });
+        setSkillData({ missions: skillData.missions, activationStats: skillData.activationStats, activeUsers: skillData.activeUsers });
       }
     } catch (err) {
       setError('加载数据失败');
@@ -231,7 +231,7 @@ export default function EnhancedAdminDashboard() {
             </div>
           </div>
           {skillExpanded && skillData && (
-            <SkillManager missions={skillData.missions} activationStats={skillData.activationStats} />
+            <SkillManager missions={skillData.missions} activationStats={skillData.activationStats} activeUsers={skillData.activeUsers} />
           )}
           {skillExpanded && !skillData && (
             <div className="card p-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
