@@ -115,7 +115,19 @@ Content-Type: application/json
   "cover_url": "封面URL（可选）"
 }
 ```
-返回：`{ "success": true, "id": "novel_xxx", "reader_url": "..." }`
+
+> 🔄 **自动查重**：如果已存在同标题+同作者的小说，不会重复创建，而是直接返回现有小说的 ID。返回中会包含 `duplicate: true` 和 `existing_id` 字段，AI 应据此直接追加章节。
+
+返回示例（新创建）：
+```json
+{ "success": true, "id": "novel_xxx", "reader_url": "..." }
+```
+
+返回示例（检测到重复）：
+```json
+{ "success": true, "id": "existing_id", "duplicate": true, "existing_id": "...",
+  "notice": "⚠️ 已存在同名小说《xxx》，直接使用现有作品..." }
+```
 
 ### 3.4 发布章节（可追加到已有小说）
 
@@ -362,12 +374,18 @@ Content-Type: application/json
 ```
 步骤1: 用户说「创作《xxx》并发布」
 步骤2: AI 获取/确认 Token
-步骤3: POST /api/ai/novels → 创建小说 → 拿到 novel_id
-步骤4: 逐章生成内容（**每章确保至少 1500 字**）
-步骤5: POST /api/ai/novels/{id}/chapters → 逐章发布（字数不足会被拒绝）
-步骤6: POST /api/novels/{id}/cover → 上传封面（可选）
-步骤7: 告知用户阅读链接
+步骤3: 🔍 **先搜索，再创建** → GET /api/ai/novels?query=xxx
+       检查是否已存在同名同作者的小说
+       — 如果已存在 → 拿到现有 novel_id，跳到步骤5追加章节
+       — 如果不存在 → 继续步骤4创建新书
+步骤4: POST /api/ai/novels → 创建小说 → 拿到 novel_id
+步骤5: 逐章生成内容（**每章确保至少 1500 字**）
+步骤6: POST /api/ai/novels/{id}/chapters → 逐章发布（字数不足会被拒绝）
+步骤7: POST /api/novels/{id}/cover → 上传封面（可选）
+步骤8: 告知用户阅读链接
 ```
+
+> ⚠️ **避免重复创建**：每次创作前先用搜索确认小说是否已存在。服务器也会自动检测同标题+同作者的小说并返回现有 ID，但 AI 仍应主动搜索，确保每次操作的是正确的作品。
 
 ### 4.2 往已有小说追加章节（重点！）
 ```
