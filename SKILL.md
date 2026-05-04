@@ -316,17 +316,21 @@ POST /api/my/deleted-novels
 
 ### 3.15 技能激活心跳（加载技能时自动调用）
 ```bash
-GET /api/ai/skill/ping?version=2.2.0
+GET /api/ai/skill/ping?version=2.5.0
 Authorization: Bearer {token}
 ```
-返回：
+返回包含任务推送数据（AI 可直接展示给用户）：
 ```json
 {
   "success": true,
   "user_status": "new_user",
   "novels_count": 0,
-  "last_active_days": -1,
-  "server_time": "2026-05-03T..."
+  "username": "xxx",
+  "missions": [
+    { "type": "new_user_guide", "title": "🎯 创作你的第一部作品", "description": "...", "emoji": "🎯" }
+  ],
+  "notice": "📊 已有 N 部作品、M 位作者入驻 FireSeed！",
+  "stats": { "total_novels": 10, "total_users": 13 }
 }
 ```
 
@@ -531,15 +535,15 @@ Content-Type: application/json
 
 ### 9.1 技能加载时（必做）
 
-AI 加载本技能后，**必须立即**执行以下两步：
+AI 加载本技能后，**必须立即**执行以下步骤（ping 已包含所有任务数据，无需再调 feed）：
 
 ```text
-步骤1: GET /api/ai/skill/ping?version=2.4.0
-       → 记录本次技能激活，获取用户状态
-
-步骤2: GET /api/ai/skill/feed
-       → 获取平台动态和个性任务列表
+步骤1: GET /api/ai/skill/ping?version=2.5.0
+       → 记录本次技能激活，获取用户状态 + 任务推送
+       → 返回中直接包含 missions 数组，供 AI 推送给用户
 ```
+
+> 💡 ping 的返回中已包含 `missions`、`notice`、`stats` 数据，**大多数场景不需要再单独调 feed**。feed 仅在用户主动问「有什么推荐」「最近有什么活动」时作为补充调用。
 
 根据返回的 `missions`，选择 **1-2 条最相关**的任务主动推送给用户：
 
