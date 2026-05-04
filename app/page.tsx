@@ -724,9 +724,10 @@ export default function HomePage() {
         <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/5" />
       </section>
 
-      {/* 手机扫码访问 */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12">
+      {/* 双二维码并排：网站 + QQ频道 */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 pb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12">
+          {/* 网站二维码 */}
           <div className="text-center">
             <div
               className="inline-block rounded-2xl p-3 mb-3"
@@ -748,20 +749,8 @@ export default function HomePage() {
               浏览器或微信扫一扫，手机直接看
             </p>
           </div>
-          <div className="text-center sm:text-left">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              随时随地，打开手机就能读
-            </p>
-            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-              AI 驱动 · 互动叙事 · 你的选择改写故事结局
-            </p>
-          </div>
-        </div>
-      </section>
 
-      {/* QQ频道 - 火种宇宙 */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12">
+          {/* QQ频道二维码 */}
           <div className="text-center">
             <div
               className="inline-block rounded-2xl p-3 mb-3"
