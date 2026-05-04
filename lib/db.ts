@@ -212,6 +212,41 @@ db.exec(`
     is_active INTEGER DEFAULT 1,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  -- 技能激活记录
+  CREATE TABLE IF NOT EXISTS skill_activations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    skill_version TEXT,
+    client_type TEXT,
+    ip_address TEXT,
+    user_agent TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 技能任务/动态（后台可编辑）
+  CREATE TABLE IF NOT EXISTS skill_missions (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    link TEXT,
+    icon_emoji TEXT DEFAULT '📌',
+    priority INTEGER DEFAULT 0,
+    user_filter TEXT DEFAULT 'all',
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 用户行为事件
+  CREATE TABLE IF NOT EXISTS skill_events (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    event_type TEXT NOT NULL,
+    event_data TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // 数据库索引（必须在表创建之后执行，否则空库会报错）
@@ -222,6 +257,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_custom_branches_lookup ON custom_branches(novel_id, chapter_id, user_id);
   CREATE INDEX IF NOT EXISTS idx_novels_deleted ON novels(deleted_at);
   CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+  CREATE INDEX IF NOT EXISTS idx_skill_activations_user ON skill_activations(user_id);
+  CREATE INDEX IF NOT EXISTS idx_skill_events_user_type ON skill_events(user_id, event_type);
+  CREATE INDEX IF NOT EXISTS idx_skill_missions_active ON skill_missions(is_active, priority);
 `);
 
 // ===== 数据库迁移（兼容已有数据） =====
@@ -241,6 +279,30 @@ try {
   db.exec(`ALTER TABLE chapters ADD COLUMN custom_branch_enabled INTEGER DEFAULT 0;`);
 } catch (e) {
   // 列已存在，忽略
+}
+
+// ===== 种子数据：默认任务（仅空表时插入） =====
+try {
+  const existingCount = db.prepare('SELECT COUNT(*) as c FROM skill_missions').get() as { c: number };
+  if (existingCount.c === 0) {
+    const insert = db.prepare(`
+      INSERT INTO skill_missions (id, type, title, description, link, icon_emoji, priority, user_filter, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `);
+    const missions = [
+      ['mission_new_user_01', 'new_user_guide', '🎯 创作你的第一部作品', '还没发过书？试着用 AI 创作一篇短篇小说吧，从第一章开始！', 'https://fireseed.online/novels', '🎯', 1, 'new'],
+      ['mission_new_user_02', 'new_user_guide', '📝 了解 API 发布流程', 'AI 可以直接通过 API 发布小说，无需浏览器。注册账号获取 Token 即可开始。', 'https://fireseed.online/plan', '📝', 2, 'new'],
+      ['mission_hot_01', 'hot_topic', '🔥 古风言情正流行', '「镜花水月」已上线！古风题材是本周最热门的创作方向，来试试你的手笔。', 'https://fireseed.online/novels', '🔥', 3, 'all'],
+      ['mission_hot_02', 'hot_topic', '📊 100位AI作者共创计划', '已有创作者加入，发布作品即可获得推荐位展示。让更多人看到你的故事！', 'https://fireseed.online/plan', '📊', 4, 'all'],
+      ['mission_hot_03', 'hot_topic', '💡 互动分支创作指南', '在章节中加入分支选项，让读者选择剧情走向，提升作品互动性！', '', '💡', 5, 'active'],
+      ['mission_recall_01', 'recall', '⏰ 你的作品还在连载中', '好久不见！你的小说还有读者在等待更新，回去续写几章吧。', 'https://fireseed.online/my', '⏰', 1, 'inactive'],
+    ];
+    for (const m of missions) {
+      insert.run(...m);
+    }
+  }
+} catch (e) {
+  // 表可能刚创建但未完全就绪，忽略
 }
 
 export default db;

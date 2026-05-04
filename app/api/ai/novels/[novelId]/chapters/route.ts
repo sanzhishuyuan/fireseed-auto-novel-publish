@@ -116,7 +116,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
   
   try {
-    const { title, content, order, branch = 'main', choices = [], custom_branch_enabled = false } = body || {};
+    const { title, content, order: rawOrder, branch = 'main', choices = [], custom_branch_enabled = false } = body || {};
     
     // 验证必填字段
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
@@ -134,6 +134,22 @@ export async function POST(request: NextRequest, { params }: Params) {
     
     const novel = db.prepare('SELECT id FROM novels WHERE id = ?').get(novelId);
     if (!novel) return NextResponse.json({ error: 'novel not found' }, { status: 404 });
+
+    // 自动计算 order：不传时取当前最大 order_num + 1（避免默认插到第1章）
+    let order = rawOrder;
+    if (order === undefined) {
+      const maxRow = db.prepare(
+        'SELECT COALESCE(MAX(order_num), 0) as max_order FROM chapters WHERE novel_id = ? AND branch = ?'
+      ).get(novelId, branch) as { max_order: number };
+      order = maxRow.max_order + 1;
+    }
+
+    // 后移已有章节：把 >= 目标 order 的现有章节全部 +1，为新章腾位置
+    // 追加场景（order > 当前最大值）不受影响，因为没有行命中
+    db.prepare(`
+      UPDATE chapters SET order_num = order_num + 1
+      WHERE novel_id = ? AND branch = ? AND order_num >= ?
+    `).run(novelId, branch, order);
 
     const chapterId = String(order || Date.now()) + '-' + Date.now();
     const dbChapterId = uuidv4();

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import SkillManager from '../skills/SkillManager';
 
 interface AdminStats {
   overview: {
@@ -51,6 +52,8 @@ export default function EnhancedAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cleaningUp, setCleaningUp] = useState(false);
+  const [skillData, setSkillData] = useState<{ missions: any[]; activationStats: any } | null>(null);
+  const [skillExpanded, setSkillExpanded] = useState(true);
 
   useEffect(() => {
     fetchStats();
@@ -58,8 +61,13 @@ export default function EnhancedAdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      // 获取统计数据（依靠登录时设置的 admin_auth cookie 认证）
-      const statsRes = await fetch('/api/admin/stats');
+      // 并发获取统计数据、清理清单、技能数据
+      const [statsRes, cleanupRes, skillRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/cleanup'),
+        fetch('/api/admin/skill-dashboard'),
+      ]);
+      
       if (!statsRes.ok) {
         if (statsRes.status === 403) {
           router.push('/admin');
@@ -70,11 +78,14 @@ export default function EnhancedAdminDashboard() {
       const statsData = await statsRes.json();
       setStats(statsData.data);
 
-      // 获取待清理清单
-      const cleanupRes = await fetch('/api/admin/cleanup');
       if (cleanupRes.ok) {
         const cleanupData = await cleanupRes.json();
         setCleanupList(cleanupData.data?.ready_to_cleanup || []);
+      }
+
+      if (skillRes.ok) {
+        const skillData = await skillRes.json();
+        setSkillData({ missions: skillData.missions, activationStats: skillData.activationStats });
       }
     } catch (err) {
       setError('加载数据失败');
@@ -140,6 +151,7 @@ export default function EnhancedAdminDashboard() {
             <Link href="/admin/novels" className="btn-ghost text-sm">小说管理</Link>
             <Link href="/admin/chapters" className="btn-ghost text-sm">章节管理</Link>
             <Link href="/admin/tokens" className="btn-ghost text-sm">Token管理</Link>
+            <Link href="/admin/skills" className="btn-ghost text-sm">技能管理</Link>
             <button onClick={() => router.push('/admin')} className="btn-ghost text-sm">退出</button>
           </div>
         </div>
@@ -199,6 +211,34 @@ export default function EnhancedAdminDashboard() {
             <MiniStat label="今日字数" value={stats?.growth.newWordsToday || 0} displayValue={formatNumber(stats?.growth.newWordsToday || 0)} />
             <MiniStat label="今日API调用" value={stats?.apiUsage.callsToday || 0} />
           </div>
+        </div>
+
+        {/* 技能管理（任务编辑 + 激活监控）— 默认展开 */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>🤖 技能管理</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                转化: {skillData ? ((skillData.activationStats?.authorsWithNovels || 0) / Math.max(skillData.activationStats?.totalUsers || 1, 1) * 100).toFixed(1) : '?'}%
+              </span>
+              <Link href="/admin/skills" className="btn-ghost text-xs" target="_blank">新窗口打开</Link>
+              <button 
+                onClick={() => setSkillExpanded(!skillExpanded)}
+                className="btn-ghost text-xs px-2"
+              >
+                {skillExpanded ? '折叠' : '展开'}
+              </button>
+            </div>
+          </div>
+          {skillExpanded && skillData && (
+            <SkillManager missions={skillData.missions} activationStats={skillData.activationStats} />
+          )}
+          {skillExpanded && !skillData && (
+            <div className="card p-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+              <div className="w-6 h-6 border-2 rounded-full animate-spin mx-auto mb-3" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}></div>
+              加载技能数据...
+            </div>
+          )}
         </div>
 
         {/* 待处理任务 */}
@@ -330,6 +370,11 @@ export default function EnhancedAdminDashboard() {
               <p className="text-lg mb-1">🔑</p>
               <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Token管理</p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>AI授权管理</p>
+            </Link>
+            <Link href="/admin/skills" className="card p-4 hover:scale-[1.02] transition-transform">
+              <p className="text-lg mb-1">🤖</p>
+              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>技能管理</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>任务编辑 / 激活监控</p>
             </Link>
             <a href="/" target="_blank" className="card p-4 hover:scale-[1.02] transition-transform">
               <p className="text-lg mb-1">🌐</p>
