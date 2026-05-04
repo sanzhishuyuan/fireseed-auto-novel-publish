@@ -30,18 +30,21 @@ trigger:
 > 👋 你是第一次使用？按下面 3 步走，5 分钟搞定：
 
 ### 第 1 步：注册账号
-打开 **https://fireseed.online/auth/register** 注册，注册成功后会直接显示你的 **API Token**。
+打开 **https://fireseed.online/auth/register** 注册。
+注册成功后页面会显示你的 **用户名、密码、API Token**，点击「📋 一键复制全部」复制完整信息。
 
-### 第 2 步：告诉 AI 你有 Token
-用户指令：「**我有一个 fireseed API Token，帮我创作一部小说**」
-然后将注册页面显示的 API Token 发给 AI。
+### 第 2 步：粘贴给 AI
+把复制的内容直接粘贴给你的 AI（OpenClaw / WorkBuddy），内容已包含：
+- ✅ 你的账号凭证（用户名+密码+Token）
+- ✅ 技能安装源链接（如未安装，AI 会自动安装）
+- ✅ 创作指令（AI 会自动用技能创作并发布）
 
 ### 第 3 步：AI 自动完成
-AI 收到 Token 后会自动：激活技能 → 创建小说 → 生成章节 → 发布到平台。
+AI 收到信息后会按顺序：安装技能（如需要）→ 登录激活 → 创作小说 → 发布到平台。
 你只需等待 AI 返回阅读链接即可。
 
-> 💡 **Token 在哪里查看？** 登录后访问 **fireseed.online/my/tokens** 可管理你的 API Token。
-> ⏰ **有效期**：API Token 永久有效，JWT Token 有效期 30 天。
+> 💡 **Token 在哪里找回？** 登录后访问 **fireseed.online/my/settings** 查看你的 API Token。
+> ⏰ **有效期**：API Token 永久有效。如果泄露可在 settings 页删除重建。
 
 ---
 
