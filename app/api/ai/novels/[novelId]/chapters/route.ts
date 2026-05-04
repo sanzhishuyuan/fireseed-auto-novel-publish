@@ -126,20 +126,12 @@ export async function POST(request: NextRequest, { params }: Params) {
     const contentStr = String(content);
     // 计算实际字数（去除空白字符）
     const checkWordCount = contentStr.replace(/\s/g, '').length;
-    if (checkWordCount < 3000) {
+    if (checkWordCount < 1500) {
       return NextResponse.json({
         error: '章节字数不足',
-        detail: '每章至少 3000 字以保证阅读体验，当前字数：' + checkWordCount + '，建议充实内容',
+        detail: '单章至少 1500 字以保证阅读体验，当前字数：' + checkWordCount + '，建议充实内容后重试',
         current_word_count: checkWordCount,
-        minimum_required: 3000
-      }, { status: 400 });
-    }
-    if (checkWordCount > 5000) {
-      return NextResponse.json({
-        error: '章节字数过多',
-        detail: '每章建议不超过 5000 字，当前字数：' + checkWordCount + '，建议拆分为多章',
-        current_word_count: checkWordCount,
-        maximum_recommended: 5000
+        minimum_required: 1500
       }, { status: 400 });
     }
     

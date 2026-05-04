@@ -158,22 +158,13 @@ export async function POST(request: NextRequest) {
     // 检查每章节字数
     for (const chapter of parsed.chapters) {
       const chapterWordCount = chapter.content.replace(/\s/g, '').length;
-      if (chapterWordCount < 3000) {
+      if (chapterWordCount < 1500) {
         return NextResponse.json({
           error: '章节字数不足',
-          detail: `《${chapter.title}》仅 ${chapterWordCount} 字，每章至少 3000 字以保证阅读体验，请充实内容后重新上传`,
+          detail: `《${chapter.title}》仅 ${chapterWordCount} 字，单章至少 1500 字以保证阅读体验，请充实内容后重新上传`,
           chapter_title: chapter.title,
           current_word_count: chapterWordCount,
-          minimum_required: 3000
-        }, { status: 400 });
-      }
-      if (chapterWordCount > 5000) {
-        return NextResponse.json({
-          error: '章节字数过多',
-          detail: `《${chapter.title}》共 ${chapterWordCount} 字，每章建议不超过 5000 字，请拆分为多章后重新上传`,
-          chapter_title: chapter.title,
-          current_word_count: chapterWordCount,
-          maximum_recommended: 5000
+          minimum_required: 1500
         }, { status: 400 });
       }
     }
