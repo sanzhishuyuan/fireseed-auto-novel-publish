@@ -33,16 +33,26 @@ export async function GET() {
   const eventsToday = (db.prepare("SELECT COUNT(*) as c FROM skill_events WHERE date(created_at) = date('now')").get() as { c: number }).c;
   const totalNovels = (db.prepare('SELECT COUNT(*) as c FROM novels WHERE deleted_at IS NULL').get() as { c: number }).c;
 
-  // 最近活跃用户（每个用户最近一次激活时间，取100个）
+  // 最近活跃用户（技能激活 + 发书，取最近时间）
   const activeUsers = db.prepare(`
-    SELECT u.id, u.username, u.nickname, u.created_at as registered_at,
-      MAX(sa.created_at) as last_active_at,
-      COUNT(sa.id) as activation_count,
+    SELECT 
+      u.id, u.username, u.nickname, u.created_at as registered_at,
+      MAX(u_act.last_time) as last_activation_at,
+      (SELECT MAX(created_at) FROM novels WHERE author_id = u.id AND deleted_at IS NULL) as last_novel_at,
+      COALESCE(u_act.cnt, 0) as activation_count,
       (SELECT COUNT(*) FROM novels WHERE author_id = u.id AND deleted_at IS NULL) as novels_count
-    FROM skill_activations sa
-    JOIN users u ON sa.user_id = u.id
+    FROM users u
+    LEFT JOIN (
+      SELECT user_id, MAX(created_at) as last_time, COUNT(*) as cnt
+      FROM skill_activations GROUP BY user_id
+    ) u_act ON u.id = u_act.user_id
+    WHERE 
+      u_act.user_id IS NOT NULL 
+      OR EXISTS (SELECT 1 FROM novels WHERE author_id = u.id AND deleted_at IS NULL)
     GROUP BY u.id
-    ORDER BY last_active_at DESC
+    ORDER BY 
+      COALESCE(u_act.last_time, (SELECT MAX(created_at) FROM novels WHERE author_id = u.id AND deleted_at IS NULL)) DESC,
+      novels_count DESC
     LIMIT 100
   `).all() as any[];
 

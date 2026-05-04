@@ -331,7 +331,21 @@ export default function SkillManager({ missions, activationStats, activeUsers }:
                       <tr key={u.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                         <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{u.username}</td>
                         <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{u.nickname || '-'}</td>
-                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--accent)' }}>{new Date(u.last_active_at).toLocaleString('zh-CN')}</td>
+                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--accent)' }}>
+                          {(() => {
+                            const lastAct = u.last_activation_at ? new Date(u.last_activation_at) : null;
+                            const lastNovel = u.last_novel_at ? new Date(u.last_novel_at) : null;
+                            const latest = lastAct && lastNovel
+                              ? (lastAct > lastNovel ? lastAct : lastNovel)
+                              : (lastAct || lastNovel);
+                            const label = lastAct && lastNovel
+                              ? (lastAct > lastNovel ? '(激活)' : '(发书)')
+                              : lastAct ? '(激活)' : '(发书)';
+                            return latest
+                              ? latest.toLocaleString('zh-CN') + ' ' + label
+                              : '-';
+                          })()}
+                        </td>
                         <td className="px-4 py-3"><span className="badge">{u.activation_count}</span></td>
                         <td className="px-4 py-3">
                           <span className={`badge ${parseInt(u.novels_count) > 0 ? 'bg-green-100 text-green-700' : ''}`}>
