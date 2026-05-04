@@ -275,8 +275,11 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/novels" className="btn-primary text-sm px-6 py-2.5">
-              开始探索
+            <Link href="/download" className="btn-primary text-sm px-6 py-2.5">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M8 1v10M4 7l4 4 4-4M2 12v2h12v-2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              下载 AI 技能
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
