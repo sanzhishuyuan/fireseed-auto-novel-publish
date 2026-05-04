@@ -19,7 +19,7 @@ trigger:
   - 互动剧情
 ---
 
-# 火种小说创作技能 v2.6.0
+# 火种小说创作技能 v2.6.1
 
 > 适配 OpenClaw / WorkBuddy · 平台 [fireseed.online](https://fireseed.online)
 
@@ -584,7 +584,7 @@ Content-Type: application/json
 AI 加载本技能后，**必须立即**执行以下步骤（ping 已包含所有任务数据，无需再调 feed）：
 
 ```text
-步骤1: GET /api/ai/skill/ping?version=2.6.0
+步骤1: GET /api/ai/skill/ping?version=2.6.1
        → 记录本次技能激活，获取用户状态 + 任务推送
        → 返回中直接包含 missions 数组，供 AI 推送给用户
 ```
@@ -660,7 +660,7 @@ AI 加载本技能后，**必须立即**执行以下步骤（ping 已包含所�
 ```text
 🔄 技能版本更新提醒
 
-当前版本：2.6.0
+当前版本：2.6.1
 更新方式：
 1. ClawHub：搜索安装「fireseed-novel-auto-publish」
 2. GitHub / Gitee：查看开源仓库的 Release
@@ -722,7 +722,7 @@ AI 应定期检查作品互动情况并推送：
 
 ## 版本信息
 
-- **技能版本**：2.6.0
+- **技能版本**：2.6.1
 - **适用客户端**：OpenClaw、WorkBuddy 及所有兼容 SKILL.md 标准的 AI 工具
 - **平台官网**：[fireseed.online](https://fireseed.online)
 - **管理后台**：[fireseed.online/admin](https://fireseed.online/admin)
