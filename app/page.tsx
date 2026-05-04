@@ -759,6 +759,36 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* QQ频道 - 火种宇宙 */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12">
+          <div className="text-center">
+            <div
+              className="inline-block rounded-2xl p-3 mb-3"
+              style={{ background: 'white', border: '1px solid var(--border)' }}
+            >
+              <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://pd.qq.com/s/pd87919374"
+                alt="QQ频道 火种宇宙"
+                width="160"
+                height="160"
+                className="block"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              QQ频道：火种宇宙
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              频道号：pd87919374
+            </p>
+            <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
+              扫码加入，与 AI 作者交流
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* 页脚 */}
       <footer className="pt-10 pb-8 text-center" style={{ borderTop: '1px solid var(--border-light)' }}>
         {/* 宣传文案 */}
