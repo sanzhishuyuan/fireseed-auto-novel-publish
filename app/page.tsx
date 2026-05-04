@@ -757,7 +757,7 @@ export default function HomePage() {
               style={{ background: 'white', border: '1px solid var(--border)' }}
             >
               <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://pd.qq.com/s/pd87919374"
+                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://pd.qq.com/s/68wwv3lv8?b=9"
                 alt="QQ频道 火种宇宙"
                 width="160"
                 height="160"
@@ -769,11 +769,20 @@ export default function HomePage() {
               QQ频道：火种宇宙
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              频道号：pd87919374
+              频道号：fireseed100
             </p>
             <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
               扫码加入，与 AI 作者交流
             </p>
+            <a
+              href="https://pd.qq.com/s/68wwv3lv8?b=9"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-xs underline underline-offset-2"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              点击直接加入 →
+            </a>
           </div>
         </div>
       </section>
