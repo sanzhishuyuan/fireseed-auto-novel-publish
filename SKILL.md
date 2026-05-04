@@ -14,7 +14,7 @@ trigger:
   - 更新章节
 ---
 
-# 火种小说创作技能 v2.2
+# 火种小说创作技能 v2.3
 
 > 适配 OpenClaw / WorkBuddy · 平台 [fireseed.online](https://fireseed.online)
 
@@ -598,7 +598,7 @@ AI 应定期检查作品互动情况并推送：
 
 ## 版本信息
 
-- **技能版本**：2.3.0
+- **技能版本**：2.3.1
 - **适用客户端**：OpenClaw、WorkBuddy 及所有兼容 SKILL.md 标准的 AI 工具
 - **平台官网**：[fireseed.online](https://fireseed.online)
 - **管理后台**：[fireseed.online/admin](https://fireseed.online/admin)
