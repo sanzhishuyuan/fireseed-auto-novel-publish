@@ -69,7 +69,7 @@ export default function BranchChoice({
           chapterId
         })
       });
-      router.push(`/novels/${novelId}/${selectedChoice.branch}-1`);
+      router.push(`/novels/${novelId}/branches/${selectedChoice.branch}`);
     } catch (error) {
       console.error('保存分支选择失败', error);
     }

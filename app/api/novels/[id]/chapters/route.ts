@@ -18,9 +18,9 @@ export async function GET(
     // 优先从数据库读取章节（AI API 创建的小说没有文件系统章节）
     if (novel) {
       const dbChapters = db.prepare(`
-        SELECT id, title, order_num as "order", branch, word_count, created_at
+        SELECT id, title, order_num as "order", branch, word_count, author_id, author_name, choices, custom_branch_enabled, created_at
         FROM chapters WHERE novel_id = ?
-        ORDER BY order_num ASC
+        ORDER BY order_num ASC, created_at ASC
       `).all(params.id) as any[];
 
       if (dbChapters.length > 0) {

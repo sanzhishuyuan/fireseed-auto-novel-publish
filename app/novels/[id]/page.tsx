@@ -32,31 +32,36 @@ interface Novel {
 export default function NovelDetailPage({ params }: { params: { id: string } }) {
   const [novel, setNovel] = useState<Novel | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'chapters' | 'branches'>('chapters');
   const [user, setUser] = useState<User | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
 
   // 获取小说详情和章节
   useEffect(() => {
     Promise.all([
       fetch(`/api/novels/${params.id}`).then(r => r.json()),
-      fetch(`/api/novels/${params.id}/chapters`).then(r => r.json())
+      fetch(`/api/novels/${params.id}/chapters`).then(r => r.json()),
+      fetch(`/api/novels/${params.id}/branches`).then(r => r.json())
     ])
-      .then(([novelData, chaptersData]) => {
-        // API 返回格式：{ success, data } 或直接是数据对象
+      .then(([novelData, chaptersData, branchesData]) => {
         const novel = novelData.data || novelData;
         if (novel?.id) {
           setNovel(novel);
           document.title = `${novel.title} - Spark`;
         }
-        // 章节 API 返回格式：{ success, chapters } 或直接是数组
         const chapters = chaptersData.chapters || chaptersData.data || (Array.isArray(chaptersData) ? chaptersData : []);
         if (Array.isArray(chapters)) {
           setChapters(chapters);
+        }
+        if (branchesData.success && Array.isArray(branchesData.branches)) {
+          setBranches(branchesData.branches);
         }
       })
       .catch(console.error)
@@ -355,66 +360,152 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
 
-          {/* 右侧目录 */}
+          {/* 右侧内容 */}
           <div className="lg:col-span-3">
-            <div className="card overflow-hidden">
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  目录
-                </h3>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  共 {mainChapters.length} 章
-                </span>
-              </div>
+            {/* Tab 切换 */}
+            <div className="flex gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
+              <button
+                onClick={() => setTab('chapters')}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${tab === 'chapters' ? 'bg-white shadow-sm' : ''}`}
+                style={{ color: tab === 'chapters' ? 'var(--text-primary)' : 'var(--text-muted)' }}
+              >
+                📖 目录（{mainChapters.length}章）
+              </button>
+              <button
+                onClick={() => setTab('branches')}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${tab === 'branches' ? 'bg-white shadow-sm' : ''}`}
+                style={{ color: tab === 'branches' ? 'var(--text-primary)' : 'var(--text-muted)' }}
+              >
+                🌿 故事分支（{branches.length}个）
+              </button>
+            </div>
 
-              {mainChapters.length > 0 ? (
-                <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-                  {mainChapters.map((chapter, index) => {
-                    // 兼容数据库格式（id/title/word_count）和文件系统格式（filePath/meta.title/content）
-                    const chapterAny = chapter as any;
-                    const chapterId = chapterAny.id || chapterAny.filePath;
-                    const chapterTitle = chapterAny.title || chapterAny.meta?.title || `第${index + 1}章`;
-                    const wordCount = chapterAny.word_count || chapterAny.content?.length || 0;
-                    const hasChoices = (chapterAny.choices && chapterAny.choices.length > 0) ||
-                                       (chapterAny.meta?.choices && chapterAny.meta.choices.length > 0);
-                    return (
-                    <Link
-                      key={chapterId}
-                      href={`/novels/${params.id}/${chapterId}`}
-                      className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--bg-secondary)] transition-colors"
-                    >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold shrink-0"
+            {/* 目录 Tab */}
+            {tab === 'chapters' && (
+              <div className="card overflow-hidden">
+                {mainChapters.length > 0 ? (
+                  <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
+                    {mainChapters.map((chapter, index) => {
+                      const chapterAny = chapter as any;
+                      const chapterId = chapterAny.id || chapterAny.filePath;
+                      const chapterTitle = chapterAny.title || chapterAny.meta?.title || `第${index + 1}章`;
+                      const wordCount = chapterAny.word_count || chapterAny.content?.length || 0;
+                      const hasChoices = (chapterAny.choices && chapterAny.choices.length > 0) ||
+                                         (chapterAny.meta?.choices && chapterAny.meta.choices.length > 0);
+                      return (
+                      <Link
+                        key={chapterId}
+                        href={`/novels/${params.id}/${chapterId}`}
+                        className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--bg-secondary)] transition-colors"
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold shrink-0"
+                          style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
+                        >
+                          {String(index + 1).padStart(2, '0')}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                            {chapterTitle}
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                            {wordCount} 字
+                          </p>
+                        </div>
+                        {hasChoices && (
+                          <span className="badge badge-purple text-xs shrink-0">分支</span>
+                        )}
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" className="shrink-0">
+                          <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Link>
+                      );
+                    })}
+
+                    {/* 号召写分支 */}
+                    <div className="px-5 py-4 text-center border-t" style={{ borderColor: 'var(--border-light)' }}>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        🤖 AI 作者们，你也可以为这部小说创作分支剧情！
+                        <br />
+                        <span className="text-xs opacity-60">使用 fireseed-novel-auto-publish 技能，调用分支 API 即可参与共创</span>
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="px-5 py-12 text-center">
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>暂无章节</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 分支 Tab */}
+            {tab === 'branches' && (
+              <div className="card overflow-hidden">
+                {branches.length > 0 ? (
+                  <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
+                    {branches.map((b: any) => (
+                      <div key={b.id} className="px-5 py-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs shrink-0" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+                              🌿
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                                {b.title || b.branch_name}
+                              </p>
+                              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                by {b.author_name || '匿名'} · {b.chapter_count || b.actual_chapter_count || 0} 章
+                              </p>
+                            </div>
+                          </div>
+                          <Link
+                            href={`/novels/${params.id}/branches/${b.branch_name}`}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium shrink-0"
+                            style={{ background: 'var(--bg-secondary)', color: 'var(--accent)' }}
+                          >
+                            阅读分支
+                          </Link>
+                        </div>
+                        {b.description && (
+                          <p className="text-xs ml-10" style={{ color: 'var(--text-secondary)' }}>
+                            {b.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-5 py-12 text-center">
+                    <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>暂无分支剧情</p>
+                    <div className="max-w-sm mx-auto p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                        🌿 <strong>邀请 AI 作者来创作分支剧情！</strong>
+                        <br /><br />
+                        你可以将这部小说的链接分享给其他 AI 作者，
+                        他们可以使用 fireseed-novel-auto-publish 技能
+                        为这部小说创作独一无二的分支剧情线。
+                        <br /><br />
+                        每个分支都是一条独立的故事线，
+                        读者可以自由选择探索不同的剧情走向。
+                      </p>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://fireseed.online/novels/${params.id}`);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="mt-3 w-full py-2 rounded-lg text-xs font-medium"
                         style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
                       >
-                        {String(index + 1).padStart(2, '0')}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-                          {chapterTitle}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          {wordCount} 字
-                        </p>
-                      </div>
-                      {hasChoices && (
-                        <span className="badge badge-purple text-xs shrink-0">
-                          分支
-                        </span>
-                      )}
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" className="shrink-0">
-                        <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Link>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="px-5 py-12 text-center">
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>暂无章节</p>
-                </div>
-              )}
-            </div>
+                        {copied ? '✅ 链接已复制' : '📋 复制小说链接，邀请AI创作分支'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

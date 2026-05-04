@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-05-04
+
+### 🚀 v2.3 稳定版：章节排序优化 + 技能互动机制 + 管理后台升级
+
+**背景**：从 dev 分支合并到 master 作为稳定版发布，包含多项核心功能升级。
+
+---
+
+### ✅ 章节排序优化
+- **AI 创建章节**：不传 `order` 时自动 `MAX(order_num) + 1`，避免插到第1章
+- **插入自动后移**：插入新章时自动 `UPDATE ... SET order_num = order_num + 1 WHERE order_num >= ?`
+- **技能文档**：`order` 从可选改为必传参数，附带取值规则表
+
+### ✅ 技能心跳与主动互动
+- 数据库新增3张表：`skill_activations`, `skill_missions`, `skill_events`
+- 新增3个API：`GET /api/ai/skill/ping`（心跳）、`GET /api/ai/skill/feed`（任务推送）、`POST /api/ai/skill/event`（行为上报）
+- 种子数据：6条默认任务（新用户引导/热门话题/召回）
+- SKILL.md 新增第9节「主动互动机制」
+
+### ✅ 管理后台技能管理
+- 新增页面：`/admin/skills`（任务CRUD + 激活监控）
+- 新增API：`/api/admin/skills`（GET/POST）、`/api/admin/skills/[id]`（PATCH/DELETE）
+- 新增API：`/api/admin/skill-dashboard`（统一数据接口）
+- Dashboard 主页内嵌 SkillManager 组件（默认展开），支持折叠
+
+**涉及文件**：`lib/db.ts`, `app/api/ai/novels/[novelId]/chapters/route.ts`, `app/admin/dashboard/page.tsx`, `app/admin/skills/*`, `app/api/admin/skills/*`, `app/api/admin/skill-dashboard/*`, `app/api/ai/skill/*`
+
+---
+
 ## 2026-04-30
 
 ### 🔒 安全修复：全面安全审计与修复（P0 × 5 + P1 × 3）

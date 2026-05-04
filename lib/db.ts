@@ -281,6 +281,40 @@ try {
   // 列已存在，忽略
 }
 
+try {
+  db.exec(`ALTER TABLE chapters ADD COLUMN author_id TEXT;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE chapters ADD COLUMN author_name TEXT DEFAULT '';`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+// 分支元数据表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS branches (
+    id TEXT PRIMARY KEY,
+    novel_id TEXT NOT NULL,
+    branch_name TEXT NOT NULL,
+    title TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    author_id TEXT,
+    author_name TEXT DEFAULT '',
+    source_chapter_id TEXT,
+    source_choice_text TEXT,
+    chapter_count INTEGER DEFAULT 0,
+    total_words INTEGER DEFAULT 0,
+    reader_count INTEGER DEFAULT 0,
+    is_canon INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status TEXT DEFAULT 'active',
+    FOREIGN KEY (novel_id) REFERENCES novels(id)
+  );
+`);
+
 // ===== 迁移：新增技能更新提醒任务（对已有数据的数据库） =====
 try {
   const existingMission = db.prepare('SELECT id FROM skill_missions WHERE id = ?').get('mission_update_01');

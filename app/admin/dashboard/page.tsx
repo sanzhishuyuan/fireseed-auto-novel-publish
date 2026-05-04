@@ -54,12 +54,19 @@ export default function EnhancedAdminDashboard() {
   const [cleaningUp, setCleaningUp] = useState(false);
   const [skillData, setSkillData] = useState<{ missions: any[]; activationStats: any; activeUsers?: any[] } | null>(null);
   const [skillExpanded, setSkillExpanded] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+    const interval = setInterval(() => {
+      if (autoRefresh) fetchStats();
+    }, 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
 
   const fetchStats = async () => {
+    setRefreshing(true);
     try {
       // 并发获取统计数据、清理清单、技能数据
       const [statsRes, cleanupRes, skillRes] = await Promise.all([
@@ -91,6 +98,7 @@ export default function EnhancedAdminDashboard() {
       setError('加载数据失败');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -152,6 +160,26 @@ export default function EnhancedAdminDashboard() {
             <Link href="/admin/chapters" className="btn-ghost text-sm">章节管理</Link>
             <Link href="/admin/tokens" className="btn-ghost text-sm">Token管理</Link>
             <Link href="/admin/skills" className="btn-ghost text-sm">技能管理</Link>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={fetchStats}
+                disabled={refreshing}
+                className="btn-ghost text-sm flex items-center gap-1"
+                title="手动刷新"
+              >
+                <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {refreshing ? '刷新中' : '刷新'}
+              </button>
+              <button
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={`btn-ghost text-sm ${autoRefresh ? 'text-green-600' : ''}`}
+                title={autoRefresh ? '自动刷新已开启（10分钟）' : '自动刷新已关闭'}
+              >
+                {autoRefresh ? '⏱️ 自动' : '⏱️ 手动'}
+              </button>
+            </div>
             <button onClick={() => router.push('/admin')} className="btn-ghost text-sm">退出</button>
           </div>
         </div>

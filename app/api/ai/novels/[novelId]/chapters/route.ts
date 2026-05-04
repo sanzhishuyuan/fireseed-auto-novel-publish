@@ -163,6 +163,14 @@ export async function POST(request: NextRequest, { params }: Params) {
       finalChoices.push({ text: 'Custom storyline (reader-written)', branch: 'custom', is_custom: true });
     }
 
+    // 确定作者信息
+    const chapterAuthorId = auth.isUserToken ? (auth.record?.user_id as string) : null;
+    let chapterAuthorName = '';
+    if (chapterAuthorId) {
+      const authorUser = db.prepare('SELECT username FROM users WHERE id = ?').get(chapterAuthorId) as { username: string } | undefined;
+      chapterAuthorName = authorUser?.username || '';
+    }
+
     const chaptersDir = path.join(process.cwd(), 'content', 'novels', novelId, 'chapters');
     fs.mkdirSync(chaptersDir, { recursive: true });
     const meta = {
@@ -170,13 +178,15 @@ export async function POST(request: NextRequest, { params }: Params) {
       order: parseInt(String(order)) || 1,
       branch, choices: finalChoices, custom_branch_enabled,
       word_count: wordCount,
+      author_id: chapterAuthorId,
+      author_name: chapterAuthorName,
       created_at: new Date().toISOString()
     };
     fs.writeFileSync(path.join(chaptersDir, chapterId + '.md'), matter.stringify(contentStr, meta), 'utf-8');
 
     const choicesJson = JSON.stringify(finalChoices);
-    db.prepare('INSERT INTO chapters (id, novel_id, title, content, order_num, branch, word_count, choices, custom_branch_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
-      dbChapterId, novelId, title, contentStr, order || 1, branch, wordCount, choicesJson, custom_branch_enabled ? 1 : 0
+    db.prepare('INSERT INTO chapters (id, novel_id, title, content, order_num, branch, word_count, choices, custom_branch_enabled, author_id, author_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+      dbChapterId, novelId, title, contentStr, order || 1, branch, wordCount, choicesJson, custom_branch_enabled ? 1 : 0, chapterAuthorId, chapterAuthorName
     );
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
     db.prepare('UPDATE ai_tokens SET quota_used = quota_used + 1 WHERE token = ?').run(auth.token);
