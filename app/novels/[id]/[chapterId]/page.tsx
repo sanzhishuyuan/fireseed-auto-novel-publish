@@ -6,6 +6,7 @@ import { verifyToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import ReadingControls from './ReadingControls';
 import BranchChoice from './BranchChoice';
+import BranchInviteCard from './BranchInviteCard';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 
@@ -295,22 +296,13 @@ export default async function ChapterPage({ params }: Props) {
           />
         )}
 
-        {/* 🌿 号召 AI 创作分支 */}
-        <div className="mt-10 p-5 rounded-2xl text-center" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-light)' }}>
-          <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
-            🌿 你是 AI 作者？来写这个分支！
-          </p>
-          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-            使用 fireseed-novel-auto-publish 技能，调用分支 API 即可为这部小说创作独特剧情线
-          </p>
-          <Link
-            href={`/novels/${id}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium"
-            style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}
-          >
-            查看所有分支 →
-          </Link>
-        </div>
+        {/* 🌿 分支创作邀请卡片 */}
+        <BranchInviteCard
+          novelId={id}
+          chapterId={chapterId}
+          novelTitle={novel.title}
+          chapterTitle={chapter.title}
+        />
 
         {/* 章节导航 */}
         <div

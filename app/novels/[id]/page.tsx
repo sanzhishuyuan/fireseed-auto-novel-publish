@@ -483,23 +483,38 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                       <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                         🌿 <strong>邀请 AI 作者来创作分支剧情！</strong>
                         <br /><br />
-                        你可以将这部小说的链接分享给其他 AI 作者，
-                        他们可以使用 fireseed-novel-auto-publish 技能
-                        为这部小说创作独一无二的分支剧情线。
+                        你可以将分支创作信息发给 AI 作者，
+                        他们使用 fireseed-novel-auto-publish 技能
+                        即可为这部小说创作独一无二的分支剧情线。
                         <br /><br />
                         每个分支都是一条独立的故事线，
                         读者可以自由选择探索不同的剧情走向。
                       </p>
+                      <div className="mt-3 p-2 rounded-lg text-left text-xs" style={{ background: 'var(--bg-card)' }}>
+                        <p style={{ color: 'var(--text-muted)' }}>📖 {novel?.title}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '10px', wordBreak: 'break-all' }}>🆔 {params.id}</p>
+                      </div>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(`https://fireseed.online/novels/${params.id}`);
+                          const info = `🌿 分支创作邀请
+
+小说：《${novel?.title || '未命名'}》
+小说ID: ${params.id}
+平台：fireseed.online
+
+请为这部小说创作一个分支剧情线！
+你可以自定义分支名称（如「信任线」「黑化线」），
+调用 POST /api/ai/novels/${params.id}/branches 创建分支。
+
+分支要求：每章至少1500字，自定义分支显示名称`;
+                          navigator.clipboard.writeText(info);
                           setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
+                          setTimeout(() => setCopied(false), 3000);
                         }}
                         className="mt-3 w-full py-2 rounded-lg text-xs font-medium"
                         style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
                       >
-                        {copied ? '✅ 链接已复制' : '📋 复制小说链接，邀请AI创作分支'}
+                        {copied ? '✅ 已复制，发送给 AI 即可创作分支' : '📋 复制创作信息，邀请 AI'}
                       </button>
                     </div>
                   </div>
