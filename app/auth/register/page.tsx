@@ -9,6 +9,16 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<{ username: string; jwtToken: string; apiToken: string } | null>(null);
+  const [copiedField, setCopiedField] = useState('');
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(''), 2000);
+    } catch { /* 忽略 */ }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +48,7 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // 注册成功，自动登录
+        // 自动登录：设置 cookie（JWT）
         const loginRes = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -46,10 +56,17 @@ export default function RegisterPage() {
         });
 
         if (loginRes.ok) {
-          router.push('/novels');
-          router.refresh();
+          setSuccess({
+            username: form.username,
+            jwtToken: data.jwt_token || '',
+            apiToken: data.api_token || ''
+          });
         } else {
-          router.push('/auth/login?registered=true');
+          setSuccess({
+            username: form.username,
+            jwtToken: data.jwt_token || '',
+            apiToken: data.api_token || ''
+          });
         }
       } else {
         setError(data.error || '注册失败，请稍后重试');
@@ -60,6 +77,129 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  // 成功页面
+  if (success) {
+    return (
+      <div className="min-h-screen flex" style={{ background: 'var(--bg-primary)' }}>
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-8 py-12">
+          <div className="w-full max-w-lg">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(16,185,129,0.1)' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                🎉 注册成功，{success.username}！
+              </h1>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                下面是你专属的 API Token，<strong>复制后告诉 AI</strong> 即可开始创作
+              </p>
+            </div>
+
+            {/* API Token 展示 */}
+            <div
+              className="rounded-xl p-5 mb-6"
+              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  🔑 你的 API Token
+                </span>
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}
+                >
+                  复制给 AI 用
+                </span>
+              </div>
+              <div
+                className="relative rounded-lg p-3 font-mono text-xs break-all select-all cursor-pointer"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--accent)' }}
+                onClick={() => copyToClipboard(success.apiToken, 'api')}
+              >
+                {success.apiToken}
+                <button
+                  className="absolute top-2 right-2 px-2 py-1 rounded text-xs transition-all"
+                  style={{
+                    background: copiedField === 'api' ? 'rgba(16,185,129,0.15)' : 'var(--bg-secondary)',
+                    color: copiedField === 'api' ? '#10b981' : 'var(--text-muted)'
+                  }}
+                  onClick={(e) => { e.stopPropagation(); copyToClipboard(success.apiToken, 'api'); }}
+                >
+                  {copiedField === 'api' ? '✅ 已复制' : '📋 复制'}
+                </button>
+              </div>
+            </div>
+
+            {/* JWT Token（高级） */}
+            <details className="mb-6">
+              <summary className="text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>
+                🔧 高级：JWT Token（有效期 30 天，用于网页登录）
+              </summary>
+              <div
+                className="mt-2 rounded-lg p-3 font-mono text-xs break-all"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+              >
+                {success.jwtToken}
+              </div>
+            </details>
+
+            {/* 下一步指引 */}
+            <div
+              className="rounded-xl p-5 mb-6"
+              style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.05), rgba(245,158,11,0.1))', border: '1px solid rgba(245,158,11,0.15)' }}
+            >
+              <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+                📋 下一步做什么？
+              </h3>
+              <ol className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <li className="flex gap-2">
+                  <span className="font-bold shrink-0" style={{ color: 'var(--accent)' }}>1.</span>
+                  <span><strong>复制上面的 API Token</strong>（已帮你选中）</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold shrink-0" style={{ color: 'var(--accent)' }}>2.</span>
+                  <span>告诉你的 AI：「<strong>我有一个 fireseed API Token，帮我创作一部小说</strong>」</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold shrink-0" style={{ color: 'var(--accent)' }}>3.</span>
+                  <span>把 Token 发给 AI，剩下的自动完成 ✨</span>
+                </li>
+              </ol>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => router.push('/novels')}
+                className="btn-primary flex-1 justify-center py-2.5"
+              >
+                去逛逛作品
+              </button>
+              <button
+                onClick={() => { setSuccess(null); setForm({ username: '', password: '', confirmPassword: '' }); }}
+                className="btn-secondary flex-1 justify-center py-2.5"
+              >
+                注册新账号
+              </button>
+            </div>
+
+            <div className="mt-6 text-center">
+              <Link href="/" className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                ← 返回首页
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--bg-primary)' }}>
