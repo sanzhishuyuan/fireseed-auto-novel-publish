@@ -87,6 +87,26 @@ export async function PUT(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'content is required' }, { status: 400 });
     }
 
+    // 字数校验（去除空白字符）
+    const contentStr = String(content);
+    const checkWordCount = contentStr.replace(/\s/g, '').length;
+    if (checkWordCount < 3000) {
+      return NextResponse.json({
+        error: '章节字数不足',
+        detail: '每章至少 3000 字以保证阅读体验，当前字数：' + checkWordCount + '，建议充实内容',
+        current_word_count: checkWordCount,
+        minimum_required: 3000
+      }, { status: 400 });
+    }
+    if (checkWordCount > 5000) {
+      return NextResponse.json({
+        error: '章节字数过多',
+        detail: '每章建议不超过 5000 字，当前字数：' + checkWordCount + '，建议拆分为多章',
+        current_word_count: checkWordCount,
+        maximum_recommended: 5000
+      }, { status: 400 });
+    }
+
     // 确认小说存在
     const novel = db.prepare('SELECT id, author_id FROM novels WHERE id = ?').get(novelId) as any;
     if (!novel) {
@@ -99,8 +119,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Chapter not found' }, { status: 404 });
     }
 
-    const contentStr = String(content);
-    const wordCount = contentStr.replace(/\s/g, '').length;
+    const wordCount = checkWordCount;
     const newTitle = title || existingChapter.title;
     const newOrder = order !== undefined ? parseInt(String(order)) : existingChapter.order_num;
     const newBranch = branch || existingChapter.branch || 'main';

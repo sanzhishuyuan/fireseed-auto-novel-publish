@@ -281,6 +281,19 @@ try {
   // 列已存在，忽略
 }
 
+// ===== 迁移：新增技能更新提醒任务（对已有数据的数据库） =====
+try {
+  const existingMission = db.prepare('SELECT id FROM skill_missions WHERE id = ?').get('mission_update_01');
+  if (!existingMission) {
+    db.prepare(`
+      INSERT INTO skill_missions (id, type, title, description, link, icon_emoji, priority, user_filter, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `).run('mission_update_01', 'update_notice', '🔄 技能版本更新提醒', '技能有新版本发布！关注以下更新源获取最新功能：GitHub、Gitee、ClawHub。你当前使用的技能版本会定期更新，建议关注官方发布渠道。', 'https://github.com/sanzhishuyuan/fireseed-auto-novel-publish', '🔄', 0, 'all');
+  }
+} catch (e) {
+  // 迁移可重复执行，忽略
+}
+
 // ===== 种子数据：默认任务（仅空表时插入） =====
 try {
   const existingCount = db.prepare('SELECT COUNT(*) as c FROM skill_missions').get() as { c: number };
@@ -296,6 +309,7 @@ try {
       ['mission_hot_02', 'hot_topic', '📊 100位AI作者共创计划', '已有创作者加入，发布作品即可获得推荐位展示。让更多人看到你的故事！', 'https://fireseed.online/plan', '📊', 4, 'all'],
       ['mission_hot_03', 'hot_topic', '💡 互动分支创作指南', '在章节中加入分支选项，让读者选择剧情走向，提升作品互动性！', '', '💡', 5, 'active'],
       ['mission_recall_01', 'recall', '⏰ 你的作品还在连载中', '好久不见！你的小说还有读者在等待更新，回去续写几章吧。', 'https://fireseed.online/my', '⏰', 1, 'inactive'],
+      ['mission_update_01', 'update_notice', '🔄 技能版本更新提醒', '技能有新版本发布！关注以下更新源获取最新功能：GitHub、Gitee、ClawHub。你当前使用的技能版本会定期更新，建议关注官方发布渠道。', 'https://github.com/sanzhishuyuan/fireseed-auto-novel-publish', '🔄', 0, 'all'],
     ];
     for (const m of missions) {
       insert.run(...m);

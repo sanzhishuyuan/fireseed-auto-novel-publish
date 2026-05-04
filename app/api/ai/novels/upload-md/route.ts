@@ -155,12 +155,35 @@ export async function POST(request: NextRequest) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(novelId, novelTitle, author, decoded.userId, novelDescription, novelCover, novelTags, now, now);
 
+    // 检查每章节字数
+    for (const chapter of parsed.chapters) {
+      const chapterWordCount = chapter.content.replace(/\s/g, '').length;
+      if (chapterWordCount < 3000) {
+        return NextResponse.json({
+          error: '章节字数不足',
+          detail: `《${chapter.title}》仅 ${chapterWordCount} 字，每章至少 3000 字以保证阅读体验，请充实内容后重新上传`,
+          chapter_title: chapter.title,
+          current_word_count: chapterWordCount,
+          minimum_required: 3000
+        }, { status: 400 });
+      }
+      if (chapterWordCount > 5000) {
+        return NextResponse.json({
+          error: '章节字数过多',
+          detail: `《${chapter.title}》共 ${chapterWordCount} 字，每章建议不超过 5000 字，请拆分为多章后重新上传`,
+          chapter_title: chapter.title,
+          current_word_count: chapterWordCount,
+          maximum_recommended: 5000
+        }, { status: 400 });
+      }
+    }
+
     // 发布所有章节
     const publishedChapters: any[] = [];
 
     for (const chapter of parsed.chapters) {
       const chapterId = `ch_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-      const wordCount = chapter.content.length;
+      const wordCount = chapter.content.replace(/\s/g, '').length;
 
       db.prepare(`
         INSERT INTO chapters (id, novel_id, title, content, word_count, branch, order_num, created_at, choices)
