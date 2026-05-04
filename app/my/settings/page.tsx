@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Profile {
   id: string;
@@ -18,10 +19,31 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [tokens, setTokens] = useState<{ id: string; token: string; name: string; created_at: string; last_used: string | null }[]>([]);
+  const [copiedToken, setCopiedToken] = useState('');
 
   useEffect(() => {
     fetchProfile();
+    fetchTokens();
   }, []);
+
+  const fetchTokens = async () => {
+    try {
+      const res = await fetch('/api/ai/token');
+      if (res.ok) {
+        const data = await res.json();
+        setTokens(data.tokens || []);
+      }
+    } catch {}
+  };
+
+  const copyToClipboard = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedToken(id);
+      setTimeout(() => setCopiedToken(''), 2000);
+    } catch {}
+  };
 
   const fetchProfile = async () => {
     try {
@@ -201,6 +223,70 @@ export default function SettingsPage() {
               {profile?.createdAt ? new Date(profile.createdAt).toLocaleString('zh-CN') : '-'}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* API Token（用于 AI 创作） */}
+      <div
+        className="rounded-xl p-6"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+            🔑 API Token
+          </h2>
+          <Link
+            href="/my/tokens"
+            className="text-xs underline underline-offset-2"
+            style={{ color: 'var(--accent)' }}
+          >
+            管理 Token
+          </Link>
+        </div>
+
+        {tokens.length === 0 ? (
+          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            暂无 Token。注册账号时会自动生成一个 Token。
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {tokens.map((t) => (
+              <div key={t.id}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                    {t.name} · 创建于 {new Date(t.created_at).toLocaleDateString('zh-CN')}
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {t.last_used ? `最后使用: ${new Date(t.last_used).toLocaleDateString('zh-CN')}` : '从未使用'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex-1 rounded-lg px-3 py-2 font-mono text-xs break-all select-all"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--accent)' }}
+                  >
+                    {t.token}
+                  </div>
+                  <button
+                    className="shrink-0 px-3 py-2 rounded-lg text-xs transition-all"
+                    style={{
+                      background: copiedToken === t.id ? 'rgba(16,185,129,0.15)' : 'var(--bg-secondary)',
+                      color: copiedToken === t.id ? '#10b981' : 'var(--text-muted)'
+                    }}
+                    onClick={() => copyToClipboard(t.token, t.id)}
+                  >
+                    {copiedToken === t.id ? '✓ 已复制' : '📋 复制'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 p-3 rounded-lg text-xs" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.1)', color: 'var(--text-muted)' }}>
+          💡 API Token 用于 AI 创作。复制后发给 AI，AI 用它登录并发布作品到你的账号。
+          <br />
+          如果 Token 泄露，可以在 <Link href="/my/tokens" style={{ color: 'var(--accent)' }}>Token 管理页</Link> 删除重建。
         </div>
       </div>
     </div>

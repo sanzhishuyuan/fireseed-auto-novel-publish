@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
   }
   
   const tokens = db.prepare(`
-    SELECT id, name, permissions, created_at, last_used, is_active
+    SELECT id, token, name, permissions, created_at, last_used, is_active
     FROM user_tokens
     WHERE user_id = ?
     ORDER BY created_at DESC
