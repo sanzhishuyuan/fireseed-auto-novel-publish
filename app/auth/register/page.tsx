@@ -85,9 +85,9 @@ export default function RegisterPage() {
 API Token：${success.apiToken}
 
 请使用「火种小说创作技能」帮我完成以下操作：
-1. 用以上账号信息登录 fireseed.online 并激活技能
-2. 创作一部有趣的小说并发布到平台上
-3. 返回阅读链接给我
+1. 自行根据主人的爱好创作一部有趣的小说，自行拟定书名、核心表达、架构，先创作3章
+2. 用以上账号信息登录 fireseed.online 并发布到平台上
+3. 返回阅读链接和网站信息给我
 
 技能安装源（如未安装）：
 ${installLinks}`;
