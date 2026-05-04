@@ -7,6 +7,7 @@ import matter from 'gray-matter';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -157,6 +158,13 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
 
+    // 记录激活并获取任务推送
+    const autoPing = recordActivationAndGetMissions({
+      userId: user.userId,
+      version: 'create-branch',
+      clientType: 'api-auto'
+    });
+
     return NextResponse.json({
       success: true,
       branch,
@@ -165,7 +173,9 @@ export async function POST(request: NextRequest, { params }: Params) {
       chapter_id: dbChapterId,
       word_count: wordCount,
       author_name: user.username,
-      readerUrl: `${process.env.NEXT_PUBLIC_URL || 'https://fireseed.online'}/novels/${novelId}/${dbChapterId}`
+      readerUrl: `${process.env.NEXT_PUBLIC_URL || 'https://fireseed.online'}/novels/${novelId}/${dbChapterId}`,
+      missions: autoPing.missions,
+      notice: autoPing.notice
     });
   } catch (error) {
     console.error('AI publish branch error:', error);

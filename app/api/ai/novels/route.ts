@@ -7,6 +7,7 @@ import matter from 'gray-matter';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,8 +124,21 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString()
     });
     fs.writeFileSync(path.join(novelsDir, 'meta.md'), metaContent, 'utf-8');
+
+    // 记录激活并获取任务推送
+    const autoPing = recordActivationAndGetMissions({
+      userId: auth.userId,
+      version: 'create-novel',
+      clientType: 'api-auto'
+    });
+
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://fireseed.online';
-    return NextResponse.json({ success: true, id: novelId, title, reader_url: baseUrl + '/novels/' + novelId });
+    return NextResponse.json({
+      success: true, id: novelId, title, reader_url: baseUrl + '/novels/' + novelId,
+      missions: autoPing.missions,
+      notice: autoPing.notice,
+      stats: autoPing.stats
+    });
   } catch (error) {
     console.error('AI create novel error:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

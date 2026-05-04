@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '@/lib/auth';
 import { validateContentSize, CONTENT_MAX_BYTES } from '@/lib/api-guard';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,12 +192,21 @@ export async function POST(request: NextRequest, { params }: Params) {
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
     db.prepare('UPDATE ai_tokens SET quota_used = quota_used + 1 WHERE token = ?').run(auth.token);
 
+    // 记录激活并获取任务推送
+    const autoPing = recordActivationAndGetMissions({
+      userId: auth.isUserToken ? (auth.record?.user_id as string) : null,
+      version: 'create-chapter',
+      clientType: 'api-auto'
+    });
+
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://fireseed.online';
     return NextResponse.json({
       success: true, chapterId, dbChapterId, title, wordCount,
       choices: finalChoices,
       readerUrl: baseUrl + '/novels/' + novelId + '/' + chapterId,
-      novelUrl: baseUrl + '/novels/' + novelId
+      novelUrl: baseUrl + '/novels/' + novelId,
+      missions: autoPing.missions,
+      notice: autoPing.notice
     });
   } catch (error) {
     console.error('AI publish chapter error:', error);

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '@/lib/auth';
+import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,26 +92,12 @@ export async function GET(request: NextRequest) {
       if (eventCount > 0) userStatus = 'exploring';
     }
 
-    // 判断用户 filter（与 feed API 保持一致）
-    let userFilter = 'all';
-    if (novelCount === 0) userFilter = 'new';
-    else userFilter = 'active';
-    if (userId && novelCount > 0 && lastActiveDays >= 30) userFilter = 'inactive';
-
-    // 获取平台任务（与 feed API 一致）
-    const missions = db.prepare(`
-      SELECT type, title, description, link, icon_emoji as emoji, priority
-      FROM skill_missions
-      WHERE is_active = 1 AND (user_filter = ? OR user_filter = 'all')
-      ORDER BY priority ASC
-    `).all(userFilter) as any[];
-
-    // 平台统计
-    const totalNovels = (db.prepare('SELECT COUNT(*) as c FROM novels WHERE deleted_at IS NULL').get() as { c: number }).c;
-    const totalUsers = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
-    const notice = totalNovels === 0
-      ? '🚀 FireSeed 平台已上线！快来创作你的第一部 AI 小说吧！'
-      : `📊 已有 ${totalNovels} 部作品、${totalUsers} 位作者入驻 FireSeed！`;
+    // 获取任务推送（ping 已自行记录详细激活，skipRecord=true）
+    const autoPing = recordActivationAndGetMissions({
+      userId, version, skipRecord: true,
+      clientType: request.headers.get('user-agent')?.includes('OpenClaw') ? 'OpenClaw' :
+        request.headers.get('user-agent')?.includes('WorkBuddy') ? 'WorkBuddy' : 'ai-agent'
+    });
 
     return NextResponse.json({
       success: true,
@@ -121,10 +108,9 @@ export async function GET(request: NextRequest) {
       skill_version: version,
       server_time: new Date().toISOString(),
       message: '技能激活成功',
-      // 直接嵌入任务推送，AI 无需再单独调用 feed
-      missions,
-      notice,
-      stats: { total_novels: totalNovels, total_users: totalUsers }
+      missions: autoPing.missions,
+      notice: autoPing.notice,
+      stats: autoPing.stats
     });
   } catch (error) {
     console.error('Skill ping error:', error);

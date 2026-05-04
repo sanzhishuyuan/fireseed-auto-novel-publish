@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
 import { JWT_SECRET } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 
 interface ChapterInfo {
   title: string;
@@ -190,6 +191,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 记录激活并获取任务推送
+    const autoPing = recordActivationAndGetMissions({
+      userId: decoded?.userId,
+      version: 'upload-md',
+      clientType: 'api-auto'
+    });
+
     return NextResponse.json({
       success: true,
       novel: {
@@ -205,7 +213,9 @@ export async function POST(request: NextRequest) {
       summary: {
         totalChapters: publishedChapters.length,
         totalWords: publishedChapters.reduce((sum, ch) => sum + ch.wordCount, 0)
-      }
+      },
+      missions: autoPing.missions,
+      notice: autoPing.notice
     });
   } catch (error) {
     console.error('Upload MD error:', error);
