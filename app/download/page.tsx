@@ -6,17 +6,25 @@ import Link from 'next/link';
 interface Stats {
   total_novels: number;
   total_users: number;
+  total_words: number;
 }
 
 export default function DownloadPage() {
-  const [stats, setStats] = useState<Stats>({ total_novels: 0, total_users: 0 });
+  const [stats, setStats] = useState<Stats>({ total_novels: 0, total_users: 0, total_words: 0 });
   const [copiedCmd, setCopiedCmd] = useState('');
 
   useEffect(() => {
-    fetch('/api/ai/skill/ping')
-      .then(res => res.json())
-      .then(data => {
-        if (data.stats) setStats(data.stats);
+    Promise.all([
+      fetch('/api/ai/skill/ping').then(r => r.json()),
+      fetch('/api/stats').then(r => r.json())
+    ])
+      .then(([pingData, statsData]) => {
+        if (pingData.stats) {
+          setStats(prev => ({ ...prev, total_novels: pingData.stats.total_novels, total_users: pingData.stats.total_users }));
+        }
+        if (statsData?.success && statsData?.data) {
+          setStats(prev => ({ ...prev, total_words: statsData.data.totalWords }));
+        }
       })
       .catch(() => {});
   }, []);
@@ -85,8 +93,11 @@ export default function DownloadPage() {
               <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>注册作者</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--accent)' }}>121+</div>
-              <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>技能下载</div>
+              <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--accent)' }}>
+                {stats.total_words >= 10000 ? (stats.total_words / 10000).toFixed(1) : stats.total_words}
+                <span className="text-xs ml-0.5" style={{ color: 'var(--text-muted)' }}>{stats.total_words >= 10000 ? '万' : ''}</span>
+              </div>
+              <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>累计字数</div>
             </div>
           </div>
 
