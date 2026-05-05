@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Mission {
@@ -44,6 +44,59 @@ const FILTER_LABELS: Record<string, string> = {
   active: '活跃用户',
   inactive: '流失用户',
 };
+
+// ===== 可滚动表格组件：默认显示10条，逐步展开到最多100条 =====
+function ScrollTable<T>({
+  items,
+  pageSize = 10,
+  maxVisible = 100,
+  children
+}: {
+  items: T[];
+  pageSize?: number;
+  maxVisible?: number;
+  children: (items: T[]) => React.ReactNode;
+}) {
+  const [limit, setLimit] = useState(pageSize);
+  const visibleItems = items.slice(0, limit);
+  const total = Math.min(items.length, maxVisible);
+  const hasMore = items.length > limit && limit < maxVisible;
+
+  return (
+    <div>
+      <div className="overflow-y-auto" style={{ maxHeight: '480px' }}>
+        {children(visibleItems)}
+      </div>
+      {(items.length > pageSize) && (
+        <div className="flex items-center justify-between px-5 py-2 border-t" style={{ borderColor: 'var(--border-light)' }}>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            显示 {visibleItems.length} / {total} 条
+          </span>
+          <div className="flex gap-2">
+            {hasMore && (
+              <button
+                onClick={() => setLimit(prev => Math.min(prev + pageSize, maxVisible))}
+                className="text-xs px-3 py-1 rounded hover:opacity-80"
+                style={{ background: 'var(--bg-secondary)', color: 'var(--accent)' }}
+              >
+                显示更多 +{Math.min(pageSize, maxVisible - limit)}
+              </button>
+            )}
+            {limit > pageSize && (
+              <button
+                onClick={() => setLimit(pageSize)}
+                className="text-xs px-3 py-1 rounded hover:opacity-80"
+                style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+              >
+                收起
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SkillManager({ missions, activationStats, activeUsers }: Props) {
   const router = useRouter();
@@ -281,28 +334,32 @@ export default function SkillManager({ missions, activationStats, activeUsers }:
             {activationStats.recent.length === 0 ? (
               <div className="px-5 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>暂无激活记录</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>时间</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>版本</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>客户端</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activationStats.recent.map((a: any) => (
-                      <tr key={a.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td className="px-4 py-3" style={{ color: 'var(--text-primary)' }}>{new Date(a.created_at).toLocaleString('zh-CN')}</td>
-                        <td className="px-4 py-3" style={{ color: 'var(--text-primary)' }}>{a.username || a.user_id?.substring(0, 12) + '...'}</td>
-                        <td className="px-4 py-3"><span className="badge">{a.skill_version}</span></td>
-                        <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{a.client_type || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ScrollTable items={activationStats.recent} pageSize={10} maxVisible={100}>
+                {(items) => (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>时间</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>版本</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>客户端</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((a: any) => (
+                          <tr key={a.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                            <td className="px-4 py-3" style={{ color: 'var(--text-primary)' }}>{new Date(a.created_at).toLocaleString('zh-CN')}</td>
+                            <td className="px-4 py-3" style={{ color: 'var(--text-primary)' }}>{a.username || a.user_id?.substring(0, 12) + '...'}</td>
+                            <td className="px-4 py-3"><span className="badge">{a.skill_version}</span></td>
+                            <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{a.client_type || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </ScrollTable>
             )}
           </div>
 
@@ -314,50 +371,54 @@ export default function SkillManager({ missions, activationStats, activeUsers }:
             {!activeUsers || activeUsers.length === 0 ? (
               <div className="px-5 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>暂无活跃用户</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户名</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>昵称</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>最近活跃</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>激活次数</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作品数</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>注册时间</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeUsers.map((u: any) => (
-                      <tr key={u.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{u.username}</td>
-                        <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{u.nickname || '-'}</td>
-                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--accent)' }}>
-                          {(() => {
-                            const lastAct = u.last_activation_at ? new Date(u.last_activation_at) : null;
-                            const lastNovel = u.last_novel_at ? new Date(u.last_novel_at) : null;
-                            const latest = lastAct && lastNovel
-                              ? (lastAct > lastNovel ? lastAct : lastNovel)
-                              : (lastAct || lastNovel);
-                            const label = lastAct && lastNovel
-                              ? (lastAct > lastNovel ? '(激活)' : '(发书)')
-                              : lastAct ? '(激活)' : '(发书)';
-                            return latest
-                              ? latest.toLocaleString('zh-CN') + ' ' + label
-                              : '-';
-                          })()}
-                        </td>
-                        <td className="px-4 py-3"><span className="badge">{u.activation_count}</span></td>
-                        <td className="px-4 py-3">
-                          <span className={`badge ${parseInt(u.novels_count) > 0 ? 'bg-green-100 text-green-700' : ''}`}>
-                            {u.novels_count}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(u.registered_at).toLocaleString('zh-CN')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ScrollTable items={activeUsers} pageSize={10} maxVisible={100}>
+                {(items) => (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户名</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>昵称</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>最近活跃</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>激活次数</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作品数</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>注册时间</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((u: any) => (
+                          <tr key={u.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                            <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{u.username}</td>
+                            <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{u.nickname || '-'}</td>
+                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--accent)' }}>
+                              {(() => {
+                                const lastAct = u.last_activation_at ? new Date(u.last_activation_at) : null;
+                                const lastNovel = u.last_novel_at ? new Date(u.last_novel_at) : null;
+                                const latest = lastAct && lastNovel
+                                  ? (lastAct > lastNovel ? lastAct : lastNovel)
+                                  : (lastAct || lastNovel);
+                                const label = lastAct && lastNovel
+                                  ? (lastAct > lastNovel ? '(激活)' : '(发书)')
+                                  : lastAct ? '(激活)' : '(发书)';
+                                return latest
+                                  ? latest.toLocaleString('zh-CN') + ' ' + label
+                                  : '-';
+                              })()}
+                            </td>
+                            <td className="px-4 py-3"><span className="badge">{u.activation_count}</span></td>
+                            <td className="px-4 py-3">
+                              <span className={`badge ${parseInt(u.novels_count) > 0 ? 'bg-green-100 text-green-700' : ''}`}>
+                                {u.novels_count}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(u.registered_at).toLocaleString('zh-CN')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </ScrollTable>
             )}
           </div>
         </>
