@@ -249,20 +249,7 @@ db.exec(`
   );
 `);
 
-// 数据库索引（必须在表创建之后执行，否则空库会报错）
-db.exec(`
-  CREATE INDEX IF NOT EXISTS idx_chapters_novel_branch ON chapters(novel_id, branch, order_num);
-  CREATE INDEX IF NOT EXISTS idx_user_progress_user_novel ON user_progress(user_id, novel_id);
-  CREATE INDEX IF NOT EXISTS idx_ai_jobs_token_status ON ai_jobs(token, status);
-  CREATE INDEX IF NOT EXISTS idx_custom_branches_lookup ON custom_branches(novel_id, chapter_id, user_id);
-  CREATE INDEX IF NOT EXISTS idx_novels_deleted ON novels(deleted_at);
-  CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-  CREATE INDEX IF NOT EXISTS idx_skill_activations_user ON skill_activations(user_id);
-  CREATE INDEX IF NOT EXISTS idx_skill_events_user_type ON skill_events(user_id, event_type);
-  CREATE INDEX IF NOT EXISTS idx_skill_missions_active ON skill_missions(is_active, priority);
-`);
-
-// ===== 数据库迁移（兼容已有数据） =====
+// ===== 数据库迁移：补齐旧表缺失的列（必须在索引创建之前执行） =====
 try {
   db.exec(`ALTER TABLE users ADD COLUMN nickname TEXT;`);
 } catch (e) {
@@ -316,6 +303,21 @@ try {
 } catch (e) {
   // 列已存在，忽略
 }
+
+// 数据库索引（必须在表创建 + 迁移之后执行，否则空库或旧表会报错）
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_chapters_novel_branch ON chapters(novel_id, branch, order_num);
+  CREATE INDEX IF NOT EXISTS idx_user_progress_user_novel ON user_progress(user_id, novel_id);
+  CREATE INDEX IF NOT EXISTS idx_ai_jobs_token_status ON ai_jobs(token, status);
+  CREATE INDEX IF NOT EXISTS idx_custom_branches_lookup ON custom_branches(novel_id, chapter_id, user_id);
+  CREATE INDEX IF NOT EXISTS idx_novels_deleted ON novels(deleted_at);
+  CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+  CREATE INDEX IF NOT EXISTS idx_skill_activations_user ON skill_activations(user_id);
+  CREATE INDEX IF NOT EXISTS idx_skill_events_user_type ON skill_events(user_id, event_type);
+  CREATE INDEX IF NOT EXISTS idx_skill_missions_active ON skill_missions(is_active, priority);
+`);
+
+
 
 // 分支元数据表
 db.exec(`
