@@ -39,6 +39,10 @@ if [ ! -f "$DB_FILE" ]; then
   exit 1
 fi
 
+# WAL checkpoint：确保 WAL 日志已完全写入主数据库，避免备份丢失数据
+sqlite3 "$DB_FILE" "PRAGMA wal_checkpoint(TRUNCATE);" 2>/dev/null || true
+echo "  ✅ WAL checkpoint 完成"
+
 cp "$DB_FILE" "$BACKUP_FILE"
 echo "  ✅ 备份已保存: $BACKUP_FILE"
 RECORD_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM novels;" 2>/dev/null || echo "0")
