@@ -293,6 +293,30 @@ try {
   // 列已存在，忽略
 }
 
+try {
+  db.exec(`ALTER TABLE novels ADD COLUMN deleted_at DATETIME;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE novels ADD COLUMN author_id TEXT;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE novels ADD COLUMN cover_url TEXT;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE novels ADD COLUMN retention_days INTEGER DEFAULT 7;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
 // 分支元数据表
 db.exec(`
   CREATE TABLE IF NOT EXISTS branches (
