@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-const COVERS_DIR = path.join(process.cwd(), 'covers');
+const COVERS_DIR = '/var/data/ai-novel/covers';
 
 const MIME_MAP: Record<string, string> = {
   'jpg': 'image/jpeg',

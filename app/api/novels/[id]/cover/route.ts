@@ -38,19 +38,18 @@ export async function POST(
     const authHeader = request.headers.get('Authorization');
 
     let authed = false;
-    let tokenUserId: string | null = null;
 
-    // 尝试从 JWT 获取用户 ID（支持 token 字段 + Authorization 头）
-    const tryDecode = (t: string) => {
+    // 尝试从 JWT 获取用户信息（支持 token 字段 + Authorization 头）
+    const tryDecode = (t: string): { userId: string; role: string } | null => {
       try {
         const d = jwt.verify(t, JWT_SECRET) as any;
-        if (d && d.userId) return d.userId;
+        if (d && d.userId) return { userId: d.userId, role: d.role || 'reader' };
       } catch { /* ignore */ }
       return null;
     };
-    if (token) tokenUserId = tryDecode(token);
-    if (!tokenUserId && authHeader?.startsWith('Bearer ')) {
-      tokenUserId = tryDecode(authHeader.slice(7));
+    let tokenInfo = token ? tryDecode(token) : null;
+    if (!tokenInfo && authHeader?.startsWith('Bearer ')) {
+      tokenInfo = tryDecode(authHeader.slice(7));
     }
 
     const adminPassword = process.env.ADMIN_PASSWORD;
@@ -58,7 +57,10 @@ export async function POST(
     if (bodyKey && adminPassword && bodyKey === adminPassword) authed = true;
     if (!authed && queryKey && verifyAdminToken(queryKey)) authed = true;
     if (!authed && bodyKey && verifyAdminToken(bodyKey)) authed = true;
-    if (!authed && tokenUserId && tokenUserId === novel.author_id) authed = true;
+    // 管理员 JWT：role 为 admin 直接放行
+    if (!authed && tokenInfo && tokenInfo.role === 'admin') authed = true;
+    // 普通用户 JWT：必须是小说作者本人
+    if (!authed && tokenInfo && tokenInfo.userId === novel.author_id) authed = true;
 
     if (!authed) {
       return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 403 });

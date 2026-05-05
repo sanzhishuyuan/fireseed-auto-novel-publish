@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
-import { JWT_SECRET } from '@/lib/auth';
+import { JWT_SECRET, verifyAdminToken } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 
@@ -97,10 +97,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { token, content, title, author, description, tags } = body;
+    const { token, admin_key, content, title, author, description, tags } = body;
 
-    if (!token) {
-      return NextResponse.json({ error: '缺少 token' }, { status: 401 });
+    if (!token && !admin_key) {
+      return NextResponse.json({ error: '缺少 token 或 admin_key' }, { status: 401 });
     }
 
     if (!content) {
@@ -111,12 +111,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '缺少作者名' }, { status: 400 });
     }
 
-    // 验证 Token
-    let decoded: any;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch {
-      return NextResponse.json({ error: '无效的 token' }, { status: 401 });
+    // 确定用户ID：admin_key 优先，JWT Token 回退
+    let userId: string | null = null;
+
+    // 方式一：admin_key 鉴权（管理员绕过）
+    if (admin_key) {
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (adminPassword && admin_key === adminPassword) {
+        // admin_key 匹配 → 查找管理员用户
+        const adminUser = db.prepare(
+          "SELECT id FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1"
+        ).get() as { id: string } | undefined;
+        if (adminUser) {
+          userId = adminUser.id;
+        }
+      }
+      if (!userId) {
+        // 尝试 admin JWT token
+        if (verifyAdminToken(admin_key)) {
+          const adminUser = db.prepare(
+            "SELECT id FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1"
+          ).get() as { id: string } | undefined;
+          if (adminUser) {
+            userId = adminUser.id;
+          }
+        }
+      }
+    }
+
+    // 方式二：JWT Token 鉴权（普通用户）
+    if (!userId && token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+        if (decoded && decoded.userId) {
+          userId = decoded.userId;
+        }
+      } catch {
+        return NextResponse.json({ error: '无效的 token' }, { status: 401 });
+      }
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: '鉴权失败，无法确定用户身份' }, { status: 403 });
     }
 
     // 解析 frontmatter（如果存在）
@@ -154,7 +190,7 @@ export async function POST(request: NextRequest) {
     db.prepare(`
       INSERT INTO novels (id, title, author, author_id, description, cover_url, tags, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(novelId, novelTitle, author, decoded.userId, novelDescription, novelCover, novelTags, now, now);
+    `).run(novelId, novelTitle, author, userId, novelDescription, novelCover, novelTags, now, now);
 
     // 检查每章节字数
     for (const chapter of parsed.chapters) {
@@ -193,7 +229,7 @@ export async function POST(request: NextRequest) {
 
     // 记录激活并获取任务推送
     const autoPing = recordActivationAndGetMissions({
-      userId: decoded?.userId,
+      userId: userId,
       version: 'upload-md',
       clientType: 'api-auto'
     });

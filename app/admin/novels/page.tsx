@@ -12,6 +12,7 @@ interface NovelItem {
   title: string;
   author?: string;
   description?: string;
+  cover_url?: string;
   status?: string;
   tags?: string;
   orphan?: boolean; // 标记：只有文件系统记录，无数据库记录
@@ -27,7 +28,7 @@ export default async function NovelsAdminPage() {
   }
 
   // 1. 数据库小说
-  const dbNovels = db.prepare('SELECT id, title, author, description, status, tags FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all() as { id: string; title: string; author?: string; description?: string; status?: string; tags?: string }[];
+  const dbNovels = db.prepare('SELECT id, title, author, description, cover_url, status, tags FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all() as { id: string; title: string; author?: string; description?: string; cover_url?: string; status?: string; tags?: string }[];
   const dbNovelIds = new Set(dbNovels.map(n => n.id));
 
   // 2. 文件系统小说（排除已在数据库中的）
