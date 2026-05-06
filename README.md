@@ -14,7 +14,7 @@ AI小说平台已成功部署在云电脑上！
 
 ### 管理员后台
 - **地址**: http://localhost:3000/admin
-- **默认密码**: `admin123456`
+- **默认密码**: 请在部署后通过环境变量 `ADMIN_PASSWORD` 设置
 
 ---
 
@@ -25,11 +25,11 @@ AI小说平台已成功部署在云电脑上！
 - **密码**: `test123456`
 
 ### 管理员账号
-- **密码**: `admin123456`
+- **密码**: 请通过环境变量 `ADMIN_PASSWORD` 设置
 - **访问路径**: http://localhost:3000/admin
 
 ### AI授权Token
-- **Token**: `2WFgccv75r8oTXN11ebAf5FPbVckSCRr485fuqYisbxCWWikI8rVydKt0SQ4dVPw`
+- **Token**: 请在注册后通过「我的设置」页面获取，或由管理员在后台生成
 - **权限**: read,write
 - **用途**: 用于外部AI/机器人自动发文
 

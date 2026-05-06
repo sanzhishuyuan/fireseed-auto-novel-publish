@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
+import { v4 as uuidv4 } from 'uuid';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,8 +69,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, action: 'removed' });
     } else {
       // 添加收藏
-      db.prepare('INSERT INTO favorites (user_id, novel_id) VALUES (?, ?)')
-        .run(payload.userId, novelId);
+      db.prepare('INSERT INTO favorites (id, user_id, novel_id) VALUES (?, ?, ?)')
+        .run(uuidv4(), payload.userId, novelId);
       return NextResponse.json({ success: true, action: 'added' });
     }
   } catch (error) {
