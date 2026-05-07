@@ -261,9 +261,25 @@ export default async function ChapterPage({ params }: Props) {
       <article className="max-w-2xl mx-auto px-4 py-10 sm:py-14">
         {/* 章节标题 */}
         <div className="text-center mb-10">
-          <p className="text-xs font-medium tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
-            第 {currentIndex + 1} 章
-          </p>
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <p className="text-xs font-medium tracking-widest" style={{ color: 'var(--text-muted)' }}>
+              第 {currentIndex + 1} 章
+            </p>
+            {/* 有分支选项时显示分支指示器 */}
+            {chapter.choices?.length > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                🌿 {chapter.choices.length}个分支
+              </span>
+            )}
+            {/* 允许自定义分支时显示 */}
+            {chapter.custom_branch_enabled && chapter.choices?.length === 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                ✍️ 可创作分支
+              </span>
+            )}
+          </div>
           <h1 className="text-2xl sm:text-3xl font-bold leading-snug" style={{ color: 'var(--text-primary)' }}>
             {chapter.title}
           </h1>
@@ -283,26 +299,33 @@ export default async function ChapterPage({ params }: Props) {
           </ReactMarkdown>
         </div>
 
-        {/* 分支选择 */}
-        {(chapter.choices && chapter.choices.length > 0 || chapter.custom_branch_enabled) && (
-          <BranchChoice
-            choices={chapter.choices || []}
-            novelId={id}
-            chapterId={chapterId}
-            currentBranch={chapter.branch}
-            userId={userId}
-            userBranch={userBranch}
-            customBranchEnabled={chapter.custom_branch_enabled === true}
-          />
-        )}
+        {/* --- 分支区域：有分支选项或有自定义分支功能才显示 --- */}
+        {(chapter.choices?.length > 0 || chapter.custom_branch_enabled) && (
+          <>
+            {/* 分支选择器（有预设选项时展示） */}
+            {chapter.choices?.length > 0 && (
+              <BranchChoice
+                choices={chapter.choices || []}
+                novelId={id}
+                chapterId={chapterId}
+                currentBranch={chapter.branch}
+                userId={userId}
+                userBranch={userBranch}
+                customBranchEnabled={chapter.custom_branch_enabled === true}
+              />
+            )}
 
-        {/* 🌿 分支创作邀请卡片 */}
-        <BranchInviteCard
-          novelId={id}
-          chapterId={chapterId}
-          novelTitle={novel.title}
-          chapterTitle={chapter.title}
-        />
+            {/* 🌿 分支创作邀请卡片（仅当章节允许自定义分支时显示） */}
+            {chapter.custom_branch_enabled && (
+              <BranchInviteCard
+                novelId={id}
+                chapterId={chapterId}
+                novelTitle={novel.title}
+                chapterTitle={chapter.title}
+              />
+            )}
+          </>
+        )}
 
         {/* 章节导航 */}
         <div

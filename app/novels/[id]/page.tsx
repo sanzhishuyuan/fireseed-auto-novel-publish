@@ -29,6 +29,64 @@ interface Novel {
   status: string;
 }
 
+// ===== 分支选择弹出面板 =====
+function BranchPopover({ choices, chapterOrder, novelId }: {
+  choices: any[];
+  chapterOrder: number;
+  novelId: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
+        className="badge badge-purple text-xs cursor-pointer hover:scale-105 transition-transform"
+        title="查看分支选项"
+      >
+        🌿 {choices.length}个分支
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute right-0 top-full mt-2 w-64 rounded-xl p-4 z-50 shadow-lg"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}
+          >
+            <p className="text-xs font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
+              第{chapterOrder}章 · 分支选择
+            </p>
+            <div className="space-y-2">
+              {choices.map((choice: any, i: number) => (
+                <Link
+                  key={i}
+                  href={`/novels/${novelId}/branches/${choice.branch}`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 p-2.5 rounded-lg text-xs transition-all hover:scale-[1.02]"
+                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                >
+                  <span className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold shrink-0"
+                    style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+                    {String.fromCharCode(65 + i)}
+                  </span>
+                  <span className="flex-1 truncate">{choice.text}</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
+                    <path d="M4.5 2.5L8 6l-3.5 3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </Link>
+              ))}
+            </div>
+            <p className="text-xs text-center mt-2" style={{ color: 'var(--text-muted)' }}>
+              点击选项进入对应分支
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function NovelDetailPage({ params }: { params: { id: string } }) {
   const [novel, setNovel] = useState<Novel | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -413,7 +471,11 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                           </p>
                         </div>
                         {hasChoices && (
-                          <span className="badge badge-purple text-xs shrink-0">分支</span>
+                          <BranchPopover
+                            choices={chapterAny.choices || chapterAny.meta?.choices || []}
+                            chapterOrder={index + 1}
+                            novelId={params.id}
+                          />
                         )}
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" className="shrink-0">
                           <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>
