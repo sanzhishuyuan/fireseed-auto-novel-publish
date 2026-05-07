@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SkillManager from '../skills/SkillManager';
+import MusicManager from '../music/MusicManager';
 
 interface AdminStats {
   overview: {
@@ -378,6 +379,11 @@ export default function EnhancedAdminDashboard() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* 背景音乐管理 */}
+        <div className="mb-8">
+          <MusicManager />
         </div>
 
         {/* 快捷操作 */}

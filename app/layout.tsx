@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import ThemeToggle from '@/components/ThemeToggle';
+import MusicPlayer from '@/components/MusicPlayer';
 
 export const metadata: Metadata = {
   title: 'FireSeed - AI 互动小说平台',
@@ -35,11 +36,12 @@ export default function RootLayout({
         </a>
         {children}
         {/* 全局主题切换按钮 */}
-        <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 999 }}>
+        <div style={{ position: 'fixed', bottom: 20, right: 80, zIndex: 999 }}>
           <div className="card" style={{ padding: 6, borderRadius: 30, boxShadow: 'var(--shadow-lg)' }}>
             <ThemeToggle />
           </div>
         </div>
+        <MusicPlayer />
       </body>
     </html>
   );
