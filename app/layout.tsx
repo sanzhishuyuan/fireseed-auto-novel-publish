@@ -35,13 +35,13 @@ export default function RootLayout({
           跳转到主要内容
         </a>
         {children}
-        {/* 全局主题切换按钮 */}
-        <div style={{ position: 'fixed', bottom: 20, right: 80, zIndex: 999 }}>
-          <div className="card" style={{ padding: 6, borderRadius: 30, boxShadow: 'var(--shadow-lg)' }}>
+        {/* 全局右上角工具栏：主题切换 + 音乐播放器 */}
+        <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="card" style={{ padding: 4, borderRadius: 24, boxShadow: 'var(--shadow-lg)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <ThemeToggle />
           </div>
+          <MusicPlayer />
         </div>
-        <MusicPlayer />
       </body>
     </html>
   );
