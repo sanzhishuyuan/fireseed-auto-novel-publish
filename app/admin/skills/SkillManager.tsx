@@ -382,6 +382,7 @@ export default function SkillManager({ missions, activationStats, activeUsers }:
                           <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>最近活跃</th>
                           <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>激活次数</th>
                           <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作品数</th>
+                          <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作品名</th>
                           <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>注册时间</th>
                         </tr>
                       </thead>
@@ -407,11 +408,16 @@ export default function SkillManager({ missions, activationStats, activeUsers }:
                             </td>
                             <td className="px-4 py-3"><span className="badge">{u.activation_count}</span></td>
                             <td className="px-4 py-3">
-                              <span className={`badge ${parseInt(u.novels_count) > 0 ? 'bg-green-100 text-green-700' : ''}`}>
-                                {u.novels_count}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(u.registered_at).toLocaleString('zh-CN')}</td>
+                          <span className={`badge ${parseInt(u.novels_count) > 0 ? 'bg-green-100 text-green-700' : ''}`}>
+                            {u.novels_count}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs max-w-[200px]" style={{ color: 'var(--text-secondary)' }}>
+                          <div className="truncate" title={u.novel_titles || ''}>
+                            {u.novel_titles || '-'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(u.registered_at).toLocaleString('zh-CN')}</td>
                           </tr>
                         ))}
                       </tbody>

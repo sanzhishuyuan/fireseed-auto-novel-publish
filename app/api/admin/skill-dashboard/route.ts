@@ -40,7 +40,8 @@ export async function GET() {
       MAX(u_act.last_time) as last_activation_at,
       (SELECT MAX(created_at) FROM novels WHERE author_id = u.id AND deleted_at IS NULL) as last_novel_at,
       COALESCE(u_act.cnt, 0) as activation_count,
-      (SELECT COUNT(*) FROM novels WHERE author_id = u.id AND deleted_at IS NULL) as novels_count
+      (SELECT COUNT(*) FROM novels WHERE author_id = u.id AND deleted_at IS NULL) as novels_count,
+      (SELECT GROUP_CONCAT(substr(title, 1, 30), ' | ') FROM novels WHERE author_id = u.id AND deleted_at IS NULL ORDER BY created_at DESC) as novel_titles
     FROM users u
     LEFT JOIN (
       SELECT user_id, MAX(created_at) as last_time, COUNT(*) as cnt
