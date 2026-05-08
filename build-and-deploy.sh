@@ -29,7 +29,7 @@ echo "  ✅ native 模块已重编译"
 
 # ===== 步骤1: 备份数据库（数据库不存在则中止！）=====
 echo ""
-echo "[1/5] 备份数据库..."
+echo "[1/6] 备份数据库 + 封面文件..."
 mkdir -p "$BACKUP_DIR"
 
 if [ ! -f "$DB_FILE" ]; then
@@ -48,25 +48,36 @@ echo "  ✅ 备份已保存: $BACKUP_FILE"
 RECORD_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM novels;" 2>/dev/null || echo "0")
 echo "  📊 当前小说数: $RECORD_COUNT"
 
-# 保留最近7个备份，删除更旧的
+# 保留最近7个数据库备份，删除更旧的
 ls -t "$BACKUP_DIR"/novel.db.* 2>/dev/null | tail -n +8 | xargs -r rm
-echo "  🧹 保留最近7个备份"
+echo "  🧹 保留最近7个数据库备份"
+
+# 备份封面文件（tar 压缩，避免文件数过多）
+COVERS_SRC="$NGINX_COVERS_DIR"
+COVERS_BACKUP="$BACKUP_DIR/covers.$TIMESTAMP.tar.gz"
+if [ -d "$COVERS_SRC" ] && [ "$(ls -A "$COVERS_SRC" 2>/dev/null)" ]; then
+  tar -czf "$COVERS_BACKUP" -C "$(dirname "$COVERS_SRC")" "$(basename "$COVERS_SRC")" 2>/dev/null
+  echo "  ✅ 封面已备份: $COVERS_BACKUP ($(du -sh "$COVERS_BACKUP" | cut -f1))"
+fi
+
+# 保留最近7个封面备份
+ls -t "$BACKUP_DIR"/covers.*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm
 
 # ===== 步骤2: 构建 =====
 echo ""
-echo "[2/5] 执行构建..."
+echo "[2/6] 执行构建..."
 npm run build
 echo "  ✅ 构建完成"
 
 # ===== 步骤3: 复制静态资源 =====
 echo ""
-echo "[3/5] 复制静态资源..."
+echo "[3/6] 复制静态资源..."
 cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
 echo "  ✅ 静态资源已同步"
 
 # ===== 步骤4: 设置符号链接 =====
 echo ""
-echo "[4/5] 设置符号链接和目录..."
+echo "[4/6] 设置符号链接和目录..."
 # 封面目录：统一到 /var/data/ai-novel/covers/（nginx 也使用此路径）
 NGINX_COVERS_DIR="/var/data/ai-novel/covers"
 mkdir -p "$NGINX_COVERS_DIR"
@@ -91,7 +102,7 @@ echo "  ✅ 符号链接: $STANDALONE_COVERS → $COVERS_DIR"
 
 # ===== 步骤5: 重启服务 =====
 echo ""
-echo "[5/5] 重启服务..."
+echo "[5/6] 重启服务..."
 pm2 restart ai-novel || pm2 start ecosystem.config.js
 sleep 2
 
