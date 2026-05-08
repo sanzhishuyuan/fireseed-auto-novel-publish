@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -26,7 +27,12 @@ export async function POST(request: NextRequest) {
   try {
     // 修复: request.json() 解析异常兼容
     const bodyText = await request.text();
-    const { title, author, description, status, tags } = JSON.parse(bodyText);
+
+    // 安全解析 JSON，非法请求体返回 400 而非 500
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+
+    const { title, author, description, status, tags } = parsed.data;
     const id = uuidv4();
 
     // 保存到数据库

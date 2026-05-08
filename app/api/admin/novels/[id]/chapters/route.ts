@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { safeParseJSON } from '@/lib/request-parser';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -21,7 +22,12 @@ export async function POST(request: NextRequest, { params }: Props) {
   try {
     // 修复: request.json() 解析异常兼容
     const bodyText = await request.text();
-    const { title, content, order, branch, choices } = JSON.parse(bodyText);
+
+    // 安全解析 JSON，非法请求体返回 400 而非 500
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+
+    const { title, content, order, branch, choices } = parsed.data;
     const chapterId = `${order}-${Date.now()}`;
 
     // 保存到文件系统

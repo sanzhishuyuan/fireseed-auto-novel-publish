@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { verifyAdminToken, generateAIToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -23,7 +24,9 @@ export async function POST(request: NextRequest) {
   try {
     // 修复: request.json() 解析异常兼容
     const bodyText = await request.text();
-    const { name, permissions } = JSON.parse(bodyText);
+      const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { name, permissions } = parsed.data;
     const token = generateAIToken();
     const id = uuidv4();
 

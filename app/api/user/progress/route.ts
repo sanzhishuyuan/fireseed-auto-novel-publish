@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -20,7 +21,9 @@ export async function POST(request: NextRequest) {
   try {
     // 修复: request.json() 解析异常兼容
     const bodyText = await request.text();
-    const { novelId, branch, chapterId } = JSON.parse(bodyText);
+      const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { novelId, branch, chapterId } = parsed.data;
     const userId = payload.userId;
 
     const existing = db.prepare('SELECT id FROM user_progress WHERE user_id = ? AND novel_id = ?')

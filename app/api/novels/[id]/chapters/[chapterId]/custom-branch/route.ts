@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,12 +33,14 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: '登录已过期' }, { status: 401 });
   }
 
-  const { id: novelId, chapterId } = await params;
+    const { id: novelId, chapterId } = await params;
 
   try {
     // 修复: request.json() 解析异常兼容
     const bodyText = await request.text();
-    const { content } = JSON.parse(bodyText);
+      const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { content } = parsed.data;
 
     if (!content || content.trim().length < 10) {
       return NextResponse.json({ error: '自定义剧情内容至少10个字' }, { status: 400 });
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest, { params }: Params) {
  * 获取该章节下的所有自定义分支（已审核的）
  */
 export async function GET(request: NextRequest, { params }: Params) {
-  const { id: novelId, chapterId } = await params;
+    const { id: novelId, chapterId } = await params;
 
   try {
     const branches = db.prepare(`

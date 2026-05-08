@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { verifyAdminPassword, generateAdminToken } from '@/lib/auth';
 import db from '@/lib/db';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export async function POST(request: NextRequest) {
   // P0-4: 速率限制（每分钟最多5次 Admin 登录尝试）
@@ -12,8 +13,13 @@ export async function POST(request: NextRequest) {
 
   try {
     // 修复: request.json() 在 Node 18 + Next 14 standalone 下解析异常
-    const body = await request.text();
-    const { password } = JSON.parse(body);
+    const bodyText = await request.text();
+
+    // 安全解析 JSON，非法请求体返回 400 而非 500
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+
+    const { password } = parsed.data;
 
     let authed = false;
 

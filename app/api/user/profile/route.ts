@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +53,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.text();
-    const { nickname } = JSON.parse(body);
+      const parsed = safeParseJSON(body);
+    if (!parsed.success) return parsed.response;
+    const { nickname } = parsed.data;
 
     if (!nickname || typeof nickname !== 'string') {
       return NextResponse.json({ error: '昵称不能为空' }, { status: 400 });

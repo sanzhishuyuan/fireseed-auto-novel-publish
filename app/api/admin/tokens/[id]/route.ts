@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyAdminToken } from '@/lib/auth';
 import db from '@/lib/db';
+import { safeParseJSON } from '@/lib/request-parser';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 export async function PATCH(request: NextRequest, { params }: Props) {
-  const { id } = await params;
+    const { id } = await params;
   const cookieStore = await cookies();
   if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
     return NextResponse.json({ error: '未授权' }, { status: 401 });
@@ -17,7 +18,9 @@ export async function PATCH(request: NextRequest, { params }: Props) {
   try {
     // 修复: request.json() 解析异常兼容
     const bodyText = await request.text();
-    const { is_active } = JSON.parse(bodyText);
+      const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { is_active } = parsed.data;
     db.prepare('UPDATE ai_tokens SET is_active = ? WHERE id = ?').run(is_active, id);
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -26,7 +29,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Props) {
-  const { id } = await params;
+    const { id } = await params;
   const cookieStore = await cookies();
   if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
     return NextResponse.json({ error: '未授权' }, { status: 401 });

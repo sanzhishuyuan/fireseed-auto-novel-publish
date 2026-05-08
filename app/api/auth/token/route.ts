@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
 import { JWT_SECRET } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { safeParseJSON } from '@/lib/request-parser';
 
 /**
  * POST /api/auth/token
@@ -20,8 +21,13 @@ export async function POST(request: NextRequest) {
 
   try {
     // 修复: request.json() 在 Node 18 + Next 14 standalone 下解析异常
-    const body = await request.text();
-    const { username, password } = JSON.parse(body);
+    const bodyText = await request.text();
+
+    // 安全解析 JSON，非法请求体返回 400 而非 500
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+
+    const { username, password } = parsed.data;
 
     if (!username || !password) {
       return NextResponse.json({ error: '请填写完整信息' }, { status: 400 });

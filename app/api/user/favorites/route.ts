@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,9 @@ export async function POST(request: NextRequest) {
 
     // 修复: request.json() 解析异常兼容
     const bodyText = await request.text();
-    const { novelId } = JSON.parse(bodyText);
+      const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { novelId } = parsed.data;
     if (!novelId) {
       return NextResponse.json({ error: '缺少小说ID' }, { status: 400 });
     }
