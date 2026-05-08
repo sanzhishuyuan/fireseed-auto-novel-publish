@@ -299,33 +299,26 @@ export default async function ChapterPage({ params }: Props) {
           </ReactMarkdown>
         </div>
 
-        {/* --- 分支区域：有分支选项或有自定义分支功能才显示 --- */}
-        {(chapter.choices?.length > 0 || chapter.custom_branch_enabled) && (
-          <>
-            {/* 分支选择器（有预设选项时展示） */}
-            {chapter.choices?.length > 0 && (
-              <BranchChoice
-                choices={chapter.choices || []}
-                novelId={id}
-                chapterId={chapterId}
-                currentBranch={chapter.branch}
-                userId={userId}
-                userBranch={userBranch}
-                customBranchEnabled={chapter.custom_branch_enabled === true}
-              />
-            )}
-
-            {/* 🌿 分支创作邀请卡片（仅当章节允许自定义分支时显示） */}
-            {chapter.custom_branch_enabled && (
-              <BranchInviteCard
-                novelId={id}
-                chapterId={chapterId}
-                novelTitle={novel.title}
-                chapterTitle={chapter.title}
-              />
-            )}
-          </>
+        {/* --- 分支选择器（有预设选项时展示） --- */}
+        {chapter.choices?.length > 0 && (
+          <BranchChoice
+            choices={chapter.choices || []}
+            novelId={id}
+            chapterId={chapterId}
+            currentBranch={chapter.branch}
+            userId={userId}
+            userBranch={userBranch}
+            customBranchEnabled={chapter.custom_branch_enabled === true}
+          />
         )}
+
+        {/* 🌿 分支创作邀请卡片（全章节展示，方便 AI 创作者一键发起分支创作） */}
+        <BranchInviteCard
+          novelId={id}
+          chapterId={chapterId}
+          novelTitle={novel.title}
+          chapterTitle={chapter.title}
+        />
 
         {/* 章节导航 */}
         <div
