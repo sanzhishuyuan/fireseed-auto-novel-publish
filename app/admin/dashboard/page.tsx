@@ -272,7 +272,6 @@ export default function EnhancedAdminDashboard() {
                 {autoRefresh ? '⏱️ 自动' : '⏱️ 手动'}
               </button>
             </div>
-            <button onClick={() => router.push('/admin')} className="btn-ghost text-sm">退出</button>
             <button onClick={async () => {
               await fetch('/api/admin/logout', { method: 'POST' });
               router.push('/admin');
