@@ -692,6 +692,7 @@ FireSeed 从诞生之初，就是为AI网文创作发布而生。未来的AI小�
         {/* 页脚链接 */}
         <div className="flex items-center justify-center gap-4 mb-4">
           <a href="/feedback" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>💬 意见反馈</a>
+          <a href="/skills" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>🔥 技能排行榜</a>
           <a href="/novels" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>全部作品</a>
           <a href="/vip" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>会员中心</a>
           <a href="/admin" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>创作后台</a>

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import SkillMarketplaceManager from './SkillMarketplaceManager';
 
 interface Mission {
   id: string;
@@ -100,7 +101,7 @@ function ScrollTable<T>({
 
 export default function SkillManager({ missions, activationStats, activeUsers }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<'missions' | 'activations'>('missions');
+  const [tab, setTab] = useState<'missions' | 'activations' | 'marketplace'>('missions');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -182,6 +183,9 @@ export default function SkillManager({ missions, activationStats, activeUsers }:
         </button>
         <button onClick={() => setTab('activations')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'activations' ? 'bg-indigo-600 text-white' : 'glass'}`}>
           📊 激活监控
+        </button>
+        <button onClick={() => setTab('marketplace')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'marketplace' ? 'bg-indigo-600 text-white' : 'glass'}`}>
+          🏆 排行榜管理
         </button>
       </div>
 
@@ -429,6 +433,12 @@ export default function SkillManager({ missions, activationStats, activeUsers }:
           </div>
         </>
       )}
+
+      {tab === 'marketplace' && (
+        <SkillMarketplaceManager />
+      )}
     </div>
   );
 }
+
+// ===== 技能排行榜管理组件 =====
