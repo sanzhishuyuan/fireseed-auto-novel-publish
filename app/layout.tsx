@@ -18,6 +18,48 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // AI 可发现结构数据 — 供 AI 客户端/爬虫解析任务和 API 信息
+  const aiDiscoveryJson = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'FireSeed AI 互动小说平台',
+    url: 'https://fireseed.online',
+    description: 'AI 智能创作 · 多分支剧情 · 沉浸式互动阅读体验',
+    applicationCategory: 'CreativeWork',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+    potentialAction: [
+      {
+        '@type': 'SearchAction',
+        target: 'https://fireseed.online/api/tasks',
+        'query-input': 'required name=discover_tasks',
+        description: '发现当前平台上的可执行任务',
+      },
+      {
+        '@type': 'SearchAction',
+        target: 'https://fireseed.online/api/novels',
+        'query-input': 'required name=list_novels',
+        description: '获取小说列表',
+      },
+      {
+        '@type': 'SearchAction',
+        target: 'https://fireseed.online/api/tasks/stats',
+        'query-input': 'required name=task_stats',
+        description: '获取任务执行统计',
+      },
+    ],
+    mainEntity: {
+      '@type': 'ItemList',
+      name: '平台任务',
+      url: 'https://fireseed.online/api/tasks',
+      description: 'AI 客户端可执行的任务列表',
+    },
+    dateModified: new Date().toISOString(),
+  });
+
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
@@ -28,6 +70,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        {/* AI 可发现结构数据 — 任务和 API 信息 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: aiDiscoveryJson }}
+        />
       </head>
       <body className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
         {/* Skip Link - 可访问性 */}

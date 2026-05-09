@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 记录事件
-    const allowedTypes = ['skill_activate', 'novel_create', 'chapter_publish', 'cover_upload', 'milestone_10', 'milestone_50'];
+    const allowedTypes = ['skill_activate', 'novel_create', 'chapter_publish', 'cover_upload', 'milestone_10', 'milestone_50', 'task_take', 'task_complete'];
     const cleanType = allowedTypes.includes(event_type) ? event_type : 'custom_' + event_type;
 
     db.prepare(`

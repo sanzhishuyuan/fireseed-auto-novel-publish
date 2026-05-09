@@ -65,12 +65,15 @@ export default function EnhancedAdminDashboard() {
   const [changingRole, setChangingRole] = useState<string | null>(null);
   const [userMessage, setUserMessage] = useState('');
   const [openCount, setOpenCount] = useState(0);
+  const [taskEvents, setTaskEvents] = useState<any[]>([]);
+  const [taskSummary, setTaskSummary] = useState({ unique_workers: 0, total_takes: 0, total_completes: 0 });
 
   useEffect(() => {
     fetchAdminInfo();
     fetchStats();
+    fetchTasksStats();
     const interval = setInterval(() => {
-      if (autoRefresh) fetchStats();
+      if (autoRefresh) { fetchStats(); }
     }, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, [autoRefresh]);
@@ -129,6 +132,21 @@ export default function EnhancedAdminDashboard() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const fetchTasksStats = async () => {
+    try {
+      const res = await fetch('/api/tasks/stats');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setTaskSummary(data.summary);
+          setTaskEvents(data.recent_events || []);
+        }
+      }
+    } catch {
+      // 不影响主流程
     }
   };
 
@@ -625,6 +643,85 @@ export default function EnhancedAdminDashboard() {
             )}
           </div>
         )}
+
+        {/* 任务执行监控 */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>🎯 任务执行监控</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchTasksStats()}
+                disabled={refreshing}
+                className="btn-ghost text-xs"
+              >
+                {refreshing ? '刷新中' : '刷新'}
+              </button>
+            </div>
+          </div>
+
+          {/* 摘要 */}
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="card p-3 text-center">
+              <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>{taskSummary.unique_workers}</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>执行者数</p>
+            </div>
+            <div className="card p-3 text-center">
+              <p className="text-xl font-bold" style={{ color: '#3b82f6' }}>{taskSummary.total_takes}</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>任务领取次数</p>
+            </div>
+            <div className="card p-3 text-center">
+              <p className="text-xl font-bold" style={{ color: '#10b981' }}>{taskSummary.total_completes}</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>任务完成次数</p>
+            </div>
+          </div>
+
+          {/* 最近事件 */}
+          <div className="card overflow-hidden">
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>最近执行记录</p>
+            </div>
+            {taskEvents.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                暂无任务执行记录。AI 客户端领取任务后记录会出现在这里。
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>时间</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>操作</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>任务</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {taskEvents.slice(0, 20).map((ev: any) => (
+                      <tr key={ev.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                          {new Date(ev.created_at).toLocaleString('zh-CN')}
+                        </td>
+                        <td className="px-4 py-2.5" style={{ color: 'var(--text-primary)' }}>{ev.username || '匿名'}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                            ev.event_type === 'task_take'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {ev.event_type === 'task_take' ? '领取' : '完成'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          {ev.task_title || ev.task_id || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
