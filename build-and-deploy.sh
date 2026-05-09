@@ -11,6 +11,7 @@ DB_FILE="$PROJECT_DIR/data/novel.db"
 BACKUP_DIR="/var/data/ai-novel/backup"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/novel.db.$TIMESTAMP"
+NGINX_COVERS_DIR="/var/data/ai-novel/covers"
 
 echo "=========================================="
 echo "  Fireseed 部署脚本 (v5 - 正式版)"
