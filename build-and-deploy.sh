@@ -74,6 +74,8 @@ echo "  ✅ 构建完成"
 echo ""
 echo "[3/6] 复制静态资源..."
 cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+# 复制 public 目录（如计划详情页的 MD 文件）
+cp -r public .next/standalone/public 2>/dev/null || true
 echo "  ✅ 静态资源已同步"
 
 # ===== 步骤4: 设置符号链接 =====
