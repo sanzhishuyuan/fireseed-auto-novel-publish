@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, verifyAdminToken } from '@/lib/auth';
+import { requireAdmin, verifyAdminToken, ADMIN_PASSWORD } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,11 +10,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  // 支持 admin_key 认证（方便管理面板API调用）
-  const bodyKey = body.admin_key || '';
-  if (bodyKey && verifyAdminToken(bodyKey)) {
-    // admin_key 验证通过
-  } else {
+  // 支持 admin_key 直接在body中传入
+  const bodyKey = (body.admin_key || '').trim();
+  if (!bodyKey || bodyKey !== ADMIN_PASSWORD) {
     const admin = requireAdmin(request, 'skill.manage');
     if (admin instanceof Response) return admin;
   }
