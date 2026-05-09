@@ -57,7 +57,7 @@ export default function EnhancedAdminDashboard() {
   const [skillExpanded, setSkillExpanded] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [adminInfo, setAdminInfo] = useState<{ username: string; role: string; roleLabel: string } | null>(null);
+  const [adminInfo, setAdminInfo] = useState<{ username: string; nickname?: string; role: string; roleLabel: string } | null>(null);
   const [usersExpanded, setUsersExpanded] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
