@@ -55,12 +55,15 @@ export default function EnhancedAdminDashboard() {
   const [cleaningUp, setCleaningUp] = useState(false);
   const [skillData, setSkillData] = useState<{ missions: any[]; activationStats: any; activeUsers?: any[] } | null>(null);
   const [skillExpanded, setSkillExpanded] = useState(true);
-<<<<<<< HEAD
   const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-=======
   const [adminInfo, setAdminInfo] = useState<{ username: string; role: string; roleLabel: string } | null>(null);
->>>>>>> 0a2d0ba (feat: admin permission system stage 1 - roles + audit + permission checks)
+  const [usersExpanded, setUsersExpanded] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersTotal, setUsersTotal] = useState(0);
+  const [userSearch, setUserSearch] = useState('');
+  const [changingRole, setChangingRole] = useState<string | null>(null);
+  const [userMessage, setUserMessage] = useState('');
 
   useEffect(() => {
     fetchAdminInfo();
@@ -119,6 +122,47 @@ export default function EnhancedAdminDashboard() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const fetchUsers = async (search = '') => {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      params.set('limit', '100');
+      const res = await fetch(`/api/admin/users?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setUsers(data.users);
+          setUsersTotal(data.total);
+        }
+      }
+    } catch {
+      // 忽略
+    }
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    setChangingRole(userId);
+    setUserMessage('');
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUserMessage(data.message);
+        fetchUsers(userSearch);
+      } else {
+        setUserMessage(data.error || '操作失败');
+      }
+    } catch {
+      setUserMessage('网络错误');
+    } finally {
+      setChangingRole(null);
     }
   };
 
@@ -182,7 +226,6 @@ export default function EnhancedAdminDashboard() {
             <Link href="/admin/chapters" className="btn-ghost text-sm">章节管理</Link>
             <Link href="/admin/tokens" className="btn-ghost text-sm">Token管理</Link>
             <Link href="/admin/skills" className="btn-ghost text-sm">技能管理</Link>
-<<<<<<< HEAD
             <div className="flex items-center gap-1">
               <button
                 onClick={fetchStats}
@@ -204,12 +247,10 @@ export default function EnhancedAdminDashboard() {
               </button>
             </div>
             <button onClick={() => router.push('/admin')} className="btn-ghost text-sm">退出</button>
-=======
             <button onClick={async () => {
               await fetch('/api/admin/logout', { method: 'POST' });
               router.push('/admin');
             }} className="btn-ghost text-sm">退出</button>
->>>>>>> 0a2d0ba (feat: admin permission system stage 1 - roles + audit + permission checks)
           </div>
         </div>
       </header>
@@ -445,6 +486,122 @@ export default function EnhancedAdminDashboard() {
             </a>
           </div>
         </div>
+
+        {/* 用户管理（仅 super_admin 可见） */}
+        {adminInfo?.role === 'super_admin' && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>👥 用户管理</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>共 {usersTotal} 人</span>
+                <button
+                  onClick={() => {
+                    setUsersExpanded(!usersExpanded);
+                    if (!usersExpanded) fetchUsers();
+                  }}
+                  className="btn-ghost text-xs px-2"
+                >
+                  {usersExpanded ? '折叠' : '展开'}
+                </button>
+              </div>
+            </div>
+
+            {usersExpanded && (
+              <div className="card overflow-hidden">
+                {/* 搜索栏 */}
+                <div className="p-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && fetchUsers(userSearch)}
+                      className="input flex-1"
+                      placeholder="搜索用户名..."
+                    />
+                    <button onClick={() => fetchUsers(userSearch)} className="btn-primary text-sm px-4">搜索</button>
+                  </div>
+                  {userMessage && (
+                    <p className="text-xs mt-2" style={{ color: userMessage.includes('已更新') || userMessage.includes('成功') ? '#10b981' : '#ef4444' }}>
+                      {userMessage}
+                    </p>
+                  )}
+                </div>
+
+                {/* 用户表格 */}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户名</th>
+                        <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>当前角色</th>
+                        <th className="text-center px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作品数</th>
+                        <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>注册时间</th>
+                        <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user: any) => (
+                        <tr key={user.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-primary)' }}>
+                            {user.nickname || user.username}
+                            {user.username === '__admin__' && (
+                              <span className="text-xs ml-1" style={{ color: '#64748b' }}>(系统)</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              user.role === 'super_admin' ? 'text-purple-400 bg-purple-400/10' :
+                              user.role === 'admin' ? 'text-blue-400 bg-blue-400/10' :
+                              user.role === 'editor' ? 'text-green-400 bg-green-400/10' :
+                              user.role === 'viewer' ? 'text-yellow-400 bg-yellow-400/10' :
+                              'text-gray-400 bg-gray-400/10'
+                            }`}>
+                              {user.roleLabel}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-center" style={{ color: 'var(--text-muted)' }}>{user.novelsCount}</td>
+                          <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+                            {new Date(user.registeredAt).toLocaleDateString('zh-CN')}
+                          </td>
+                          <td className="px-4 py-3">
+                            {user.username !== '__admin__' && user.role !== 'super_admin' ? (
+                              <select
+                                value={user.role}
+                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                disabled={changingRole === user.id}
+                                className="text-xs px-2 py-1 rounded"
+                                style={{
+                                  background: 'var(--bg-secondary)',
+                                  color: 'var(--text-primary)',
+                                  border: '1px solid var(--border-light)',
+                                }}
+                              >
+                                <option value="reader">注册用户</option>
+                                <option value="viewer">数据观察员</option>
+                                <option value="editor">内容管理员</option>
+                                <option value="admin">高级管理员</option>
+                              </select>
+                            ) : user.role === 'super_admin' ? (
+                              <span className="text-xs" style={{ color: '#a78bfa' }}>—</span>
+                            ) : null}
+                          </td>
+                        </tr>
+                      ))}
+                      {users.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>
+                            无匹配用户
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
