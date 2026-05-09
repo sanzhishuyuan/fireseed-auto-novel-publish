@@ -64,6 +64,7 @@ export default function EnhancedAdminDashboard() {
   const [userSearch, setUserSearch] = useState('');
   const [changingRole, setChangingRole] = useState<string | null>(null);
   const [userMessage, setUserMessage] = useState('');
+  const [openCount, setOpenCount] = useState(0);
 
   useEffect(() => {
     fetchAdminInfo();
@@ -92,10 +93,11 @@ export default function EnhancedAdminDashboard() {
     setRefreshing(true);
     try {
       // 并发获取管理员信息、统计数据、清理清单、技能数据
-      const [statsRes, cleanupRes, skillRes] = await Promise.all([
+      const [statsRes, cleanupRes, skillRes, feedbackRes] = await Promise.all([
         fetch('/api/admin/stats'),
         fetch('/api/admin/cleanup'),
         fetch('/api/admin/skill-dashboard'),
+        fetch('/api/admin/feedback'),
       ]);
       
       if (!statsRes.ok) {
@@ -116,6 +118,11 @@ export default function EnhancedAdminDashboard() {
       if (skillRes.ok) {
         const skillData = await skillRes.json();
         setSkillData({ missions: skillData.missions, activationStats: skillData.activationStats, activeUsers: skillData.activeUsers });
+      }
+
+      if (feedbackRes.ok) {
+        const feedbackData = await feedbackRes.json();
+        setOpenCount(feedbackData.openCount || 0);
       }
     } catch (err) {
       setError('加载数据失败');
@@ -226,6 +233,7 @@ export default function EnhancedAdminDashboard() {
             <Link href="/admin/chapters" className="btn-ghost text-sm">章节管理</Link>
             <Link href="/admin/tokens" className="btn-ghost text-sm">Token管理</Link>
             <Link href="/admin/skills" className="btn-ghost text-sm">技能管理</Link>
+            <Link href="/admin/feedback" className="btn-ghost text-sm">反馈管理</Link>
             <div className="flex items-center gap-1">
               <button
                 onClick={fetchStats}
@@ -342,7 +350,7 @@ export default function EnhancedAdminDashboard() {
         {/* 待处理任务 */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>⚠️ 待处理任务</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <TaskCard 
               title="待清理小说" 
               count={cleanupList.length}
@@ -376,6 +384,16 @@ export default function EnhancedAdminDashboard() {
               description={`今日已使用 ${stats?.apiUsage.usedTokensToday || 0} 次`}
               action={
                 <Link href="/admin/tokens" className="btn-ghost text-sm">管理</Link>
+              }
+            />
+            <TaskCard 
+              title="用户反馈" 
+              count={openCount}
+              description="用户提交的意见与问题"
+              action={
+                <Link href="/admin/feedback" className="btn-primary text-sm">
+                  {openCount > 0 ? `待处理 ${openCount} 条` : '查看'}
+                </Link>
               }
             />
           </div>
@@ -458,7 +476,7 @@ export default function EnhancedAdminDashboard() {
         {/* 快捷操作 */}
         <div>
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>⚡ 快捷操作</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             <Link href="/admin/novels" className="card p-4 hover:scale-[1.02] transition-transform">
               <p className="text-lg mb-1">📚</p>
               <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>小说管理</p>
@@ -478,6 +496,11 @@ export default function EnhancedAdminDashboard() {
               <p className="text-lg mb-1">🤖</p>
               <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>技能管理</p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>任务编辑 / 激活监控</p>
+            </Link>
+            <Link href="/admin/feedback" className="card p-4 hover:scale-[1.02] transition-transform">
+              <p className="text-lg mb-1">💬</p>
+              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>反馈管理</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{openCount > 0 ? `待处理 ${openCount} 条` : '用户反馈'}</p>
             </Link>
             <a href="/" target="_blank" className="card p-4 hover:scale-[1.02] transition-transform">
               <p className="text-lg mb-1">🌐</p>
