@@ -11,8 +11,8 @@ interface Props {
 export async function PATCH(request: NextRequest, { params }: Props) {
     const { id } = await params;
   const cookieStore = await cookies();
-  const admin = requireAdmin(request, 'token.manage');
-  if (admin instanceof Response) return admin;
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
+    return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 
   try {
@@ -31,8 +31,8 @@ export async function PATCH(request: NextRequest, { params }: Props) {
 export async function DELETE(request: NextRequest, { params }: Props) {
     const { id } = await params;
   const cookieStore = await cookies();
-  const admin = requireAdmin(request, 'token.manage');
-  if (admin instanceof Response) return admin;
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
+    return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 
   try {

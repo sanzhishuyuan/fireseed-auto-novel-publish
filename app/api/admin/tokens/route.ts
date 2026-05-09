@@ -5,10 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { safeParseJSON } from '@/lib/request-parser';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
-  const admin = requireAdmin(request, 'token.manage');
-  if (admin instanceof Response) return admin;
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
+    return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 
   const tokens = db.prepare('SELECT * FROM ai_tokens ORDER BY created_at DESC').all();
@@ -17,8 +17,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
-  const admin = requireAdmin(request, 'token.manage');
-  if (admin instanceof Response) return admin;
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
+    return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 
   try {

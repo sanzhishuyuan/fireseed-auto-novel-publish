@@ -6,8 +6,8 @@ import { safeParseJSON } from '@/lib/request-parser';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const cookieStore = await cookies();
-  const admin = requireAdmin(request, 'skill.manage');
-  if (admin instanceof Response) return admin;
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
+    return NextResponse.json({ error: '未授�? }, { status: 401 });
   }
 
   try {
@@ -52,8 +52,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const cookieStore = await cookies();
-  const admin = requireAdmin(request, 'skill.manage');
-  if (admin instanceof Response) return admin;
+  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
+    return NextResponse.json({ error: '未授�? }, { status: 401 });
   }
 
   try {
