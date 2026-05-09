@@ -32,25 +32,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '仅支持 GitHub 和 Gitee 仓库' }, { status: 400 });
     }
 
-    // 尝试获取 SKILL.md，fallback 到 README.md
-    const rawUrls = [
-      `https://raw.githubusercontent.com/${repoPath}/main/SKILL.md`,
-      `https://raw.githubusercontent.com/${repoPath}/master/SKILL.md`,
-      `https://raw.githubusercontent.com/${repoPath}/main/README.md`,
-      `https://raw.githubusercontent.com/${repoPath}/master/README.md`,
-    ];
-
     let rawContent = '';
     let usedUrl = '';
-    for (const url of rawUrls) {
-      try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-        if (res.ok) {
-          rawContent = await res.text();
-          usedUrl = url;
-          break;
-        }
-      } catch { /* try next */ }
+
+    // 根据仓库类型选择 raw URL 格式
+    const isGitee = repoUrl.includes('gitee.com');
+
+    if (isGitee) {
+      // Gitee raw URL: https://gitee.com/{owner}/{repo}/raw/{branch}/{file}
+      const giteeRawUrls = [
+        `https://gitee.com/${repoPath}/raw/main/SKILL.md`,
+        `https://gitee.com/${repoPath}/raw/master/SKILL.md`,
+        `https://gitee.com/${repoPath}/raw/main/README.md`,
+        `https://gitee.com/${repoPath}/raw/master/README.md`,
+      ];
+      for (const url of giteeRawUrls) {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) {
+            rawContent = await res.text();
+            usedUrl = url;
+            break;
+          }
+        } catch { /* try next */ }
+      }
+    } else {
+      // GitHub raw URL: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file}
+      const ghRawUrls = [
+        `https://raw.githubusercontent.com/${repoPath}/main/SKILL.md`,
+        `https://raw.githubusercontent.com/${repoPath}/master/SKILL.md`,
+        `https://raw.githubusercontent.com/${repoPath}/main/README.md`,
+        `https://raw.githubusercontent.com/${repoPath}/master/README.md`,
+      ];
+      for (const url of ghRawUrls) {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) {
+            rawContent = await res.text();
+            usedUrl = url;
+            break;
+          }
+        } catch { /* try next */ }
+      }
     }
 
     if (!rawContent) {
