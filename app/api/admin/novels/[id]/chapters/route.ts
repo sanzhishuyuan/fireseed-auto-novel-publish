@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import fs from 'fs';
@@ -14,10 +14,8 @@ interface Props {
 
 export async function POST(request: NextRequest, { params }: Props) {
   const { id: novelId } = await params;
-  const cookieStore = await cookies();
   const admin = requireAdmin(request, 'content.create');
   if (admin instanceof Response) return admin;
-  }
 
   try {
     // 修复: request.json() 解析异常兼容

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { isAdminAuthed } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import fs from 'fs';
 import path from 'path';
 
@@ -12,9 +12,8 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-            const admin = requireAdmin(request, 'cleanup.execute');
+    const admin = requireAdmin(request, 'cleanup.execute');
     if (admin instanceof Response) return admin;
-    }
 
     // 查询已软删除且超过保留期的小说
     const now = new Date();
@@ -88,8 +87,7 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const admin = requireAdmin(request, 'cleanup.execute');
-  if (admin instanceof Response) return admin;
-    }
+    if (admin instanceof Response) return admin;
 
     const url = new URL(request.url);
     const novelId = url.searchParams.get('novel_id');

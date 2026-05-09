@@ -1,15 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const cookieStore = await cookies();
+export async function GET(request: NextRequest) {
   const admin = requireAdmin(request, 'skill.manage');
   if (admin instanceof Response) return admin;
-  }
 
   // 任务列表
   const missions = db.prepare('SELECT * FROM skill_missions ORDER BY priority ASC').all();

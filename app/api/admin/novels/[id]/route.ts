@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
@@ -15,10 +15,8 @@ interface Props {
 export async function PUT(request: NextRequest, { params }: Props) {
   const { id } = await params;
 
-  const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
-  }
+  const admin = requireAdmin(request, 'content.edit');
+  if (admin instanceof Response) return admin;
 
   try {
     // 检查小说是否存在
@@ -115,10 +113,8 @@ export async function PUT(request: NextRequest, { params }: Props) {
 export async function GET(request: NextRequest, { params }: Props) {
   const { id } = await params;
 
-  const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
-  }
+  const admin = requireAdmin(request, 'content.view');
+  if (admin instanceof Response) return admin;
 
   try {
     const novel = db.prepare('SELECT * FROM novels WHERE id = ?').get(id) as any;
@@ -133,13 +129,11 @@ export async function GET(request: NextRequest, { params }: Props) {
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: Props) {
+export async function DELETE(request: NextRequest, { params }: Props) {
   const { id } = await params;
 
-  const cookieStore = await cookies();
   const admin = requireAdmin(request, 'content.delete');
   if (admin instanceof Response) return admin;
-  }
 
   try {
     const novel = db.prepare('SELECT id, title, retention_days FROM novels WHERE id = ?').get(id) as { id: string; title: string; retention_days: number } | undefined;
