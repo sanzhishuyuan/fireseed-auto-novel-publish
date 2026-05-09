@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
     let repoUrl = (body.repo_url || '').trim();
 
     if (!repoUrl) {
