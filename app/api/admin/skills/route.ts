@@ -1,31 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { safeParseJSON } from '@/lib/request-parser';
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
-  }
+  const admin = requireAdmin(request, 'skill.manage');
+  if (admin instanceof Response) return admin;
 
   const missions = db.prepare('SELECT * FROM skill_missions ORDER BY priority ASC').all();
   return NextResponse.json({ missions });
 }
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
-  }
+  const admin = requireAdmin(request, 'skill.manage');
+  if (admin instanceof Response) return admin;
 
   try {
     const body = await request.text();
     const parsed = safeParseJSON(body);
-  if (!parsed.success) return parsed.response;
-  const { type, title, description, link, icon_emoji, priority, user_filter } = parsed.data;
+    if (!parsed.success) return parsed.response;
+    const { type, title, description, link, icon_emoji, priority, user_filter } = parsed.data;
 
     if (!type || !title) {
       return NextResponse.json({ error: 'type 和 title 是必填项' }, { status: 400 });
