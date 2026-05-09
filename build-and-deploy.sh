@@ -84,6 +84,12 @@ NGINX_COVERS_DIR="/var/data/ai-novel/covers"
 mkdir -p "$NGINX_COVERS_DIR"
 COVERS_DIR="$PROJECT_DIR/covers"
 if [ ! -L "$COVERS_DIR" ]; then
+  # 安全迁移：如果旧目录是真实目录且有封面文件，先复制到新路径再删除
+  if [ -d "$COVERS_DIR" ] && [ "$(ls -A "$COVERS_DIR" 2>/dev/null)" ]; then
+    echo "  ⚠️ 发现旧封面目录，正在迁移到新路径..."
+    cp -r "$COVERS_DIR"/* "$NGINX_COVERS_DIR"/ 2>/dev/null || true
+    echo "  ✅ 已迁移 $(ls -A "$COVERS_DIR" | wc -l) 个文件到 $NGINX_COVERS_DIR"
+  fi
   rm -rf "$COVERS_DIR"
   ln -sf "$NGINX_COVERS_DIR" "$COVERS_DIR"
 fi
