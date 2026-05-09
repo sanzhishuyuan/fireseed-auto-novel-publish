@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
+import { requireAdmin, verifyAdminToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/skills/sync
  * 从 GitHub/Gitee 仓库提取 SKILL.md 元数据（管理员工具）
- * body: { repo_url: string }
+ * body: { repo_url: string, admin_key?: string }
  */
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request, 'skill.manage');
-  if (admin instanceof Response) return admin;
+  const body = await request.json().catch(() => ({}));
+  // 支持 admin_key 认证（方便管理面板API调用）
+  const bodyKey = body.admin_key || '';
+  if (bodyKey && verifyAdminToken(bodyKey)) {
+    // admin_key 验证通过
+  } else {
+    const admin = requireAdmin(request, 'skill.manage');
+    if (admin instanceof Response) return admin;
+  }
 
   try {
     const body = await request.json().catch(() => ({}));
