@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
 
     if (isGitee) {
       // Gitee raw URL: https://gitee.com/{owner}/{repo}/raw/{branch}/{file}
+      // 注意：Gitee 对无 User-Agent 的请求有限流，必须加标头
+      const fetchOpts = { signal: AbortSignal.timeout(8000), headers: { 'User-Agent': 'FireSeed-Skill-Sync/1.0' } };
       const giteeRawUrls = [
         `https://gitee.com/${repoPath}/raw/main/SKILL.md`,
         `https://gitee.com/${repoPath}/raw/master/SKILL.md`,
@@ -52,8 +54,8 @@ export async function POST(request: NextRequest) {
       ];
       for (const url of giteeRawUrls) {
         try {
-          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-          if (res.ok) {
+          const res = await fetch(url, fetchOpts);
+          if (res.ok && res.status === 200) {
             rawContent = await res.text();
             usedUrl = url;
             break;
