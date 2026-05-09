@@ -37,13 +37,20 @@ export async function POST(request: NextRequest) {
       if (user && canAccessAdmin(user.role as Role)) {
         const isValid = await bcrypt.compare(password, user.password);
         if (isValid) {
+          // 兼容旧版 role='admin'（旧系统最高权限 = 新系统的 super_admin）
+          let effectiveRole = user.role;
+          if (effectiveRole === 'admin') {
+            db.prepare("UPDATE users SET role = 'super_admin' WHERE id = ? AND role = 'admin'").run(user.id);
+            effectiveRole = 'super_admin';
+          }
+
           // 生成带角色信息的 JWT
           const adminToken = jwt.sign(
             {
               type: 'admin',
               userId: user.id,
               username: user.username,
-              role: user.role,
+              role: effectiveRole,
             },
             JWT_SECRET,
             { expiresIn: '24h' }
@@ -56,7 +63,7 @@ export async function POST(request: NextRequest) {
             action: 'login',
             targetType: 'user',
             targetId: user.id,
-            detail: { method: 'password', role: user.role },
+            detail: { method: 'password', role: effectiveRole, autoUpgraded: user.role !== effectiveRole },
             ipAddress,
           });
 
@@ -66,7 +73,7 @@ export async function POST(request: NextRequest) {
               id: user.id,
               username: user.username,
               nickname: user.nickname || user.username,
-              role: user.role,
+              role: effectiveRole,
             },
           });
 
