@@ -6,8 +6,8 @@ import { safeParseJSON } from '@/lib/request-parser';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授�? }, { status: 401 });
+  const admin = requireAdmin(request, 'skill.manage');
+  if (admin instanceof Response) return admin;
   }
 
   try {
@@ -19,10 +19,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const mission = db.prepare('SELECT id FROM skill_missions WHERE id = ?').get(id);
     if (!mission) {
-      return NextResponse.json({ error: '任务不存�? }, { status: 404 });
+      return NextResponse.json({ error: '任务不存�? }, { status: 404 });
     }
 
-    // 动态构�?SET 子句，只更新传了的字�?
+    // 动态构�?SET 子句，只更新传了的字�?
     const allowedFields = ['type', 'title', 'description', 'link', 'icon_emoji', 'priority', 'user_filter', 'is_active'];
     const setClauses: string[] = [];
     const setValues: any[] = [];
@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     db.prepare(`UPDATE skill_missions SET ${setClauses.join(', ')} WHERE id = ?`).run(...setValues);
 
-    return NextResponse.json({ success: true, message: '任务已更�? });
+    return NextResponse.json({ success: true, message: '任务已更�? });
   } catch (error) {
     console.error('Update mission error:', error);
     return NextResponse.json({ error: '更新失败' }, { status: 500 });
@@ -52,14 +52,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授�? }, { status: 401 });
+  const admin = requireAdmin(request, 'skill.manage');
+  if (admin instanceof Response) return admin;
   }
 
   try {
     const { id } = params;
     db.prepare('DELETE FROM skill_missions WHERE id = ?').run(id);
-    return NextResponse.json({ success: true, message: '任务已删�? });
+    return NextResponse.json({ success: true, message: '任务已删�? });
   } catch (error) {
     console.error('Delete mission error:', error);
     return NextResponse.json({ error: '删除失败' }, { status: 500 });

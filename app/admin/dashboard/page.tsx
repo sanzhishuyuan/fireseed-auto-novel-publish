@@ -55,10 +55,15 @@ export default function EnhancedAdminDashboard() {
   const [cleaningUp, setCleaningUp] = useState(false);
   const [skillData, setSkillData] = useState<{ missions: any[]; activationStats: any; activeUsers?: any[] } | null>(null);
   const [skillExpanded, setSkillExpanded] = useState(true);
+<<<<<<< HEAD
   const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+=======
+  const [adminInfo, setAdminInfo] = useState<{ username: string; role: string; roleLabel: string } | null>(null);
+>>>>>>> 0a2d0ba (feat: admin permission system stage 1 - roles + audit + permission checks)
 
   useEffect(() => {
+    fetchAdminInfo();
     fetchStats();
     const interval = setInterval(() => {
       if (autoRefresh) fetchStats();
@@ -66,10 +71,24 @@ export default function EnhancedAdminDashboard() {
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
+  const fetchAdminInfo = async () => {
+    try {
+      const res = await fetch('/api/admin/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.loggedIn && data.admin) {
+          setAdminInfo(data.admin);
+        }
+      }
+    } catch {
+      // 忽略，不影响主功能
+    }
+  };
+
   const fetchStats = async () => {
     setRefreshing(true);
     try {
-      // 并发获取统计数据、清理清单、技能数据
+      // 并发获取管理员信息、统计数据、清理清单、技能数据
       const [statsRes, cleanupRes, skillRes] = await Promise.all([
         fetch('/api/admin/stats'),
         fetch('/api/admin/cleanup'),
@@ -77,7 +96,7 @@ export default function EnhancedAdminDashboard() {
       ]);
       
       if (!statsRes.ok) {
-        if (statsRes.status === 403) {
+        if (statsRes.status === 403 || statsRes.status === 401) {
           router.push('/admin');
           return;
         }
@@ -153,7 +172,9 @@ export default function EnhancedAdminDashboard() {
             </Link>
             <div>
               <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>管理面板</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Spark AI 小说平台</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {adminInfo ? `${adminInfo.nickname || adminInfo.username} · ${adminInfo.roleLabel}` : 'FireSeed 平台'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -161,6 +182,7 @@ export default function EnhancedAdminDashboard() {
             <Link href="/admin/chapters" className="btn-ghost text-sm">章节管理</Link>
             <Link href="/admin/tokens" className="btn-ghost text-sm">Token管理</Link>
             <Link href="/admin/skills" className="btn-ghost text-sm">技能管理</Link>
+<<<<<<< HEAD
             <div className="flex items-center gap-1">
               <button
                 onClick={fetchStats}
@@ -182,6 +204,12 @@ export default function EnhancedAdminDashboard() {
               </button>
             </div>
             <button onClick={() => router.push('/admin')} className="btn-ghost text-sm">退出</button>
+=======
+            <button onClick={async () => {
+              await fetch('/api/admin/logout', { method: 'POST' });
+              router.push('/admin');
+            }} className="btn-ghost text-sm">退出</button>
+>>>>>>> 0a2d0ba (feat: admin permission system stage 1 - roles + audit + permission checks)
           </div>
         </div>
       </header>

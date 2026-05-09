@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,16 +19,21 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({
+          username: username.trim() || undefined,
+          password,
+        }),
       });
 
-      if (res.ok) {
+      const data = await res.json();
+
+      if (res.ok && data.success) {
         router.push('/admin/dashboard');
       } else {
-        setError('管理员密码错误');
+        setError(data.error || '用户名或密码错误');
       }
     } catch {
-      setError('网络错误');
+      setError('网络错误，请重试');
     } finally {
       setLoading(false);
     }
@@ -51,18 +57,29 @@ export default function AdminLoginPage() {
             </svg>
           </div>
           <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>创作后台</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>输入管理员密码登录</p>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>管理员账号登录</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="input text-center"
+              placeholder="用户名（可留空用管理密码）"
+              autoComplete="username"
+            />
+          </div>
           <div>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input text-center"
-              placeholder="管理员密码"
+              placeholder="密码"
               required
+              autoComplete="current-password"
             />
           </div>
 
@@ -84,7 +101,13 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-4 text-center">
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            用户名留空则使用系统管理密码登录
+          </p>
+        </div>
+
+        <div className="mt-4 text-center">
           <a href="/" className="text-xs" style={{ color: 'var(--text-muted)' }}>
             ← 返回首页
           </a>

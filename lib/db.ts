@@ -379,4 +379,29 @@ try {
   // 表可能刚创建但未完全就绪，忽略
 }
 
+// ===== 管理员操作审计日志表 =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS admin_logs (
+    id TEXT PRIMARY KEY,
+    admin_id TEXT NOT NULL,
+    admin_username TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target_type TEXT,
+    target_id TEXT,
+    detail TEXT,
+    ip_address TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES users(id)
+  );
+`);
+
+// admin_logs 索引（方便按管理员和时间筛选）
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_id ON admin_logs(admin_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON admin_logs(action)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
 export default db;

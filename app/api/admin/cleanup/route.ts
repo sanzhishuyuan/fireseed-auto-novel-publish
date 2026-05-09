@@ -12,11 +12,8 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    if (!isAdminAuthed(request)) {
-      return NextResponse.json({ 
-        success: false, 
-        error: '无权限访问，请提供有效的管理员密钥' 
-      }, { status: 403 });
+            const admin = requireAdmin(request, 'cleanup.execute');
+    if (admin instanceof Response) return admin;
     }
 
     // 查询已软删除且超过保留期的小说
@@ -90,11 +87,8 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    if (!isAdminAuthed(request)) {
-      return NextResponse.json({ 
-        success: false, 
-        error: '无权限访问' 
-      }, { status: 403 });
+    const admin = requireAdmin(request, 'cleanup.execute');
+  if (admin instanceof Response) return admin;
     }
 
     const url = new URL(request.url);

@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { isAdminAuthed } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/admin/stats
- * 获取网站核心统计数据
+ * 获取网站核心统计数据（Viewer 及以上可查看）
  */
 export async function GET(request: NextRequest) {
   try {
-    if (!isAdminAuthed(request)) {
-      return NextResponse.json({ success: false, error: '无权限' }, { status: 403 });
-    }
+    const admin = requireAdmin(request, 'dashboard.view');
+    if (admin instanceof Response) return admin;
 
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();

@@ -2,6 +2,10 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import db from '@/lib/db';
+import type { Role } from '@/lib/permissions';
+import { checkPermission, type Permission } from '@/lib/permissions';
 
 // 生产环境必须设置这些环境变量
 const ENV_JWT_SECRET = process.env.JWT_SECRET;
@@ -89,4 +93,71 @@ export function isAdminAuthed(request: NextRequest): boolean {
   if (adminKey && verifyAdminToken(adminKey)) return true;
   if (cookieAdminToken && verifyAdminToken(cookieAdminToken)) return true;
   return false;
+}
+
+/**
+ * 获取已认证的管理员用户信息（含角色）
+ * 返回 null 表示未认证或不是有效的管理员
+ */
+export interface AdminUser {
+  id: string;
+  username: string;
+  nickname: string;
+  role: Role;
+}
+
+export function getAdminUser(request: NextRequest): AdminUser | null {
+  const token =
+    request.cookies.get('admin_token')?.value ||
+    request.nextUrl?.searchParams?.get('admin_key');
+
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      type: string;
+      userId?: string;
+      username?: string;
+      role?: string;
+    };
+
+    if (decoded.type !== 'admin' || !decoded.userId || !decoded.role) return null;
+
+    // 从数据库获取最新信息（角色可能在后台被修改）
+    const user = db.prepare('SELECT id, username, nickname, role FROM users WHERE id = ?').get(decoded.userId) as any;
+    if (!user) return null;
+
+    const role = user.role as Role;
+    if (!['viewer', 'editor', 'admin', 'super_admin'].includes(role)) return null;
+
+    return {
+      id: user.id,
+      username: user.username,
+      nickname: user.nickname || user.username,
+      role,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 要求管理员有指定权限，无权限时返回 403 Response
+ * 用于 API Route：
+ *
+ *   const admin = requireAdmin(request, 'content.delete');
+ *   if (admin instanceof Response) return admin;
+ */
+export function requireAdmin(
+  request: NextRequest,
+  permission?: Permission
+): Response | AdminUser {
+  const admin = getAdminUser(request);
+  if (!admin) {
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 });
+  }
+  if (permission && !checkPermission(admin.role, permission)) {
+    return NextResponse.json({ success: false, error: '权限不足' }, { status: 403 });
+  }
+  return admin;
 }

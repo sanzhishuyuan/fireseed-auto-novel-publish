@@ -7,8 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
+  const admin = requireAdmin(request, 'skill.manage');
+  if (admin instanceof Response) return admin;
   }
 
   // 任务列表

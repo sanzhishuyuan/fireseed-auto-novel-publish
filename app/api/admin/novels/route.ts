@@ -10,8 +10,8 @@ import { safeParseJSON } from '@/lib/request-parser';
 
 export async function GET() {
   const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
+  const admin = requireAdmin(request, 'content.view');
+  if (admin instanceof Response) return admin;
   }
 
   const novels = db.prepare('SELECT * FROM novels ORDER BY created_at DESC').all();
@@ -20,8 +20,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
+  const admin = requireAdmin(request, 'content.create');
+  if (admin instanceof Response) return admin;
   }
 
   try {

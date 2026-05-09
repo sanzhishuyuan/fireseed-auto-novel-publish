@@ -7,8 +7,8 @@ import { safeParseJSON } from '@/lib/request-parser';
 
 export async function GET() {
   const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
+  const admin = requireAdmin(request, 'token.manage');
+  if (admin instanceof Response) return admin;
   }
 
   const tokens = db.prepare('SELECT * FROM ai_tokens ORDER BY created_at DESC').all();
@@ -17,8 +17,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
-  if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-    return NextResponse.json({ error: '未授权' }, { status: 401 });
+  const admin = requireAdmin(request, 'token.manage');
+  if (admin instanceof Response) return admin;
   }
 
   try {
