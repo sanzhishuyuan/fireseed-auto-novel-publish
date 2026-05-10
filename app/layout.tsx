@@ -3,6 +3,7 @@ import './globals.css';
 import ThemeToggle from '@/components/ThemeToggle';
 import MusicPlayer from '@/components/MusicPlayer';
 import GlobalLikeBar from '@/components/GlobalLikeBar';
+import WalletBadge from '@/components/WalletBadge';
 
 export const metadata: Metadata = {
   title: 'FireSeed - AI 互动小说平台',
@@ -85,8 +86,9 @@ export default function RootLayout({
         {children}
         {/* 全局底部点赞栏 — 自动在小说页面显示 */}
         <GlobalLikeBar />
-        {/* 全局右上角工具栏：主题切换 + 音乐播放器 */}
+        {/* 全局右上角工具栏：钱包 + 主题切换 + 音乐播放器 */}
         <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <WalletBadge />
           <div className="card" style={{ padding: 4, borderRadius: 24, boxShadow: 'var(--shadow-lg)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <ThemeToggle />
           </div>
