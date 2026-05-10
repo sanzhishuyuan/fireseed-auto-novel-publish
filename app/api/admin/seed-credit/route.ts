@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
+import { requireAdmin, ADMIN_PASSWORD } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
@@ -9,11 +9,15 @@ export const dynamic = 'force-dynamic';
 /**
  * POST /api/admin/seed-credit
  * 管理员为指定用户充值 SEED
- * body: { user_id: string, amount: number, reason?: string }
+ * body: { user_id: string, amount: number, reason?: string, admin_key?: string }
  */
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request, 'admin.manage');
-  if (admin instanceof Response) return admin;
+  const body = await request.json().catch(() => ({}));
+  const key = (body.admin_key || '').trim();
+  if (!key || key !== ADMIN_PASSWORD) {
+    const admin = requireAdmin(request, 'admin.manage');
+    if (admin instanceof Response) return admin;
+  }
 
   try {
     const body = await request.json().catch(() => ({}));
