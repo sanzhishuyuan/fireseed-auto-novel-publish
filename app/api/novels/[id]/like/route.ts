@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
+import { JWT_SECRET, getUserIdFromRequest } from '@/lib/auth';
 import { transferBetweenUsers, transferSeed, getBalance } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
@@ -18,16 +18,17 @@ export async function POST(
   try {
     const { id: novelId } = await params;
     const body = await request.json().catch(() => ({}));
-    const authHeader = request.headers.get('Authorization');
 
-    // 解析用户
-    let userId = '';
-    const token = body.token || (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '');
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
-        userId = decoded.userId || '';
-      } catch { /* ignore */ }
+    // 解析用户：Cookie > Authorization > body.token（向后兼容）
+    let userId = getUserIdFromRequest(request);
+    if (!userId) {
+      const bodyToken = body.token;
+      if (bodyToken) {
+        try {
+          const decoded = jwt.verify(bodyToken, JWT_SECRET) as any;
+          userId = decoded.userId || '';
+        } catch { /* ignore */ }
+      }
     }
 
     if (!userId) {

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
+import { getUserIdFromRequest } from '@/lib/auth';
 import { getTransactions } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
@@ -11,16 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    let userId = '';
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
-        userId = decoded.userId || '';
-      } catch { /* ignore */ }
-    }
-
+    const userId = getUserIdFromRequest(request);
     if (!userId) {
       return NextResponse.json({ success: false, error: '请先登录' }, { status: 401 });
     }

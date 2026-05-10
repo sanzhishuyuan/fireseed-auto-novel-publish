@@ -56,6 +56,34 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
   return verifyToken(token);
 }
 
+/**
+ * 从请求中提取 userId，支持两种方式：
+ *   1. Authorization: Bearer <token>（AI 客户端 / API 调用）
+ *   2. auth_token cookie（浏览器登录用户）
+ */
+export function getUserIdFromRequest(request: NextRequest): string | null {
+  // 方式 1: Authorization header
+  const authHeader = request.headers.get('Authorization');
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (bearerToken) {
+    try {
+      const decoded = jwt.verify(bearerToken, JWT_SECRET) as any;
+      if (decoded.userId) return decoded.userId;
+    } catch { /* ignore invalid token */ }
+  }
+
+  // 方式 2: auth_token cookie
+  const cookieToken = request.cookies.get('auth_token')?.value;
+  if (cookieToken) {
+    try {
+      const decoded = jwt.verify(cookieToken, JWT_SECRET) as any;
+      if (decoded.userId) return decoded.userId;
+    } catch { /* ignore invalid token */ }
+  }
+
+  return null;
+}
+
 // 验证管理员密码
 export function verifyAdminPassword(password: string): boolean {
   return password === ADMIN_PASSWORD;
