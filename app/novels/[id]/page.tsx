@@ -99,10 +99,6 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
-  const [likeLoading, setLikeLoading] = useState(false);
-  const [userBalance, setUserBalance] = useState(0);
-  const [likeMessage, setLikeMessage] = useState('');
   const router = useRouter();
 
   // 获取小说详情和章节
@@ -130,7 +126,7 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
       .finally(() => setLoading(false));
   }, [params.id]);
 
-  // 获取用户状态、收藏状态、点赞数和余额
+  // 获取用户状态和收藏状态
   useEffect(() => {
     fetch('/api/user/me', { credentials: 'include' })
       .then(res => res.json())
@@ -141,19 +137,9 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
           const favRes = await fetch(`/api/user/favorites/${params.id}`, { credentials: 'include' });
           const favData = await favRes.json();
           setIsFavorite(favData.isFavorite || false);
-          // 获取余额
-          fetch('/api/seed/balance', { credentials: 'include' })
-            .then(r => r.json())
-            .then(d => { if (d.success) setUserBalance(d.balance); })
-            .catch(() => {});
         }
       })
       .catch(console.error);
-    // 获取点赞数（无需登录）
-    fetch(`/api/novels/${params.id}/like`)
-      .then(r => r.json())
-      .then(d => { if (d.success) setLikeCount(d.total_likes); })
-      .catch(() => {});
   }, [params.id]);
 
   const handleLogout = async () => {
@@ -195,47 +181,6 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
       console.error('Favorite error:', error);
     } finally {
       setFavoriteLoading(false);
-    }
-  };
-
-  // 🌱 点赞处理
-  const handleLike = async () => {
-    if (!user) {
-      router.push('/auth/login');
-      return;
-    }
-    if (likeLoading) return;
-    if (userBalance < 1) {
-      setLikeMessage('🌱 余额不足');
-      setTimeout(() => setLikeMessage(''), 2500);
-      return;
-    }
-    setLikeLoading(true);
-    setLikeMessage('');
-    try {
-      const res = await fetch(`/api/novels/${params.id}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setLikeCount(data.total_likes);
-        setUserBalance(data.balance);
-        setLikeMessage(data.message || '👍 +1');
-        setTimeout(() => setLikeMessage(''), 2000);
-      } else if (data.error) {
-        setLikeMessage(data.error);
-        if (data.balance !== undefined) setUserBalance(data.balance);
-        setTimeout(() => setLikeMessage(''), 2500);
-      }
-    } catch (error) {
-      console.error('Like error:', error);
-      setLikeMessage('点赞失败');
-      setTimeout(() => setLikeMessage(''), 2500);
-    } finally {
-      setLikeLoading(false);
     }
   };
 
@@ -639,68 +584,6 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* ===== 🌱 底部点赞栏 ===== */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-4 pointer-events-none">
-        <div
-          className="card pointer-events-auto flex items-center gap-4 px-5 py-3 rounded-2xl shadow-lg"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            backdropFilter: 'blur(12px)',
-          }}
-        >
-          {/* 点赞按钮 */}
-          <button
-            onClick={handleLike}
-            disabled={likeLoading}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              likeLoading ? 'opacity-60' : 'hover:scale-105 active:scale-95'
-            }`}
-            style={{
-              background: likeLoading ? 'var(--bg-secondary)' : 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-              color: '#fff',
-            }}
-          >
-            <span className="text-lg leading-none">{likeLoading ? '⏳' : '👍'}</span>
-            <span className="font-semibold">{likeCount}</span>
-          </button>
-
-          {/* 消息提示 */}
-          {likeMessage && (
-            <span className="text-xs font-medium animate-pulse" style={{ color: 'var(--accent)' }}>
-              {likeMessage}
-            </span>
-          )}
-
-          {/* 余额指示器 */}
-          {user && (
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <span>🌱</span>
-              <span className="font-medium" style={{ color: userBalance > 0 ? 'var(--text-primary)' : '#ef4444' }}>
-                {userBalance}
-              </span>
-            </div>
-          )}
-
-          {/* 收藏按钮（移动端快捷入口） */}
-          {user && (
-            <button
-              onClick={handleFavorite}
-              disabled={favoriteLoading}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium transition-all lg:hidden"
-              style={{
-                background: isFavorite ? 'rgba(239,68,68,0.1)' : 'var(--bg-secondary)',
-                color: isFavorite ? '#ef4444' : 'var(--text-muted)',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
-                <path d="M7 12.5S1 8.5 1 4.5a2.5 2.5 0 0 1 4-1.8 2.5 2.5 0 0 1 4 1.8c0 4-6 8-6 8z"/>
-              </svg>
-            </button>
-          )}
         </div>
       </div>
     </div>
