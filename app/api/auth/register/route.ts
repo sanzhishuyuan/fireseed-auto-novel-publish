@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { safeParseJSON } from '@/lib/request-parser';
+import { getOrCreateWallet, transferSeed } from '@/lib/seed';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
@@ -16,19 +17,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const bodyText = await request.text();
-
-    // 安全解析 JSON，非法请求体返回 400 而非 500
+    // 安全解析 JSON
     const parsed = safeParseJSON(bodyText);
     if (!parsed.success) return parsed.response;
-
-    const { username, password } = parsed.data;
-    // 修复: request.json() 在 Node 18 + Next 14 standalone 下解析异常
-    const bodyText = await request.text();
-
-    // 安全解析 JSON，非法请求体返回 400 而非 500
-    const parsed = safeParseJSON(bodyText);
-    if (!parsed.success) return parsed.response;
-
     const { username, password } = parsed.data;
 
     if (!username || !password) {
@@ -56,6 +47,12 @@ export async function POST(request: NextRequest) {
     // 创建用户
     db.prepare('INSERT INTO users (id, username, password, role) VALUES (?, ?, ?, ?)')
       .run(userId, username, hashedPassword, 'reader');
+
+    // 🌱 创建 SEED 钱包并赠送 100 注册红包
+    getOrCreateWallet(userId);
+    transferSeed(userId, 100, 'register_bonus', {
+      description: '🎉 注册成功，赠送 100 🌱 新手红包！可用于点赞、收藏等互动~'
+    });
 
     // === 自动创建 JWT Token（免二次登录）===
     const jwtToken = jwt.sign(

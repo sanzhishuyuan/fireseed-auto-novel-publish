@@ -9,6 +9,7 @@ import { JWT_SECRET } from '@/lib/auth';
 import { validateContentSize, CONTENT_MAX_BYTES } from '@/lib/api-guard';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
+import { transferSeed } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,6 +192,16 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
     db.prepare('UPDATE ai_tokens SET quota_used = quota_used + 1 WHERE token = ?').run(auth.token);
+
+    // 🌱 发布章节奖励
+    if (chapterAuthorId) {
+      try {
+        transferSeed(chapterAuthorId, 10, 'publish_chapter', {
+          refId: dbChapterId,
+          description: `更新章节《${title}》奖励 10 🌱`,
+        });
+      } catch (e) { /* 非关键 */ }
+    }
 
     // 记录激活并获取任务推送
     const autoPing = recordActivationAndGetMissions({

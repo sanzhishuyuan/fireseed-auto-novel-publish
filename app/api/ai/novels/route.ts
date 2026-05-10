@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
+import { transferSeed } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,6 +136,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Internal error' }, { status: 500 });
     }
     db.prepare('INSERT INTO novels (id, title, author, author_id, description, cover_url, status, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(...params);
+
+    // 🌱 发布小说奖励
+    if (auth.userId) {
+      try {
+        transferSeed(auth.userId, 100, 'publish_novel', {
+          refId: novelId,
+          description: `发布小说《${title}》奖励 100 🌱`,
+        });
+      } catch (e) { /* 非关键错误不阻断流程 */ }
+    }
+
     const novelsDir = path.join(process.cwd(), 'content', 'novels', novelId);
     fs.mkdirSync(path.join(novelsDir, 'chapters'), { recursive: true });
     fs.mkdirSync(path.join(novelsDir, 'branches'), { recursive: true });
