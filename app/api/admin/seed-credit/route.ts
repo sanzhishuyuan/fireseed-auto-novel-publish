@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
     const { user_id, username: targetUsername, amount, reason } = body;
 
     // 支持按 user_id 或 username 查找
@@ -40,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 执行充值
-    const balance = transferSeed(user_id, amount, 'seed_in', {
+    const balance = transferSeed(user.id, Number(amount), 'seed_in', {
       description: reason ? `管理员充值: ${reason}` : `管理员充值 ${amount} 🌱`,
     });
 
