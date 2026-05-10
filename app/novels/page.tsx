@@ -377,12 +377,6 @@ export default function NovelsPage() {
                         >
                           继续阅读
                         </button>
-                        <button 
-                          className="w-full py-2 rounded-lg text-sm font-medium backdrop-blur-sm border border-white/30 text-white transition-transform hover:scale-105"
-                          onClick={(e) => { e.preventDefault(); router.push(`/novels/${novel.id}/1`); }}
-                        >
-                          从头开始
-                        </button>
                       </div>
                     </div>
                   </div>
