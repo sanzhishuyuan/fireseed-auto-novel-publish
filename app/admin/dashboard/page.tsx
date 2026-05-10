@@ -59,6 +59,12 @@ export default function EnhancedAdminDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [adminInfo, setAdminInfo] = useState<{ username: string; nickname?: string; role: string; roleLabel: string } | null>(null);
   const [usersExpanded, setUsersExpanded] = useState(false);
+  const [seedExpanded, setSeedExpanded] = useState(true);
+  const [seedUserId, setSeedUserId] = useState('');
+  const [seedAmount, setSeedAmount] = useState('');
+  const [seedReason, setSeedReason] = useState('');
+  const [seedMessage, setSeedMessage] = useState('');
+  const [seedLoading, setSeedLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
   const [userSearch, setUserSearch] = useState('');
@@ -154,7 +160,8 @@ export default function EnhancedAdminDashboard() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      params.set('limit', '100');
+      params.set('limit', '30');
+      params.set('sort', 'newest');
       const res = await fetch(`/api/admin/users?${params}`);
       if (res.ok) {
         const data = await res.json();
@@ -526,6 +533,103 @@ export default function EnhancedAdminDashboard() {
             </a>
           </div>
         </div>
+
+        {/* 🌱 SEED 充值管理（仅 super_admin 可见） */}
+        {adminInfo?.role === 'super_admin' && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>🌱 SEED 充值</h2>
+              <button
+                onClick={() => setSeedExpanded(!seedExpanded)}
+                className="btn-ghost text-xs px-2"
+              >
+                {seedExpanded ? '折叠' : '展开'}
+              </button>
+            </div>
+
+            {seedExpanded && (
+              <div className="card p-5">
+                <div className="grid sm:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>用户ID</label>
+                    <input
+                      type="text"
+                      value={seedUserId}
+                      onChange={(e) => setSeedUserId(e.target.value)}
+                      className="input"
+                      placeholder="输入用户ID或用户名..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>充值数量</label>
+                    <input
+                      type="number"
+                      value={seedAmount}
+                      onChange={(e) => setSeedAmount(e.target.value)}
+                      className="input"
+                      placeholder="正整数值"
+                      min="1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>备注（可选）</label>
+                    <input
+                      type="text"
+                      value={seedReason}
+                      onChange={(e) => setSeedReason(e.target.value)}
+                      className="input"
+                      placeholder="如：测试奖励、活动奖励"
+                    />
+                  </div>
+                </div>
+
+                {seedMessage && (
+                  <p className="text-xs mb-3" style={{ color: seedMessage.includes('成功') ? '#10b981' : '#ef4444' }}>
+                    {seedMessage}
+                  </p>
+                )}
+
+                <button
+                  onClick={async () => {
+                    if (!seedUserId || !seedAmount) { setSeedMessage('请填写用户ID和金额'); return; }
+                    const amount = parseInt(seedAmount);
+                    if (isNaN(amount) || amount <= 0) { setSeedMessage('金额必须为正整数'); return; }
+                    setSeedLoading(true);
+                    setSeedMessage('');
+                    try {
+                      const res = await fetch('/api/admin/seed-credit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          user_id: seedUserId,
+                          username: seedUserId,
+                          amount, reason: seedReason,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        setSeedMessage(`✅ 成功: 给 ${data.user.username} 充值 ${data.credited} 🌱，当前余额 ${data.balance} 🌱`);
+                        setSeedUserId('');
+                        setSeedAmount('');
+                        setSeedReason('');
+                      } else {
+                        setSeedMessage(`❌ ${data.error || '充值失败'}`);
+                      }
+                    } catch {
+                      setSeedMessage('❌ 网络错误');
+                    } finally {
+                      setSeedLoading(false);
+                    }
+                  }}
+                  disabled={seedLoading}
+                  className="btn-primary text-sm px-6 py-2"
+                >
+                  {seedLoading ? '充值中...' : '🌱 确认充值'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 用户管理（仅 super_admin 可见） */}
         {adminInfo?.role === 'super_admin' && (
