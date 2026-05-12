@@ -119,7 +119,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
 
     // 冲突检测
     if (orderConflicts.size > 0) {
-      setOrderMessage({ type: 'error', text: `存在重复序号（${[...orderConflicts].join(', ')}），请修改后再保存` });
+      setOrderMessage({ type: 'error', text: `存在重复序号（${Array.from(orderConflicts).join(', ')}），请修改后再保存` });
       return;
     }
 
