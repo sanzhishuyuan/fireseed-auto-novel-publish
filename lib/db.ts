@@ -404,4 +404,24 @@ try {
   // 索引已存在，忽略
 }
 
+// ===== BBS 聊天消息表 =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS chat_messages (
+    id TEXT PRIMARY KEY,
+    room_id TEXT NOT NULL DEFAULT 'general',
+    user_id TEXT,
+    username TEXT NOT NULL,
+    content TEXT NOT NULL,
+    is_ai INTEGER DEFAULT 0,
+    reply_to TEXT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_chat_room_time ON chat_messages(room_id, created_at)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
 export default db;

@@ -83,6 +83,9 @@ export default function Header({ user: initialUser }: HeaderProps) {
           <Logo />
           
           <div className="flex items-center gap-1">
+            <Link href="/chat" className="btn-ghost hide-mobile">
+              社区
+            </Link>
             <Link href="/novels" className="btn-ghost hide-mobile">
               全部作品
             </Link>
@@ -201,6 +204,9 @@ export default function Header({ user: initialUser }: HeaderProps) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         <Logo />
         <nav className="flex items-center gap-1">
+          <Link href="/chat" className="btn-ghost hide-mobile">
+            社区
+          </Link>
           <Link href="/novels" className="btn-ghost hide-mobile">
             全部作品
           </Link>
