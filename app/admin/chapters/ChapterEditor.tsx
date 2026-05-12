@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Novel {
@@ -21,10 +21,12 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
     choices: [] as { text: string; branch: string }[]
   });
   const [newChoice, setNewChoice] = useState({ text: '', branch: '' });
-  const initializedRef = useRef(false);
 
   // ---- 排序相关状态 ----
+  // chapterId → 用户当前填写的序号（初始值=列表排序位置 1..N）
   const [chapterOrders, setChapterOrders] = useState<Record<string, number>>({});
+  // chapterId → 初始列表排序位置（用于检测改动）
+  const [originalOrders, setOriginalOrders] = useState<Record<string, number>>({});
   const [isOrderDirty, setIsOrderDirty] = useState(false);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [orderMessage, setOrderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -34,17 +36,12 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
     return chapter.id || chapter.filePath?.replace(/\.md$/, '');
   }, []);
 
-  // 获取章节排序号（兼容两种格式）
-  const getChapterOrder = useCallback((chapter: any): number => {
-    return chapter.order_num || chapter.order || chapter.meta?.order || 0;
-  }, []);
-
   // 获取章节显示标题
   const getChapterTitle = useCallback((chapter: any): string => {
     return chapter.title || chapter.meta?.title || '未命名章节';
   }, []);
 
-  // 加载章节列表
+  // 加载章节列表 —— 初始序号 = 列表排序后的位置（1..N），与阅读页显示一致
   const loadChapters = useCallback(() => {
     if (!selectedNovel) return;
     fetch(`/api/novels/${selectedNovel}/chapters`)
@@ -53,14 +50,19 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
         const list = data.chapters || [];
         setChapters(list);
         const orders: Record<string, number> = {};
+        const originals: Record<string, number> = {};
         list.forEach((ch: any, idx: number) => {
-          orders[getChapterId(ch)] = getChapterOrder(ch) || (idx + 1);
+          const id = getChapterId(ch);
+          const pos = idx + 1; // 列表位置 = 阅读页实际显示序号
+          orders[id] = pos;
+          originals[id] = pos;
         });
         setChapterOrders(orders);
+        setOriginalOrders(originals);
         setIsOrderDirty(false);
         setOrderMessage(null);
       });
-  }, [selectedNovel, getChapterId, getChapterOrder]);
+  }, [selectedNovel, getChapterId]);
 
   // 当 selectedNovel 变化时加载章节
   useEffect(() => {
@@ -69,37 +71,22 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
     }
   }, [selectedNovel, loadChapters]);
 
-  // 检测排序冲突（仅视觉提示，不阻塞提交）
-  const getOrderConflicts = useCallback((): Set<number> => {
-    const allOrders = Object.values(chapterOrders);
-    const seen = new Set<number>();
-    const duplicates = new Set<number>();
-    for (const o of allOrders) {
-      if (seen.has(o)) duplicates.add(o);
-      seen.add(o);
-    }
-    return duplicates;
-  }, [chapterOrders]);
-
-  const orderConflicts = getOrderConflicts();
-
-  // 判断是否有改动
+  // 检测是否有章节序号被改动
   const hasOrderChanges = useCallback((): boolean => {
-    return chapters.some((ch) => {
-      const id = getChapterId(ch);
-      const currentOrder = chapterOrders[id];
-      const originalOrder = getChapterOrder(ch);
-      return currentOrder !== undefined && currentOrder !== originalOrder;
+    return Object.keys(chapterOrders).some((id) => {
+      const current = chapterOrders[id];
+      const original = originalOrders[id];
+      return original !== undefined && current !== original;
     });
-  }, [chapters, chapterOrders, getChapterId, getChapterOrder]);
+  }, [chapterOrders, originalOrders]);
 
   useEffect(() => {
     if (chapters.length > 0) {
       setIsOrderDirty(hasOrderChanges());
     }
-  }, [chapterOrders, chapters, hasOrderChanges]);
+  }, [chapterOrders, chapters.length, hasOrderChanges]);
 
-  // 处理排序号输入——支持插入语义
+  // 处理排序号输入
   const handleOrderChange = (chapterId: string, value: string) => {
     const num = parseInt(value, 10);
     if (isNaN(num) || num < 1) return;
@@ -107,11 +94,25 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
     setOrderMessage(null);
   };
 
-  // 保存排序——后端自动做插入排序，用户可只改想移动的章节
+  // 保存排序 —— 只提交被改动的章节（diff），后端自动做插入+补位
   const handleSaveOrder = async () => {
-    if (!selectedNovel || Object.keys(chapterOrders).length === 0) return;
+    if (!selectedNovel) return;
 
     if (!hasOrderChanges()) {
+      setOrderMessage({ type: 'error', text: '没有需要保存的改动' });
+      return;
+    }
+
+    // 构建 diff：只发送用户改过的章节
+    const diff: Record<string, number> = {};
+    for (const [id, current] of Object.entries(chapterOrders)) {
+      const original = originalOrders[id];
+      if (original !== undefined && current !== original) {
+        diff[id] = current;
+      }
+    }
+
+    if (Object.keys(diff).length === 0) {
       setOrderMessage({ type: 'error', text: '没有需要保存的改动' });
       return;
     }
@@ -123,13 +124,16 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
       const res = await fetch(`/api/admin/novels/${selectedNovel}/chapters/reorder`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orders: chapterOrders }),
+        body: JSON.stringify({ orders: diff }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setOrderMessage({ type: 'success', text: `✅ 章节排序已更新（${data.message || data.updated + ' 章'}）` });
+        setOrderMessage({
+          type: 'success',
+          text: `✅ 排序已更新：${Object.keys(diff).length} 个章节移动，其余自动补位`,
+        });
         setIsOrderDirty(false);
         loadChapters();
       } else {
@@ -144,11 +148,7 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
 
   // 重置排序
   const handleResetOrder = () => {
-    const orders: Record<string, number> = {};
-    chapters.forEach((ch: any, idx: number) => {
-      orders[getChapterId(ch)] = getChapterOrder(ch) || (idx + 1);
-    });
-    setChapterOrders(orders);
+    setChapterOrders({ ...originalOrders });
     setIsOrderDirty(false);
     setOrderMessage(null);
   };
@@ -204,8 +204,8 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
 
   // 按当前排序号排列
   const sortedChapters = [...chapters].sort((a, b) => {
-    const orderA = chapterOrders[getChapterId(a)] ?? getChapterOrder(a) ?? 0;
-    const orderB = chapterOrders[getChapterId(b)] ?? getChapterOrder(b) ?? 0;
+    const orderA = chapterOrders[getChapterId(a)] ?? originalOrders[getChapterId(a)] ?? 0;
+    const orderB = chapterOrders[getChapterId(b)] ?? originalOrders[getChapterId(b)] ?? 0;
     return orderA - orderB;
   });
 
@@ -376,10 +376,8 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                 </button>
               </div>
               {isOrderDirty && (
-                <span className={`text-xs ${orderConflicts.size > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600'}`}>
-                  {orderConflicts.size > 0
-                    ? `有未保存的改动（重复序号将自动插入补位）`
-                    : '有未保存的排序改动'}
+                <span className="text-xs text-amber-600 dark:text-amber-400">
+                  有未保存的排序改动
                 </span>
               )}
             </div>
@@ -405,10 +403,9 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
               const chapterWords = chapter.word_count || chapter.content?.length || 0;
               const chapterChoices = chapter.meta?.choices?.length || 0;
 
-              const currentOrder = chapterOrders[chapterId] ?? getChapterOrder(chapter);
-              const originalOrder = getChapterOrder(chapter);
+              const currentOrder = chapterOrders[chapterId];
+              const originalOrder = originalOrders[chapterId];
               const isOrderChanged = currentOrder !== originalOrder;
-              const hasConflict = orderConflicts.has(currentOrder);
 
               return (
                 <div
@@ -426,14 +423,12 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                       value={currentOrder}
                       onChange={(e) => handleOrderChange(chapterId, e.target.value)}
                       className={`w-14 px-2 py-1.5 text-center text-sm font-mono font-bold rounded-lg border transition-all
-                        ${hasConflict
+                        ${isOrderChanged
                           ? 'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
-                          : isOrderChanged
-                            ? 'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
-                            : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+                          : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
                         }
                         focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-600`}
-                      title="修改数字调整顺序，重复序号会自动插入补位"
+                      title="修改数字调整顺序，系统会自动插入补位"
                     />
                   </div>
 
