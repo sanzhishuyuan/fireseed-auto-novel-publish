@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getNovelMeta } from '@/lib/novels';
 import db from '@/lib/db';
-import { getCurrentUser, verifyAdminToken } from '@/lib/auth';
+import { verifyAdminToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,7 +62,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser();
     const url = new URL(request.url);
     const adminKey = url.searchParams.get('admin_key');
 
@@ -77,14 +76,13 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: '小说已在待删除状态' }, { status: 400 });
     }
 
-    // 权限检查：作者本人或管理员（JWT Token 验证）
-    const isAuthor = user && novel.author_id === user.userId;
+    // 权限检查：仅管理员可删除（取消用户端删除权限，防止意外删除）
     const isAdmin = adminKey && verifyAdminToken(adminKey);
 
-    if (!isAuthor && !isAdmin) {
+    if (!isAdmin) {
       return NextResponse.json({ 
         success: false, 
-        error: '无权限删除此小说，仅作者或管理员可删除' 
+        error: '无权限删除此小说，仅管理员可删除' 
       }, { status: 403 });
     }
 
