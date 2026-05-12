@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Novel {
@@ -8,9 +8,9 @@ interface Novel {
   title: string;
 }
 
-export default function ChapterEditor({ novels }: { novels: Novel[] }) {
+export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: Novel[]; defaultNovel?: string }) {
   const router = useRouter();
-  const [selectedNovel, setSelectedNovel] = useState('');
+  const [selectedNovel, setSelectedNovel] = useState(defaultNovel);
   const [chapters, setChapters] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
@@ -21,15 +21,12 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
     choices: [] as { text: string; branch: string }[]
   });
   const [newChoice, setNewChoice] = useState({ text: '', branch: '' });
+  const initializedRef = useRef(false);
 
   // ---- 排序相关状态 ----
-  // 章节ID → 用户填入的排序号
   const [chapterOrders, setChapterOrders] = useState<Record<string, number>>({});
-  // 是否有未保存的排序改动
   const [isOrderDirty, setIsOrderDirty] = useState(false);
-  // 保存排序的加载状态
   const [isSavingOrder, setIsSavingOrder] = useState(false);
-  // 排序提示消息
   const [orderMessage, setOrderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // 获取章节 ID（兼容数据库章节和文件系统章节）
@@ -47,7 +44,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
     return chapter.title || chapter.meta?.title || '未命名章节';
   }, []);
 
-  // 加载章节列表并初始化排序状态
+  // 加载章节列表
   const loadChapters = useCallback(() => {
     if (!selectedNovel) return;
     fetch(`/api/novels/${selectedNovel}/chapters`)
@@ -55,7 +52,6 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
       .then(data => {
         const list = data.chapters || [];
         setChapters(list);
-        // 初始化排序映射（按当前 order + 显示顺序）
         const orders: Record<string, number> = {};
         list.forEach((ch: any, idx: number) => {
           orders[getChapterId(ch)] = getChapterOrder(ch) || (idx + 1);
@@ -66,21 +62,20 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
       });
   }, [selectedNovel, getChapterId, getChapterOrder]);
 
+  // 当 selectedNovel 变化时加载章节
   useEffect(() => {
     if (selectedNovel) {
       loadChapters();
     }
   }, [selectedNovel, loadChapters]);
 
-  // 检测排序冲突：哪些序号出现了多次
+  // 检测排序冲突（仅视觉提示，不阻塞提交）
   const getOrderConflicts = useCallback((): Set<number> => {
     const allOrders = Object.values(chapterOrders);
     const seen = new Set<number>();
     const duplicates = new Set<number>();
     for (const o of allOrders) {
-      if (seen.has(o)) {
-        duplicates.add(o);
-      }
+      if (seen.has(o)) duplicates.add(o);
       seen.add(o);
     }
     return duplicates;
@@ -88,7 +83,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
 
   const orderConflicts = getOrderConflicts();
 
-  // 判断排序是否有改动
+  // 判断是否有改动
   const hasOrderChanges = useCallback((): boolean => {
     return chapters.some((ch) => {
       const id = getChapterId(ch);
@@ -98,14 +93,13 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
     });
   }, [chapters, chapterOrders, getChapterId, getChapterOrder]);
 
-  // 当章节列表或排序映射变化时，检查是否有改动
   useEffect(() => {
     if (chapters.length > 0) {
       setIsOrderDirty(hasOrderChanges());
     }
   }, [chapterOrders, chapters, hasOrderChanges]);
 
-  // 处理排序号输入变化
+  // 处理排序号输入——支持插入语义
   const handleOrderChange = (chapterId: string, value: string) => {
     const num = parseInt(value, 10);
     if (isNaN(num) || num < 1) return;
@@ -113,17 +107,10 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
     setOrderMessage(null);
   };
 
-  // 保存排序
+  // 保存排序——后端自动做插入排序，用户可只改想移动的章节
   const handleSaveOrder = async () => {
     if (!selectedNovel || Object.keys(chapterOrders).length === 0) return;
 
-    // 冲突检测
-    if (orderConflicts.size > 0) {
-      setOrderMessage({ type: 'error', text: `存在重复序号（${Array.from(orderConflicts).join(', ')}），请修改后再保存` });
-      return;
-    }
-
-    // 检查是否真的有改动
     if (!hasOrderChanges()) {
       setOrderMessage({ type: 'error', text: '没有需要保存的改动' });
       return;
@@ -142,9 +129,8 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setOrderMessage({ type: 'success', text: `✅ 章节排序已更新（${data.updated} 章）` });
+        setOrderMessage({ type: 'success', text: `✅ 章节排序已更新（${data.message || data.updated + ' 章'}）` });
         setIsOrderDirty(false);
-        // 重新加载章节列表
         loadChapters();
       } else {
         setOrderMessage({ type: 'error', text: data.error || '保存排序失败' });
@@ -156,7 +142,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
     }
   };
 
-  // 重置排序为原始值
+  // 重置排序
   const handleResetOrder = () => {
     const orders: Record<string, number> = {};
     chapters.forEach((ch: any, idx: number) => {
@@ -168,24 +154,18 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
   };
 
   // ---- 原有方法 ----
-
   const handleAddChoice = () => {
     if (newChoice.text && newChoice.branch) {
-      setForm({
-        ...form,
-        choices: [...form.choices, { ...newChoice }]
-      });
+      setForm({ ...form, choices: [...form.choices, { ...newChoice }] });
       setNewChoice({ text: '', branch: '' });
     }
   };
 
   const handleRemoveChoice = (index: number) => {
-    setForm({
-      ...form,
-      choices: form.choices.filter((_, i) => i !== index)
-    });
+    setForm({ ...form, choices: form.choices.filter((_, i) => i !== index) });
   };
 
+  // 删除章节（支持 DB ID 和文件系统 ID）
   const handleDeleteChapter = async (id: string, title: string) => {
     if (!confirm(`确认删除章节「${title}」？\n\n删除后不可恢复！`)) return;
 
@@ -222,7 +202,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
     }
   };
 
-  // 按当前排序号排列章节列表
+  // 按当前排序号排列
   const sortedChapters = [...chapters].sort((a, b) => {
     const orderA = chapterOrders[getChapterId(a)] ?? getChapterOrder(a) ?? 0;
     const orderB = chapterOrders[getChapterId(b)] ?? getChapterOrder(b) ?? 0;
@@ -249,7 +229,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
       {/* 章节列表 */}
       {selectedNovel && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
-          {/* 标题栏 + 操作按钮 */}
+          {/* 标题栏 */}
           <div className="p-4 border-b dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-bold text-gray-800 dark:text-white">章节列表</h2>
             <div className="flex items-center gap-2">
@@ -262,7 +242,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
             </div>
           </div>
 
-          {/* 新建章节表单（保持不变） */}
+          {/* 新建章节表单 */}
           {showForm && (
             <div className="p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
               <h3 className="font-bold text-gray-800 dark:text-white mb-4">新建章节</h3>
@@ -313,13 +293,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
 
                 {/* 分支选择配置 */}
                 <div>
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    剧情分支选项 (可选)
-                  </label>
-                  <p className="text-xs text-gray-500 mb-2">
-                    在章节末尾添加分支选择点，读者可选择不同剧情走向
-                  </p>
-                  
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">剧情分支选项 (可选)</label>
                   {form.choices.map((choice, index) => (
                     <div key={index} className="flex items-center gap-2 mb-2">
                       <span className="text-sm text-gray-600 dark:text-gray-400">选项{index + 1}:</span>
@@ -335,15 +309,9 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
                         readOnly
                         className="w-24 px-3 py-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
                       />
-                      <button
-                        onClick={() => handleRemoveChoice(index)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        ✕
-                      </button>
+                      <button onClick={() => handleRemoveChoice(index)} className="text-red-500 hover:text-red-700">✕</button>
                     </div>
                   ))}
-                  
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
@@ -359,21 +327,11 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
                       className="w-24 px-3 py-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
                       placeholder="分支ID"
                     />
-                    <button
-                      onClick={handleAddChoice}
-                      className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm"
-                    >
-                      添加
-                    </button>
+                    <button onClick={handleAddChoice} className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm">添加</button>
                   </div>
                 </div>
 
-                <button
-                  onClick={handleSubmit}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
-                >
-                  保存章节
-                </button>
+                <button onClick={handleSubmit} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">保存章节</button>
               </div>
             </div>
           )}
@@ -381,7 +339,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
           {/* 排序提示条 */}
           <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b dark:border-gray-700 text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
             <span>💡</span>
-            <span>直接修改左侧数字即可调整章节顺序，修改后点击「保存排序」</span>
+            <span>修改左侧数字即可调整顺序，重复序号会自动插入补位，只需改想移动的章节</span>
           </div>
 
           {/* 排序操作栏 */}
@@ -390,9 +348,9 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleSaveOrder}
-                  disabled={!isOrderDirty || isSavingOrder || orderConflicts.size > 0}
+                  disabled={!isOrderDirty || isSavingOrder}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isOrderDirty && orderConflicts.size === 0
+                    isOrderDirty
                       ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
                       : 'bg-gray-200 dark:bg-gray-600 text-gray-400 cursor-not-allowed'
                   }`}
@@ -418,14 +376,16 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
                 </button>
               </div>
               {isOrderDirty && (
-                <span className="text-xs text-amber-600 dark:text-amber-400">
-                  有未保存的排序改动
+                <span className={`text-xs ${orderConflicts.size > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600'}`}>
+                  {orderConflicts.size > 0
+                    ? `有未保存的改动（重复序号将自动插入补位）`
+                    : '有未保存的排序改动'}
                 </span>
               )}
             </div>
           )}
 
-          {/* 排序消息提示 */}
+          {/* 消息提示 */}
           {orderMessage && (
             <div className={`px-4 py-2.5 text-sm border-b dark:border-gray-700 ${
               orderMessage.type === 'success'
@@ -444,9 +404,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
               const chapterBranch = chapter.branch || chapter.meta?.branch || 'main';
               const chapterWords = chapter.word_count || chapter.content?.length || 0;
               const chapterChoices = chapter.meta?.choices?.length || 0;
-              const hasDbId = !!chapter.id;
 
-              // 当前输入框的值
               const currentOrder = chapterOrders[chapterId] ?? getChapterOrder(chapter);
               const originalOrder = getChapterOrder(chapter);
               const isOrderChanged = currentOrder !== originalOrder;
@@ -455,7 +413,7 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
               return (
                 <div
                   key={chapter.filePath || chapter.id}
-                  className={`p-4 flex items-center gap-3 transition-colors ${
+                  className={`p-3 flex items-center gap-3 transition-colors ${
                     isOrderChanged ? 'bg-amber-50 dark:bg-amber-900/10' : ''
                   }`}
                 >
@@ -464,63 +422,63 @@ export default function ChapterEditor({ novels }: { novels: Novel[] }) {
                     <input
                       type="number"
                       min={1}
-                      max={chapters.length}
+                      max={chapters.length + 5}
                       value={currentOrder}
                       onChange={(e) => handleOrderChange(chapterId, e.target.value)}
                       className={`w-14 px-2 py-1.5 text-center text-sm font-mono font-bold rounded-lg border transition-all
                         ${hasConflict
-                          ? 'border-red-400 bg-red-50 dark:border-red-500 dark:bg-red-900/20 text-red-600 dark:text-red-400 ring-2 ring-red-200 dark:ring-red-800'
+                          ? 'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
                           : isOrderChanged
                             ? 'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
                             : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
                         }
                         focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-600`}
-                      title={hasConflict ? '序号冲突！请修改为不同的数字' : '点击修改排序号'}
+                      title="修改数字调整顺序，重复序号会自动插入补位"
                     />
                   </div>
 
                   {/* 章节信息 */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-800 dark:text-white truncate">
+                    <div className="font-medium text-gray-800 dark:text-white truncate text-sm">
                       {chapterTitle}
                     </div>
-                    <div className="text-sm text-gray-500 mt-0.5">
+                    <div className="text-xs text-gray-500 mt-0.5">
                       {chapterBranch === 'main' ? '主线' : '支线'} · 
                       {chapterWords} 字
                       {chapterChoices > 0 && (
                         <span className="ml-2 text-purple-600">🔀 {chapterChoices}个分支</span>
                       )}
-                      {hasConflict && (
-                        <span className="ml-2 text-red-500 font-medium">⚠ 序号冲突</span>
-                      )}
                     </div>
                   </div>
 
                   {/* 操作按钮 */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <a
                       href={`/novels/${selectedNovel}/${chapter.filePath || chapter.id}`}
                       target="_blank"
-                      className="px-2.5 py-1 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded text-sm transition-colors"
+                      className="px-2 py-1 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded text-xs transition-colors"
                     >
                       预览
                     </a>
-                    {hasDbId && (
-                      <button
-                        onClick={() => handleDeleteChapter(chapter.id, chapterTitle)}
-                        className="px-2.5 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm transition-colors"
-                      >
-                        删除
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        const id = chapter.id || chapter.filePath;
+                        if (!id) {
+                          alert('无法删除：缺少章节标识');
+                          return;
+                        }
+                        handleDeleteChapter(id, chapterTitle);
+                      }}
+                      className="px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-xs transition-colors"
+                    >
+                      删除
+                    </button>
                   </div>
                 </div>
               );
             })}
             {sortedChapters.length === 0 && (
-              <div className="p-8 text-center text-gray-500">
-                暂无章节
-              </div>
+              <div className="p-8 text-center text-gray-500">暂无章节</div>
             )}
           </div>
         </div>

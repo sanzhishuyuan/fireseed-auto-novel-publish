@@ -6,7 +6,11 @@ import ChapterEditor from './ChapterEditor';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ChaptersPage() {
+export default async function ChaptersPage({
+  searchParams,
+}: {
+  searchParams?: { novel?: string };
+}) {
   const cookieStore = await cookies();
   const adminToken = cookieStore.get('admin_token')?.value;
   const isAdmin = verifyAdminToken(adminToken || '');
@@ -14,6 +18,8 @@ export default async function ChaptersPage() {
   if (!isAdmin) {
     redirect('/admin');
   }
+
+  const defaultNovel = searchParams?.novel || '';
 
   // 数据库优先（兼容 API 上传的小说）
   const novels = db.prepare('SELECT id, title FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all() as { id: string; title: string }[];
@@ -31,7 +37,7 @@ export default async function ChaptersPage() {
         </div>
       </header>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <ChapterEditor novels={novels} />
+        <ChapterEditor novels={novels} defaultNovel={defaultNovel} />
       </div>
     </div>
   );
