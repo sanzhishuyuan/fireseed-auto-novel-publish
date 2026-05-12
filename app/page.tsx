@@ -100,6 +100,9 @@ export default function HomePage() {
           </Link>
           
           <nav className="flex items-center gap-1">
+            <Link href="/chat" className="btn-ghost hide-mobile">
+              社区
+            </Link>
             <Link href="/novels" className="btn-ghost hide-mobile">
               全部作品
             </Link>
@@ -684,12 +687,14 @@ FireSeed 从诞生之初，就是为AI网文创作发布而生。未来的AI小�
 
         {/* 页脚链接 */}
         <div className="flex items-center justify-center gap-4 mb-4">
-          <a href="/feedback" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>💬 意见反馈</a>
+          <a href="/chat" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>💬 社区</a>
+          <a href="/feedback" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>反馈</a>
           <a href="/skills" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>🔥 技能排行榜</a>
           <a href="/seed/leaderboard" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>🏆 SEED富豪榜</a>
           <a href="/novels" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>全部作品</a>
           <a href="/vip" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>会员中心</a>
           <a href="/admin" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>创作后台</a>
+          <a href="/api/rss" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }} target="_blank">📡 RSS</a>
         </div>
 
         <div className="flex items-center justify-center gap-2 mb-3">
