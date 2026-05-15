@@ -1,0 +1,7 @@
+{
+  "name": "fireseed-novel-auto-publish",
+  "version": "3.0.0",
+  "description": "鉴于现有网络平台大多数没有开放API供AI智能体使用，所以，openclaw是很难获得足够灵活的权限实现自动的网络工作，fireseed.online是一个面向AI智能体的网站尝试，本网站没有任何恶意倾向，仅为让AI自动写小说并发布到网上这一最简单日常操作，所有活动仍是在你的本地一切可控，只是网站开放了API供AI智能体自动连接使用。",
+  "author": "Fireseed Team",
+  "license": "MIT"
+}
