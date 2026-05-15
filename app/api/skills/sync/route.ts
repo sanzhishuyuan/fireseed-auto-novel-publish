@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/skills/sync
- * 从 GitHub/Gitee 仓库提取 SKILL.md 元数据（管理员工具）
- * body: { repo_url: string, admin_key?: string }
+ * 从 GitHub/Gitee/ClawHub 提取 SKILL.md 元数据（管理员工具）
+ * body: { repo_url: string, repo_type?: string, admin_key?: string }
  */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
@@ -19,12 +19,77 @@ export async function POST(request: NextRequest) {
 
   try {
     let repoUrl = (body.repo_url || '').trim();
+    const repoType = (body.repo_type || '').trim().toLowerCase();
 
     if (!repoUrl) {
-      return NextResponse.json({ success: false, error: '请输入仓库URL' }, { status: 400 });
+      return NextResponse.json({ success: false, error: '请输入仓库URL或ClawHub Slug' }, { status: 400 });
     }
 
+    let isClawHub = repoType === 'clawhub' || repoUrl.includes('clawhub.ai');
+
+    // ===== ClawHub 导入 =====
+    if (isClawHub) {
+      // 从 URL 或直接 slug 提取 slug
+      let slug = repoUrl;
+      const slugMatch = repoUrl.match(/clawhub\.ai\/(?:skills|publishers\/[^/]+\/skills)\/([^/\s?#]+)/i);
+      if (slugMatch) slug = slugMatch[1];
+      slug = slug.replace(/[^a-z0-9_-]/gi, '').toLowerCase();
+      if (!slug) {
+        return NextResponse.json({ success: false, error: '无法识别 ClawHub Slug' }, { status: 400 });
+      }
+
+      const CLAWHUB_API = 'https://clawhub.ai/api/v1';
+
+      // 1) 获取技能元数据
+      let skillMeta: any;
+      try {
+        const metaRes = await fetch(`${CLAWHUB_API}/skills/${slug}`, {
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!metaRes.ok) {
+          return NextResponse.json({ success: false, error: `ClawHub 未找到技能 "${slug}"` }, { status: 404 });
+        }
+        skillMeta = await metaRes.json();
+      } catch {
+        return NextResponse.json({ success: false, error: '无法连接 ClawHub API' }, { status: 502 });
+      }
+
+      // 2) 获取 SKILL.md 内容
+      let chRawContent = '';
+      try {
+        const fileRes = await fetch(`${CLAWHUB_API}/skills/${slug}/file?path=SKILL.md`, {
+          signal: AbortSignal.timeout(10000),
+        });
+        if (fileRes.ok) chRawContent = await fileRes.text();
+      } catch { /* SKILL.md 非必需 */ }
+
+      const s = skillMeta.skill || skillMeta;
+      const latestVer = skillMeta.latestVersion || {};
+      const meta = s.metadata || {};
+      const tags = Array.isArray(meta.tags) ? meta.tags.join(',') : (s.tags ? Object.keys(s.tags).join(',') : '');
+
+      return NextResponse.json({
+        success: true,
+        repo_url: `https://clawhub.ai/skills/${slug}`,
+        repo_path: slug,
+        repo_type: 'clawhub',
+        metadata: {
+          name: slug,
+          title: s.displayName || slug,
+          description: s.summary || '',
+          author: skillMeta.owner?.handle || skillMeta.owner?.displayName || '',
+          icon_emoji: '🔌',
+          version: latestVer.version || Object.values(s.tags || {})[0] || '',
+          tags,
+        },
+        raw_preview: chRawContent ? chRawContent.slice(0, 500) : '',
+      });
+    }
+
+    // ===== GitHub / Gitee =====
     // 标准化 URL：提取 owner/repo
+    let rawContent = '';
+    let usedUrl = '';
     let repoPath = '';
     if (repoUrl.match(/github\.com\/([^/]+\/[^/]+)/)) {
       repoPath = repoUrl.match(/github\.com\/([^/]+\/[^/]+)/)![1].replace(/\.git$/, '');
@@ -33,11 +98,8 @@ export async function POST(request: NextRequest) {
       repoPath = repoUrl.match(/gitee\.com\/([^/]+\/[^/]+)/)![1].replace(/\.git$/, '');
       repoUrl = `https://gitee.com/${repoPath}`;
     } else {
-      return NextResponse.json({ success: false, error: '仅支持 GitHub 和 Gitee 仓库' }, { status: 400 });
+      return NextResponse.json({ success: false, error: '仅支持 GitHub、Gitee 和 ClawHub' }, { status: 400 });
     }
-
-    let rawContent = '';
-    let usedUrl = '';
 
     // 根据仓库类型选择 raw URL 格式
     const isGitee = repoUrl.includes('gitee.com');

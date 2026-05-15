@@ -50,7 +50,7 @@ export default function SkillMarketplaceManager() {
     try {
       const res = await fetch('/api/skills/sync', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repo_url: form.repo_url }),
+        body: JSON.stringify({ repo_url: form.repo_url, repo_type: form.repo_type }),
       });
       const data = await res.json();
       if (data.success) {
@@ -113,17 +113,18 @@ export default function SkillMarketplaceManager() {
           <div className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>仓库URL</label>
+                <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>仓库URL / ClawHub Slug</label>
                 <div className="flex gap-2">
-                  <input type="text" value={form.repo_url} onChange={e => setForm({ ...form, repo_url: e.target.value })} className="input flex-1" placeholder="https://github.com/xxx/xxx-skill" />
+                  <input type="text" value={form.repo_url} onChange={e => setForm({ ...form, repo_url: e.target.value })} className="input flex-1" placeholder={form.repo_type === 'clawhub' ? '输入 ClawHub slug (如 fireseed-novel-auto-publish)' : 'https://github.com/xxx/xxx-skill'} />
                   <button onClick={handleSync} disabled={syncing !== ''} className="btn-ghost text-xs px-3">{syncing ? '同步中...' : '提取元数据'}</button>
                 </div>
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>仓库类型</label>
+                <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>来源类型</label>
                 <select value={form.repo_type} onChange={e => setForm({ ...form, repo_type: e.target.value })} className="input">
                   <option value="github">GitHub</option>
                   <option value="gitee">Gitee</option>
+                  <option value="clawhub">ClawHub</option>
                 </select>
               </div>
             </div>
