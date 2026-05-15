@@ -10,6 +10,7 @@ import { validateContentSize, CONTENT_MAX_BYTES } from '@/lib/api-guard';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 import { transferSeed } from '@/lib/seed';
+import { extractChoicesFromContent } from '@/lib/markdown-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -161,6 +162,14 @@ export async function POST(request: NextRequest, { params }: Params) {
     const wordCount = contentStr.replace(/\s/g, '').length;
 
     const finalChoices = [...choices];
+    // 自动从 MarkdownFlow 语法的 ?[...] 中提取选项
+    const mfChoices = extractChoicesFromContent(contentStr);
+    for (const mc of mfChoices) {
+      // 避免与手工传入的 choices 重复
+      if (!finalChoices.some(c => c.text === mc.text && c.branch === mc.branch)) {
+        finalChoices.push(mc);
+      }
+    }
     if (custom_branch_enabled) {
       finalChoices.push({ text: 'Custom storyline (reader-written)', branch: 'custom', is_custom: true });
     }

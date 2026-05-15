@@ -8,7 +8,9 @@ import ReadingControls from './ReadingControls';
 import BranchChoice from './BranchChoice';
 import BranchInviteCard from './BranchInviteCard';
 import ReactMarkdown from 'react-markdown';
+import remarkFlow from 'remark-flow';
 import type { Components } from 'react-markdown';
+import { processMarkdownFlow, hasMarkdownFlowSyntax } from '@/lib/markdown-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,6 +135,29 @@ export default async function ChapterPage({ params }: Props) {
       userBranch = progress?.branch;
     }
   }
+
+  // 构建 MarkdownFlow 上下文（注入变量）
+  const readerName = userId
+    ? (db.prepare('SELECT username FROM users WHERE id = ?').get(userId) as { username: string } | undefined)?.username || '读者'
+    : '读者';
+  const mfContext = {
+    reader_name: readerName,
+    novel_title: novel.title,
+    chapter_title: chapter.title,
+    chapter_num: currentIndex + 1,
+    total_chapters: mainChapters.length,
+  };
+
+  // 处理 MarkdownFlow 语法（变量注入 + 交互提取）
+  const hasMF = hasMarkdownFlowSyntax(chapter.content);
+  const mfResult = hasMF ? processMarkdownFlow(chapter.content, mfContext) : null;
+  const renderedContent = mfResult?.content || chapter.content;
+
+  // 合并 choices：数据库中的 + MarkdownFlow 语法中提取的
+  const allChoices = [
+    ...(chapter.choices || []),
+    ...(mfResult?.choices || []),
+  ];
 
   // 自定义 Markdown 渲染组件
   const markdownComponents: Components = {
@@ -266,14 +291,14 @@ export default async function ChapterPage({ params }: Props) {
               第 {currentIndex + 1} 章
             </p>
             {/* 有分支选项时显示分支指示器 */}
-            {chapter.choices?.length > 0 && (
+            {allChoices.length > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                 style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
-                🌿 {chapter.choices.length}个分支
+                🌿 {allChoices.length}个分支
               </span>
             )}
             {/* 允许自定义分支时显示 */}
-            {chapter.custom_branch_enabled && chapter.choices?.length === 0 && (
+            {chapter.custom_branch_enabled && allChoices.length === 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                 style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
                 ✍️ 可创作分支
@@ -294,15 +319,18 @@ export default async function ChapterPage({ params }: Props) {
 
         {/* 正文 - Markdown渲染 */}
         <div className="reading-content">
-          <ReactMarkdown components={markdownComponents}>
-            {chapter.content || ''}
+          <ReactMarkdown
+            components={markdownComponents}
+            remarkPlugins={hasMF ? [remarkFlow] : undefined}
+          >
+            {renderedContent}
           </ReactMarkdown>
         </div>
 
         {/* --- 分支选择器（有预设选项时展示） --- */}
-        {chapter.choices?.length > 0 && (
+        {allChoices.length > 0 && (
           <BranchChoice
-            choices={chapter.choices || []}
+            choices={allChoices}
             novelId={id}
             chapterId={chapterId}
             currentBranch={chapter.branch}
