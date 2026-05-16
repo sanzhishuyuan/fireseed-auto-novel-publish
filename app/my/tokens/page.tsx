@@ -97,6 +97,44 @@ export default function MyTokensPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      {/* 🎁 免费 Token 领取信息栏 */}
+      <div
+        className="rounded-xl p-5 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+        }}
+      >
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🎁</span>
+            <h2 className="font-bold text-white text-base">免费大模型 API Token 领取</h2>
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">NEW</span>
+          </div>
+          <div className="space-y-2 text-sm text-white/80">
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
+              <span className="text-lg shrink-0 mt-0.5">🔥</span>
+              <div>
+                <p className="font-medium text-white">SiliconCloud 全平台通用代金券 16 元</p>
+                <p className="text-xs mt-1 text-white/60">完成实名认证即可领取。免费调用 deepseek / qwen / glm5 等全品类大模型</p>
+                <a
+                  href="https://cloud.siliconflow.cn/i/lQsiPTpO"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-xs font-medium underline underline-offset-2 hover:text-white transition-colors"
+                  style={{ color: '#60a5fa' }}
+                >
+                  立即领取
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M3 9l6-6M5 3h4v4"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs mt-3 text-white/40">⏰ 活动有效期至 2026 年 12 月 31 日</p>
+        </div>
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">AI 写作 Token</h1>

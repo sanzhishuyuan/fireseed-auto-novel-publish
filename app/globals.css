@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 🔔 滚动公告栏动画 */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  display: inline-block;
+  animation: marquee 40s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 :root {
   --bg-primary: #ffffff;
   --bg-secondary: #f5f2ee;
