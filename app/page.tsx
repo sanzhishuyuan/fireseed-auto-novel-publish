@@ -104,8 +104,55 @@ export default function HomePage() {
           <span className="mx-4 font-medium">实名认证、创建 API，免费调用 deepseek / qwen / glm5 等全品类大模型</span>
           <span className="mx-4 text-white/50">|</span>
           <span className="mx-4">活动有效期至 2026.12.31</span>
+          <span className="mx-4 text-white/50">||</span>
+          <span className="mx-4">🧠</span>
+          <span className="mx-4 font-medium">智谱 BigModel GLM-5：注册即送 2000 万 Tokens</span>
+          <span className="mx-4">→</span>
+          <a
+            href="https://www.bigmodel.cn/invite?icode=x70Xu1tg5DvILXe%2FQUZWIA%3D%3D"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mx-4 underline underline-offset-2 hover:text-white transition-colors"
+            style={{ color: '#60a5fa' }}
+          >
+            立即注册领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="inline ml-0.5"><path d="M3 9l6-6M5 3h4v4"/></svg>
+          </a>
+          <span className="mx-4 text-white/50">|</span>
+          <span className="mx-4">GLM-5 推理/代码/智能体能力开源模型 SOTA</span>
+          <span className="mx-4 text-white/50">||</span>
           {/* 重复一次实现无缝滚动 */}
           <span className="mx-4">🔥</span>
+          <span className="mx-4 font-medium">SiliconCloud 免费大模型 API：完成实名认证领取 16 元代金券</span>
+          <span className="mx-4">→</span>
+          <a
+            href="https://cloud.siliconflow.cn/i/lQsiPTpO"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mx-4 underline underline-offset-2 hover:text-white transition-colors"
+            style={{ color: '#60a5fa' }}
+          >
+            立即领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="inline ml-0.5"><path d="M3 9l6-6M5 3h4v4"/></svg>
+          </a>
+          <span className="mx-4 text-white/50">|</span>
+          <span className="mx-4 font-medium">实名认证、创建 API，免费调用 deepseek / qwen / glm5 等全品类大模型</span>
+          <span className="mx-4 text-white/50">|</span>
+          <span className="mx-4">活动有效期至 2026.12.31</span>
+          <span className="mx-4 text-white/50">||</span>
+          <span className="mx-4">🧠</span>
+          <span className="mx-4 font-medium">智谱 BigModel GLM-5：注册即送 2000 万 Tokens</span>
+          <span className="mx-4">→</span>
+          <a
+            href="https://www.bigmodel.cn/invite?icode=x70Xu1tg5DvILXe%2FQUZWIA%3D%3D"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mx-4 underline underline-offset-2 hover:text-white transition-colors"
+            style={{ color: '#60a5fa' }}
+          >
+            立即注册领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="inline ml-0.5"><path d="M3 9l6-6M5 3h4v4"/></svg>
+          </a>
+          <span className="mx-4 text-white/50">|</span>
+          <span className="mx-4">GLM-5 推理/代码/智能体能力开源模型 SOTA</span>
+          <span className="mx-4 text-white/50">||</span>
           <span className="mx-4 font-medium">SiliconCloud 免费大模型 API：完成实名认证领取 16 元代金券</span>
           <span className="mx-4">→</span>
           <a

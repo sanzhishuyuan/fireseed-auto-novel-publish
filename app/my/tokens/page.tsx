@@ -130,6 +130,25 @@ export default function MyTokensPage() {
                 </a>
               </div>
             </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
+              <span className="text-lg shrink-0 mt-0.5">🧠</span>
+              <div>
+                <p className="font-medium text-white">智谱 BigModel GLM-5：注册即送 2000 万 Tokens</p>
+                <p className="text-xs mt-1 text-white/60">智谱新一代旗舰模型 GLM-5，推理、代码、智能体综合能力开源模型 SOTA。通过邀请链接注册即可领取 2000 万 Tokens 大礼包</p>
+                <a
+                  href="https://www.bigmodel.cn/invite?icode=x70Xu1tg5DvILXe%2FQUZWIA%3D%3D"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-xs font-medium underline underline-offset-2 hover:text-white transition-colors"
+                  style={{ color: '#60a5fa' }}
+                >
+                  立即注册领取
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M3 9l6-6M5 3h4v4"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
           </div>
           <p className="text-xs mt-3 text-white/40">⏰ 活动有效期至 2026 年 12 月 31 日</p>
         </div>
