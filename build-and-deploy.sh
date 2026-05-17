@@ -8,6 +8,7 @@ set -euo pipefail
 
 PROJECT_DIR="/root/ai-novel-lite"
 DB_FILE="$PROJECT_DIR/data/novel.db"
+BUILD_DB="$PROJECT_DIR/data/novel.build.db"       # 构建用DB副本
 BACKUP_DIR="/var/data/ai-novel/backup"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/novel.db.$TIMESTAMP"
@@ -56,11 +57,17 @@ else
   echo "  📭 封面目录为空或不存在，跳过封面备份"
 fi
 
-# ===== 步骤2: 构建 =====
+# ===== 步骤2: 构建（使用数据库副本，不污染生产库） =====
 echo ""
-echo "[2/6] 执行构建..."
-npm run build
-echo "  ✅ 构建完成"
+echo "[2/6] 执行构建（使用DB副本，生产库不受影响）..."
+# 创建构建用数据库副本
+cp "$DB_FILE" "$BUILD_DB"
+echo "  ✅ 已创建构建DB副本: $BUILD_DB"
+# 用构建副本构建，生产库不受构建过程影响
+BUILD_DB_PATH="$BUILD_DB" npm run build
+# 构建完成后清理副本
+rm -f "$BUILD_DB"
+echo "  ✅ 构建完成，已清理构建DB副本"
 
 # ===== 步骤3: 复制静态资源 =====
 echo ""

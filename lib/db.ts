@@ -3,7 +3,8 @@ import path from 'path';
 import fs from 'fs';
 
 const dataDir = path.join(process.cwd(), 'data');
-const dbPath = path.join(dataDir, 'novel.db');
+// 构建时用临时数据库副本，避免污染生产数据库
+const dbPath = process.env.BUILD_DB_PATH || path.join(dataDir, 'novel.db');
 
 // 确保 data 目录存在
 if (!fs.existsSync(dataDir)) {
@@ -200,7 +201,41 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
-  -- 用户与 Token 关联表
+  -- 用户与 Token 关联表（v2 统一版，替代 user_tokens + ai_tokens）
+  CREATE TABLE IF NOT EXISTS tokens (
+    id            TEXT PRIMARY KEY,
+    user_id       TEXT,
+    type          TEXT NOT NULL DEFAULT 'user',
+    token         TEXT NOT NULL UNIQUE,
+    name          TEXT,
+    permissions   TEXT NOT NULL DEFAULT '[]',
+    quota_day     INTEGER DEFAULT 50,
+    quota_minute  INTEGER DEFAULT 10,
+    quota_used    INTEGER DEFAULT 0,
+    quota_reset_at TEXT,
+    expires_at    TEXT,
+    last_used_at  TEXT,
+    last_ip       TEXT,
+    environment   TEXT,
+    is_active     INTEGER DEFAULT 1,
+    created_at    TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  -- Token 调用审计日志
+  CREATE TABLE IF NOT EXISTS token_usage_logs (
+    id          TEXT PRIMARY KEY,
+    token_id    TEXT NOT NULL,
+    user_id     TEXT,
+    action      TEXT NOT NULL,
+    ip          TEXT,
+    user_agent  TEXT,
+    status      INTEGER,
+    duration_ms INTEGER,
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+
+  -- 用户与 Token 关联表（v1 旧版，保留兼容）
   CREATE TABLE IF NOT EXISTS user_tokens (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
