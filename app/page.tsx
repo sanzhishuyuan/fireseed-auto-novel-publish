@@ -456,7 +456,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
             {novels.map((novel, i) => {
               // 类型标签映射（借鉴 kanshuclaw 的 emoji 图标系统）
               const tagEmojis: Record<string, string> = {
@@ -595,7 +595,7 @@ export default function HomePage() {
       {/* 加载中 */}
       {loading && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="card overflow-hidden animate-pulse">
                 <div className="aspect-[3/4]" style={{ background: 'var(--bg-secondary)' }} />

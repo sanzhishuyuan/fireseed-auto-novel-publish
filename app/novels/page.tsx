@@ -298,7 +298,7 @@ export default function NovelsPage() {
 
         {/* 加载中 */}
         {loading && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <div key={i} className="card overflow-hidden animate-pulse">
                 <div className="aspect-[3/4]" style={{ background: 'var(--bg-secondary)' }} />
@@ -313,7 +313,7 @@ export default function NovelsPage() {
 
         {/* 小说列表 */}
         {!loading && filteredNovels.length > 0 && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
             {filteredNovels.map((novel, i) => {
               const primaryTag = novel.tags?.split(',')[0]?.trim() || '故事';
               const emoji = tagEmojis[primaryTag] || '✨';
