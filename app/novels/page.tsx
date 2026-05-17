@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import SafeCover from '@/components/SafeCover';
 
 interface User {
   id: string;
@@ -328,30 +329,11 @@ export default function NovelsPage() {
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
                   <div className="aspect-[3/4] relative overflow-hidden">
-                    {/* 封面图（有 cover_url 时显示） */}
-                    {novel.cover_url ? (
-                      <img
-                        src={novel.cover_url}
-                        alt={novel.title}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div
-                        className="absolute inset-0"
-                        style={{ background: 'linear-gradient(160deg, #5c3d1e 0%, #8b5e3c 60%, #c49a6c 100%)' }}
-                      >
-                        {/* 中心图标 */}
-                        <div className="w-full h-full flex flex-col items-center justify-center">
-                          <div className="w-14 h-14 rounded-full border-2 border-white/20 flex items-center justify-center mb-3 opacity-60">
-                            <span className="text-2xl">{emoji}</span>
-                          </div>
-                          <span className="text-white/40 text-xs font-medium tracking-widest uppercase">
-                            {primaryTag}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    <SafeCover
+                      src={novel.cover_url}
+                      alt={novel.title}
+                      tag={novel.tags}
+                    />
 
                     {/* 左上角类型标签 */}
                     <div className="absolute top-3 left-3">

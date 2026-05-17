@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import SafeCover from '@/components/SafeCover';
 
 interface User {
   id: string;
@@ -480,30 +481,12 @@ export default function HomePage() {
                   style={{ animationDelay: `${i * 80}ms` }}
                 >
                   <div className="aspect-[3/4] relative overflow-hidden">
-                    {/* 封面图（有 cover_url 时显示） */}
-                    {novel.cover_url ? (
-                      <img
-                        src={novel.cover_url}
-                        alt={novel.title}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      /* 无封面时：渐变色后备 */
-                      <div
-                        className="absolute inset-0"
-                        style={{ background: 'linear-gradient(135deg, #5c3d1e 0%, #8b5e3c 50%, #c49a6c 100%)' }}
-                      >
-                        <div className="w-full h-full flex flex-col items-center justify-center">
-                          <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center mb-3">
-                            <span className="text-2xl">{emoji}</span>
-                          </div>
-                          <span className="text-white/60 text-xs font-medium tracking-widest uppercase">
-                            {primaryTag}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    {/* 安全的封面组件 */}
+                    <SafeCover
+                      src={novel.cover_url}
+                      alt={novel.title}
+                      tag={novel.tags}
+                    />
 
                     {/* 左上角类型标签 */}
                     <div className="absolute top-3 left-3">
