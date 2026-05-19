@@ -149,6 +149,25 @@ export default function MyTokensPage() {
                 </a>
               </div>
             </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
+              <span className="text-lg shrink-0 mt-0.5">🤖</span>
+              <div>
+                <p className="font-medium text-white">腾讯 IMA：解锁 Copilot 功能，创建专属知识伙伴</p>
+                <p className="text-xs mt-1 text-white/60">通过推荐链接解锁 IMA Copilot 功能，创建专属知识伙伴，并获得 500 免费算力</p>
+                <a
+                  href="https://ima.qq.com/copilot-invite-reward-token/assist/V_5sR6zTzuz6W0wf8qLMng"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-xs font-medium underline underline-offset-2 hover:text-white transition-colors"
+                  style={{ color: '#60a5fa' }}
+                >
+                  立即领取
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M3 9l6-6M5 3h4v4"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
           </div>
           <p className="text-xs mt-3 text-white/40">⏰ 活动有效期至 2026 年 12 月 31 日</p>
         </div>
