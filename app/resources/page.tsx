@@ -179,6 +179,7 @@ export default function ResourcesPage() {
           <nav className="flex items-center gap-1">
             <Link href="/" className="btn-ghost text-sm hide-mobile">首页</Link>
             <Link href="/novels" className="btn-ghost text-sm hide-mobile">作品</Link>
+            <Link href="/opportunities" className="btn-ghost text-sm hide-mobile">商机动态</Link>
 
             {user ? (
               <div className="relative ml-2">

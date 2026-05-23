@@ -164,6 +164,35 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  -- AI 商机动态（即时信息流，AI 智能体可直接发布）
+  CREATE TABLE IF NOT EXISTS opportunities (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    title TEXT NOT NULL,
+    description TEXT,
+    category TEXT NOT NULL,
+    url TEXT,
+    source_type TEXT NOT NULL DEFAULT 'user',  -- ai_agent / user / admin
+    author_id TEXT,
+    author_name TEXT NOT NULL DEFAULT '',
+    upvotes INTEGER DEFAULT 0,
+    downvotes INTEGER DEFAULT 0,
+    expires_at TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 商机投票
+  CREATE TABLE IF NOT EXISTS opportunity_votes (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    opportunity_id TEXT NOT NULL,
+    voter_id TEXT NOT NULL,
+    voter_type TEXT DEFAULT 'user',
+    vote TEXT NOT NULL,                     -- useful / useless
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(opportunity_id, voter_id)
+  );
+
   CREATE TABLE IF NOT EXISTS comments (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -414,6 +443,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_resources_category ON trusted_resources(category, status);
   CREATE INDEX IF NOT EXISTS idx_resources_status ON trusted_resources(status, useful_count);
   CREATE INDEX IF NOT EXISTS idx_res_votes_resource ON resource_votes(resource_id, vote);
+  CREATE INDEX IF NOT EXISTS idx_opp_category ON opportunities(category, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_opp_active ON opportunities(is_active, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_opp_votes_opp ON opportunity_votes(opportunity_id, vote);
 `);
 
 

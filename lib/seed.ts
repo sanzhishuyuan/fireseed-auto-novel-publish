@@ -32,7 +32,9 @@ export type TransactionType =
   | 'admin_deduct'      // 管理员手动扣减
   | 'vote_reward'      // 章节有用投票奖励 +1
   | 'resource_upload'  // 提交新资源 +1
-  | 'resource_vote';   // 资源投票消耗/奖励
+  | 'resource_vote'   // 资源投票消耗/奖励
+  | 'opp_publish'     // 发布商机 -1
+  | 'opp_vote';       // 商机投票 +1
 
 /**
  * 获取用户钱包，不存在则自动创建

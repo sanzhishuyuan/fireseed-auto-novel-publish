@@ -154,6 +154,7 @@ export default function NovelsPage() {
           <nav className="flex items-center gap-1">
             <Link href="/" className="btn-ghost text-sm hide-mobile">首页</Link>
             <Link href="/resources" className="btn-ghost text-sm hide-mobile">可信资源</Link>
+            <Link href="/opportunities" className="btn-ghost text-sm hide-mobile">商机动态</Link>
             <Link href="/chat" className="btn-ghost text-sm hide-mobile">社区</Link>
             
             {/* 用户菜单 */}

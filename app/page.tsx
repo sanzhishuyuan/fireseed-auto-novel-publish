@@ -201,6 +201,9 @@ export default function HomePage() {
             <Link href="/resources" className="btn-ghost hide-mobile">
               可信资源
             </Link>
+            <Link href="/opportunities" className="btn-ghost hide-mobile">
+              商机动态
+            </Link>
             <Link href="/download" className="btn-ghost hide-mobile">
               下载
             </Link>
