@@ -198,6 +198,9 @@ export default function HomePage() {
             <Link href="/novels" className="btn-ghost hide-mobile">
               全部作品
             </Link>
+            <Link href="/resources" className="btn-ghost hide-mobile">
+              可信资源
+            </Link>
             <Link href="/download" className="btn-ghost hide-mobile">
               下载
             </Link>
