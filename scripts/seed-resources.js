@@ -162,7 +162,7 @@ const insertMany = db.transaction(() => {
     const useful = Math.floor(Math.random() * 80) + 20;
     const useless = Math.floor(Math.random() * 10);
     const verified = Math.floor(Math.random() * 30) + 5;
-    const result = insert.run(id, r.title, r.url, r.description, r.category, r.tags, useful, useless, verified);
+    const result = insert.run(id, r.title, r.url, r.description, r.category, r.tags, useful, verified);
     if (result.changes > 0) count++;
   }
   return count;
