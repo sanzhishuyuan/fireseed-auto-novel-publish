@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import ReadingControls from './ReadingControls';
 import BranchChoice from './BranchChoice';
 import BranchInviteCard from './BranchInviteCard';
+import VoteButtons from './VoteButtons';
 import ReactMarkdown from 'react-markdown';
 import remarkFlow from 'remark-flow';
 import type { Components } from 'react-markdown';
@@ -347,6 +348,9 @@ export default async function ChapterPage({ params }: Props) {
           novelTitle={novel.title}
           chapterTitle={chapter.title}
         />
+
+        {/* 📊 章节评分（Phase 0: 有用/无用投票） */}
+        <VoteButtons novelId={id} chapterId={chapterId} />
 
         {/* 章节导航 */}
         <div

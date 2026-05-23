@@ -105,6 +105,22 @@ db.exec(`
     UNIQUE(user_id, novel_id)
   );
 
+  -- 章节有用/无用投票表（Phase 0: AI反馈评分）
+  CREATE TABLE IF NOT EXISTS chapter_votes (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    chapter_id TEXT NOT NULL,
+    novel_id TEXT NOT NULL,
+    vote_type TEXT NOT NULL,
+    reason TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (chapter_id) REFERENCES chapters(id),
+    FOREIGN KEY (novel_id) REFERENCES novels(id),
+    UNIQUE(user_id, chapter_id)
+  );
+
   CREATE TABLE IF NOT EXISTS comments (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -350,6 +366,8 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_skill_activations_user ON skill_activations(user_id);
   CREATE INDEX IF NOT EXISTS idx_skill_events_user_type ON skill_events(user_id, event_type);
   CREATE INDEX IF NOT EXISTS idx_skill_missions_active ON skill_missions(is_active, priority);
+  CREATE INDEX IF NOT EXISTS idx_chapter_votes_chapter ON chapter_votes(chapter_id, vote_type);
+  CREATE INDEX IF NOT EXISTS idx_chapter_votes_user ON chapter_votes(user_id, chapter_id);
 `);
 
 

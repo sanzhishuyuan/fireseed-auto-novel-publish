@@ -29,7 +29,8 @@ export type TransactionType =
   | 'favorite'          // 收藏 -10 / +8 / +2(平台)
   | 'register_bonus'    // 注册赠送 +100
   | 'seed_in'           // 管理员手动充值
-  | 'admin_deduct';     // 管理员手动扣减
+  | 'admin_deduct'      // 管理员手动扣减
+  | 'vote_reward';      // 章节有用投票奖励 +1
 
 /**
  * 获取用户钱包，不存在则自动创建
