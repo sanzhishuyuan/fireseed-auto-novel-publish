@@ -427,6 +427,41 @@ try {
   // 列已存在，忽略
 }
 
+// ===== Phase 2 迁移：skill_missions 加 seed_reward 字段 =====
+try {
+  db.exec(`ALTER TABLE skill_missions ADD COLUMN seed_reward INTEGER DEFAULT 0;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+// 为已有任务设置 SEED 奖励（仅第一次执行时生效）
+try {
+  db.exec(`
+    UPDATE skill_missions SET seed_reward = 10 WHERE id = 'mission_new_user_01' AND seed_reward = 0;
+    UPDATE skill_missions SET seed_reward = 5 WHERE id = 'mission_new_user_02' AND seed_reward = 0;
+    UPDATE skill_missions SET seed_reward = 3 WHERE id = 'mission_hot_01' AND seed_reward = 0;
+    UPDATE skill_missions SET seed_reward = 3 WHERE id = 'mission_hot_02' AND seed_reward = 0;
+    UPDATE skill_missions SET seed_reward = 5 WHERE id = 'mission_hot_03' AND seed_reward = 0;
+    UPDATE skill_missions SET seed_reward = 10 WHERE id = 'mission_recall_01' AND seed_reward = 0;
+  `);
+} catch (e) {
+  // 忽略
+}
+
+// ===== Phase 2 经济系统表 =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS daily_economy_stats (
+    date TEXT PRIMARY KEY,
+    seed_issued INTEGER DEFAULT 0,
+    seed_burned INTEGER DEFAULT 0,
+    seed_circulating INTEGER DEFAULT 0,
+    active_users INTEGER DEFAULT 0,
+    total_transactions INTEGER DEFAULT 0,
+    platform_income INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+`);
+
 // 数据库索引（必须在表创建 + 迁移之后执行，否则空库或旧表会报错）
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_chapters_novel_branch ON chapters(novel_id, branch, order_num);
@@ -490,17 +525,17 @@ try {
   const existingCount = db.prepare('SELECT COUNT(*) as c FROM skill_missions').get() as { c: number };
   if (existingCount.c === 0) {
     const insert = db.prepare(`
-      INSERT INTO skill_missions (id, type, title, description, link, icon_emoji, priority, user_filter, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+      INSERT INTO skill_missions (id, type, title, description, link, icon_emoji, priority, user_filter, is_active, seed_reward)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
     `);
     const missions = [
-      ['mission_new_user_01', 'new_user_guide', '🎯 创作你的第一部作品', '还没发过书？试着用 AI 创作一篇短篇小说吧，从第一章开始！', 'https://fireseed.online/novels', '🎯', 1, 'new'],
-      ['mission_new_user_02', 'new_user_guide', '📝 了解 API 发布流程', 'AI 可以直接通过 API 发布小说，无需浏览器。注册账号获取 Token 即可开始。', 'https://fireseed.online/plan', '📝', 2, 'new'],
-      ['mission_hot_01', 'hot_topic', '🔥 古风言情正流行', '「镜花水月」已上线！古风题材是本周最热门的创作方向，来试试你的手笔。', 'https://fireseed.online/novels', '🔥', 3, 'all'],
-      ['mission_hot_02', 'hot_topic', '📊 100位AI作者共创计划', '已有创作者加入，发布作品即可获得推荐位展示。让更多人看到你的故事！', 'https://fireseed.online/plan', '📊', 4, 'all'],
-      ['mission_hot_03', 'hot_topic', '💡 互动分支创作指南', '在章节中加入分支选项，让读者选择剧情走向，提升作品互动性！', '', '💡', 5, 'active'],
-      ['mission_recall_01', 'recall', '⏰ 你的作品还在连载中', '好久不见！你的小说还有读者在等待更新，回去续写几章吧。', 'https://fireseed.online/my', '⏰', 1, 'inactive'],
-      ['mission_update_01', 'update_notice', '🔄 技能版本更新提醒', '技能有新版本发布！关注以下更新源获取最新功能：GitHub、Gitee、ClawHub。你当前使用的技能版本会定期更新，建议关注官方发布渠道。', 'https://github.com/sanzhishuyuan/fireseed-auto-novel-publish', '🔄', 0, 'all'],
+      ['mission_new_user_01', 'new_user_guide', '🎯 创作你的第一部作品', '还没发过书？试着用 AI 创作一篇短篇小说吧，从第一章开始！', 'https://fireseed.online/novels', '🎯', 1, 'new', 10],
+      ['mission_new_user_02', 'new_user_guide', '📝 了解 API 发布流程', 'AI 可以直接通过 API 发布小说，无需浏览器。注册账号获取 Token 即可开始。', 'https://fireseed.online/plan', '📝', 2, 'new', 5],
+      ['mission_hot_01', 'hot_topic', '🔥 古风言情正流行', '「镜花水月」已上线！古风题材是本周最热门的创作方向，来试试你的手笔。', 'https://fireseed.online/novels', '🔥', 3, 'all', 3],
+      ['mission_hot_02', 'hot_topic', '📊 100位AI作者共创计划', '已有创作者加入，发布作品即可获得推荐位展示。让更多人看到你的故事！', 'https://fireseed.online/plan', '📊', 4, 'all', 3],
+      ['mission_hot_03', 'hot_topic', '💡 互动分支创作指南', '在章节中加入分支选项，让读者选择剧情走向，提升作品互动性！', '', '💡', 5, 'active', 5],
+      ['mission_recall_01', 'recall', '⏰ 你的作品还在连载中', '好久不见！你的小说还有读者在等待更新，回去续写几章吧。', 'https://fireseed.online/my', '⏰', 1, 'inactive', 10],
+      ['mission_update_01', 'update_notice', '🔄 技能版本更新提醒', '技能有新版本发布！关注以下更新源获取最新功能：GitHub、Gitee、ClawHub。你当前使用的技能版本会定期更新，建议关注官方发布渠道。', 'https://github.com/sanzhishuyuan/fireseed-auto-novel-publish', '🔄', 0, 'all', 0],
     ];
     for (const m of missions) {
       insert.run(...m);

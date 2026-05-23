@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '@/lib/auth';
+import { transferSeed } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,18 +62,42 @@ export async function POST(request: NextRequest) {
     db.prepare(`
       INSERT INTO skill_events (id, user_id, event_type, event_data)
       VALUES (?, ?, ?, ?)
-    `).run(
+    `    ).run(
       uuidv4(),
       userId || 'anonymous',
       cleanType,
       event_data ? JSON.stringify(event_data) : '{}'
     );
 
+    // ===== Phase 2: 任务完成自动发放 SEED 奖励 =====
+    let seedRewarded = 0;
+    if (cleanType === 'task_complete' && userId && userId !== 'anonymous') {
+      const taskId = event_data?.task_id;
+      if (taskId) {
+        try {
+          const mission = db.prepare(
+            'SELECT id, title, seed_reward FROM skill_missions WHERE id = ? AND is_active = 1'
+          ).get(taskId) as { id: string; title: string; seed_reward: number } | undefined;
+
+          if (mission && mission.seed_reward > 0) {
+            transferSeed(userId, mission.seed_reward, 'task_reward', {
+              refId: taskId,
+              description: `完成任务: ${mission.title}`,
+            });
+            seedRewarded = mission.seed_reward;
+          }
+        } catch (e) {
+          console.error('[Task Reward] failed:', e);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       event_type: cleanType,
       recorded: true,
-      message: '事件已记录'
+      seed_rewarded: seedRewarded > 0 ? seedRewarded : undefined,
+      message: seedRewarded > 0 ? `事件已记录，获得 ${seedRewarded} 🌱 奖励` : '事件已记录'
     });
   } catch (error) {
     console.error('Skill event error:', error);

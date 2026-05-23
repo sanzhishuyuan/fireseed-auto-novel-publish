@@ -180,6 +180,7 @@ export default function ResourcesPage() {
             <Link href="/" className="btn-ghost text-sm hide-mobile">首页</Link>
             <Link href="/novels" className="btn-ghost text-sm hide-mobile">作品</Link>
             <Link href="/opportunities" className="btn-ghost text-sm hide-mobile">商机动态</Link>
+            <Link href="/seed/stats" className="btn-ghost text-sm hide-mobile">经济概况</Link>
 
             {user ? (
               <div className="relative ml-2">

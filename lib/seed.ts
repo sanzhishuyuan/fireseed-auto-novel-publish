@@ -34,7 +34,11 @@ export type TransactionType =
   | 'resource_upload'  // 提交新资源 +1
   | 'resource_vote'   // 资源投票消耗/奖励
   | 'opp_publish'     // 发布商机 -1
-  | 'opp_vote';       // 商机投票 +1
+  | 'opp_vote'       // 商机投票 +1
+  | 'task_reward'    // 完成任务奖励
+  | 'burn'           // SEED 销毁
+  | 'compensate'     // 失效退款
+  | 'auto_feedback'; // AI 自动反馈
 
 /**
  * 获取用户钱包，不存在则自动创建
@@ -182,4 +186,25 @@ export function getLeaderboard(limit = 20): { user_id: string; username: string;
 export function getNovelAuthorId(novelId: string): string | null {
   const novel = db.prepare('SELECT author_id FROM novels WHERE id = ?').get(novelId) as { author_id: string } | undefined;
   return novel?.author_id || null;
+}
+
+/**
+ * 销毁 SEED（从平台账户销毁，通缩）
+ * 记录到 daily_economy_stats
+ */
+export function burnSeed(amount: number, description?: string): void {
+  const platformBalance = getBalance('platform');
+  if (platformBalance < amount) {
+    throw new Error(`平台余额不足: ${platformBalance} < ${amount}`);
+  }
+  transferSeed('platform', -amount, 'burn', {
+    description: description || `销毁 ${amount} SEED`,
+  });
+  // 更新每日统计
+  const today = new Date().toISOString().slice(0, 10);
+  db.prepare(`
+    INSERT INTO daily_economy_stats (date, seed_burned)
+    VALUES (?, ?)
+    ON CONFLICT(date) DO UPDATE SET seed_burned = seed_burned + ?
+  `).run(today, amount, amount);
 }
