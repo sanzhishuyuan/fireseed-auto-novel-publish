@@ -5,6 +5,28 @@ const { randomUUID } = require('crypto');
 const dbPath = path.join(__dirname, '..', 'data', 'novel.db');
 const db = new Database(dbPath);
 
+// 确保表存在（如果 lib/db.ts 还未初始化的话）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS trusted_resources (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    url TEXT NOT NULL UNIQUE,
+    description TEXT,
+    category TEXT NOT NULL,
+    tags TEXT DEFAULT '',
+    provider_id TEXT,
+    provider_name TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    useful_count INTEGER DEFAULT 0,
+    useless_count INTEGER DEFAULT 0,
+    verified_count INTEGER DEFAULT 0,
+    last_verified_at TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
 const resources = [
   // Category: ai-tool (AI 对话/写作)
   { title: 'ChatGPT', url: 'https://chat.openai.com', description: 'OpenAI 开发的顶级对话式 AI，支持文本生成、编程、分析', category: 'ai-tool', tags: '聊天,写作,编程,通用' },
