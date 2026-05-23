@@ -121,6 +121,49 @@ db.exec(`
     UNIQUE(user_id, chapter_id)
   );
 
+  -- 可信资源库（Phase 1: 独立于小说的可信信息库）
+  CREATE TABLE IF NOT EXISTS trusted_resources (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    title TEXT NOT NULL,
+    url TEXT NOT NULL UNIQUE,
+    description TEXT,
+    category TEXT NOT NULL,
+    tags TEXT DEFAULT '',
+    provider_id TEXT,
+    provider_name TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    useful_count INTEGER DEFAULT 0,
+    useless_count INTEGER DEFAULT 0,
+    verified_count INTEGER DEFAULT 0,
+    last_verified_at TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 资源投票
+  CREATE TABLE IF NOT EXISTS resource_votes (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    resource_id TEXT NOT NULL,
+    voter_id TEXT NOT NULL,
+    voter_type TEXT DEFAULT 'user',
+    vote TEXT NOT NULL,
+    reason TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(resource_id, voter_id)
+  );
+
+  -- 资源验证日志
+  CREATE TABLE IF NOT EXISTS resource_verification_log (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    resource_id TEXT NOT NULL,
+    checker_type TEXT NOT NULL,
+    result TEXT NOT NULL,
+    detail TEXT,
+    http_status INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS comments (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -368,6 +411,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_skill_missions_active ON skill_missions(is_active, priority);
   CREATE INDEX IF NOT EXISTS idx_chapter_votes_chapter ON chapter_votes(chapter_id, vote_type);
   CREATE INDEX IF NOT EXISTS idx_chapter_votes_user ON chapter_votes(user_id, chapter_id);
+  CREATE INDEX IF NOT EXISTS idx_resources_category ON trusted_resources(category, status);
+  CREATE INDEX IF NOT EXISTS idx_resources_status ON trusted_resources(status, useful_count);
+  CREATE INDEX IF NOT EXISTS idx_res_votes_resource ON resource_votes(resource_id, vote);
 `);
 
 
