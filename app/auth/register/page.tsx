@@ -2,41 +2,53 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const referralCodeFromUrl = searchParams.get('ref') || '';
+  const [referralCodeFromUrl, setReferralCodeFromUrl] = useState('');
   const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [referralCode, setReferralCode] = useState(referralCodeFromUrl);
+  const [referralCode, setReferralCode] = useState('');
   const [referralInfo, setReferralInfo] = useState<{ name: string; isValid: boolean } | null>(null);
   const [referralChecking, setReferralChecking] = useState(false);
   const [success, setSuccess] = useState<{ username: string; password: string; jwtToken: string; apiToken: string } | null>(null);
   const [copiedField, setCopiedField] = useState('');
 
+  // 从 URL 获取推广码
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref') || '';
+      setReferralCodeFromUrl(ref);
+      if (ref) {
+        setReferralCode(ref);
+      }
+    } catch {}
+  }, []);
   // 验证推广码
   useEffect(() => {
-    if (referralCode && referralCode.length >= 4) {
-      setReferralChecking(true);
-      fetch('/api/referral/code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: referralCode })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          setReferralInfo({ name: data.data.referrerName, isValid: true });
-        } else {
-          setReferralInfo({ name: '无效的推广码', isValid: false });
-        }
-      })
-      .catch(() => setReferralInfo({ name: '验证失败', isValid: false }))
-      .finally(() => setReferralChecking(false));
+    if (!referralCode || referralCode.length < 4) {
+      setReferralInfo(null);
+      return;
     }
+    setReferralChecking(true);
+    fetch('/api/referral/code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: referralCode })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        setReferralInfo({ name: data.data.referrerName, isValid: true });
+      } else {
+        setReferralInfo({ name: '无效的推广码', isValid: false });
+      }
+    })
+    .catch(() => setReferralInfo({ name: '验证失败', isValid: false }))
+    .finally(() => setReferralChecking(false));
   }, [referralCode]);
 
   const checkReferralCode = async (code: string) => {
