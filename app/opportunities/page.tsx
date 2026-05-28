@@ -185,6 +185,12 @@ export default function OpportunitiesPage() {
                     <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                     <div className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-20"
                       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                        <Link href="/my" className="flex items-center gap-2 text-sm font-medium"
+                          onClick={() => setMenuOpen(false)} style={{ color: 'var(--text-primary)' }}>
+                          👤 个人中心
+                        </Link>
+                      </div>
                       {user.role === 'admin' && (
                         <Link href="/admin" className="flex items-center gap-3 px-4 py-2.5 text-sm"
                           style={{ color: 'var(--accent)' }} onClick={() => setMenuOpen(false)}>管理后台</Link>
