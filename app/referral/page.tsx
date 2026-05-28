@@ -120,6 +120,7 @@ export default function ReferralPage() {
           <div className="flex items-center gap-2">
             <Link href="/crowdfunding" className="btn-ghost text-sm">众筹</Link>
             <Link href="/vip" className="btn-ghost text-sm">会员中心</Link>
+            <Link href="/my" className="btn-ghost text-sm">个人中心</Link>
           </div>
         </div>
       </header>

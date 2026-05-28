@@ -140,6 +140,7 @@ export default function CrowdfundingPage() {
           <div className="flex items-center gap-2">
             <Link href="/referral" className="btn-ghost text-sm">推广中心</Link>
             <Link href="/vip" className="btn-ghost text-sm">会员中心</Link>
+            <Link href="/my" className="btn-ghost text-sm">个人中心</Link>
             <button onClick={() => setShowCreate(true)} className="btn-primary text-sm">
               + 发起众筹
             </button>

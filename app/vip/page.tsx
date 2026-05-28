@@ -202,6 +202,7 @@ export default function VIPPage() {
             )}
             <Link href="/crowdfunding" className="btn-ghost text-sm">众筹</Link>
             <Link href="/referral" className="btn-ghost text-sm">推广</Link>
+            <Link href="/my" className="btn-ghost text-sm">个人中心</Link>
             <Link href="/novels" className="btn-ghost text-sm">返回阅读</Link>
           </div>
         </div>
