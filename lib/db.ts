@@ -520,6 +520,249 @@ try {
   // 迁移可重复执行，忽略
 }
 
+// ===== VIP 系统表 =====
+
+// VIP 订阅记录表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS vip_subscriptions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    plan_type TEXT NOT NULL,
+    start_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    end_date DATETIME NOT NULL,
+    status TEXT DEFAULT 'active',
+    payment_method TEXT,
+    amount INTEGER DEFAULT 0,
+    transaction_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+// 支付交易记录表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS payment_transactions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    order_no TEXT UNIQUE NOT NULL,
+    amount INTEGER NOT NULL,
+    currency TEXT DEFAULT 'CNY',
+    payment_method TEXT,
+    status TEXT DEFAULT 'pending',
+    transaction_id TEXT,
+    callback_data TEXT,
+    paid_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+// VIP 权益配置表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS vip_benefits (
+    id TEXT PRIMARY KEY,
+    plan_type TEXT NOT NULL,
+    benefit_key TEXT NOT NULL,
+    benefit_value TEXT,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(plan_type, benefit_key)
+  );
+`);
+
+// ===== 迁移：users 表新增 VIP 字段 =====
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN vip_type TEXT DEFAULT 'free';`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN vip_expires_at DATETIME;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN vip_auto_renew INTEGER DEFAULT 0;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+// ===== 种子数据：VIP 权益配置 =====
+try {
+  const benefitsCount = db.prepare('SELECT COUNT(*) as c FROM vip_benefits').get() as { c: number };
+  if (benefitsCount.c === 0) {
+    const insertBenefit = db.prepare(`
+      INSERT INTO vip_benefits (id, plan_type, benefit_key, benefit_value, description)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    const benefits = [
+      // 免费用户权益
+      ['benefit_free_1', 'free', 'read_main_story', 'true', '免费阅读主线章节'],
+      ['benefit_free_2', 'free', 'basic_settings', 'true', '基础阅读设置'],
+      ['benefit_free_3', 'free', 'chapter_like', 'true', '章节点赞'],
+
+      // 高级会员权益
+      ['benefit_monthly_1', 'monthly', 'unlock_branches', 'true', '解锁全部分支剧情'],
+      ['benefit_monthly_2', 'monthly', 'ad_free', 'true', '无广告阅读体验'],
+      ['benefit_monthly_3', 'monthly', 'exclusive_themes', 'true', '专属阅读主题'],
+      ['benefit_monthly_4', 'monthly', 'priority_read', 'true', '优先阅读新章节'],
+      ['benefit_monthly_5', 'monthly', 'unlimited_favorites', 'true', '无限收藏'],
+
+      // 年度会员权益
+      ['benefit_yearly_1', 'yearly', 'all_monthly_benefits', 'true', '高级会员全部权益'],
+      ['benefit_yearly_2', 'yearly', 'unlock_paid_chapters', 'true', '解锁付费章节'],
+      ['benefit_yearly_3', 'yearly', 'exclusive_identity', 'true', '专属身份标识'],
+      ['benefit_yearly_4', 'yearly', 'annual_events', 'true', '年度专属活动'],
+      ['benefit_yearly_5', 'yearly', 'exclusive_voting', 'true', '专属创作投票权'],
+    ];
+
+    for (const b of benefits) {
+      insertBenefit.run(...b);
+    }
+  }
+} catch (e) {
+  // 忽略错误
+}
+
+// ===== 众筹系统表 =====
+
+// 众筹项目表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS crowdfunding_projects (
+    id TEXT PRIMARY KEY,
+    author_id TEXT NOT NULL,
+    novel_id TEXT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    target_amount INTEGER NOT NULL,
+    current_amount INTEGER DEFAULT 0,
+    supporter_count INTEGER DEFAULT 0,
+    deadline DATETIME NOT NULL,
+    status TEXT DEFAULT 'active',
+    rewards TEXT DEFAULT '{}',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES users(id),
+    FOREIGN KEY (novel_id) REFERENCES novels(id)
+  );
+`);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_crowdfunding_status ON crowdfunding_projects(status, deadline);
+`);
+
+// 众筹支持者表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS crowdfunding_supporters (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    reward_tier TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES crowdfunding_projects(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE(project_id, user_id)
+  );
+`);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_crowdfunding_supporters ON crowdfunding_supporters(project_id, user_id);
+`);
+
+// ===== 推广链接系统表 =====
+
+// 推广码表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS referral_codes (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    code TEXT UNIQUE NOT NULL,
+    total_uses INTEGER DEFAULT 0,
+    successful_uses INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_referral_code ON referral_codes(code);
+`);
+
+// 推广兑换记录表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS referral_redemptions (
+    id TEXT PRIMARY KEY,
+    referral_code TEXT NOT NULL,
+    referrer_id TEXT NOT NULL,
+    new_user_id TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    reward_given INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (referrer_id) REFERENCES users(id),
+    FOREIGN KEY (new_user_id) REFERENCES users(id)
+  );
+`);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_referral_redemptions ON referral_redemptions(referrer_id, new_user_id);
+`);
+
+// ===== 迁移：users 表新增推广字段 =====
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN referral_code TEXT;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN referral_count INTEGER DEFAULT 0;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN referral_earnings INTEGER DEFAULT 0;`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+// ===== 种子数据：VIP 增强权益 =====
+try {
+  const existingBenefits = db.prepare('SELECT COUNT(*) as c FROM vip_benefits WHERE plan_type = ?').get('monthly') as { c: number };
+  if (existingBenefits.c <= 5) {
+    // VIP 用户可创建众筹
+    db.exec(`
+      INSERT OR IGNORE INTO vip_benefits (id, plan_type, benefit_key, benefit_value, description)
+      VALUES ('benefit_monthly_6', 'monthly', 'create_crowdfunding', 'true', '发起作品众筹')
+    `);
+    db.exec(`
+      INSERT OR IGNORE INTO vip_benefits (id, plan_type, benefit_key, benefit_value, description)
+      VALUES ('benefit_monthly_7', 'monthly', 'referral_bonus', '1.5', '推广奖励翻1.5倍')
+    `);
+    db.exec(`
+      INSERT OR IGNORE INTO vip_benefits (id, plan_type, benefit_key, benefit_value, description)
+      VALUES ('benefit_yearly_6', 'yearly', 'create_crowdfunding', 'true', '发起作品众筹')
+    `);
+    db.exec(`
+      INSERT OR IGNORE INTO vip_benefits (id, plan_type, benefit_key, benefit_value, description)
+      VALUES ('benefit_yearly_7', 'yearly', 'referral_bonus', '2.0', '推广奖励翻2倍')
+    `);
+    db.exec(`
+      INSERT OR IGNORE INTO vip_benefits (id, plan_type, benefit_key, benefit_value, description)
+      VALUES ('benefit_yearly_8', 'yearly', 'crowdfunding_featured', 'true', '众筹项目优先推荐')
+    `);
+  }
+} catch (e) {
+  // 忽略错误
+}
+
 // ===== 种子数据：默认任务（仅空表时插入） =====
 try {
   const existingCount = db.prepare('SELECT COUNT(*) as c FROM skill_missions').get() as { c: number };

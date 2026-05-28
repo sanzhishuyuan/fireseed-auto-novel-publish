@@ -1,16 +1,69 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const referralCodeFromUrl = searchParams.get('ref') || '';
   const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState(referralCodeFromUrl);
+  const [referralInfo, setReferralInfo] = useState<{ name: string; isValid: boolean } | null>(null);
+  const [referralChecking, setReferralChecking] = useState(false);
   const [success, setSuccess] = useState<{ username: string; password: string; jwtToken: string; apiToken: string } | null>(null);
   const [copiedField, setCopiedField] = useState('');
+
+  // 验证推广码
+  useEffect(() => {
+    if (referralCode && referralCode.length >= 4) {
+      setReferralChecking(true);
+      fetch('/api/referral/code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: referralCode })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setReferralInfo({ name: data.data.referrerName, isValid: true });
+        } else {
+          setReferralInfo({ name: '无效的推广码', isValid: false });
+        }
+      })
+      .catch(() => setReferralInfo({ name: '验证失败', isValid: false }))
+      .finally(() => setReferralChecking(false));
+    }
+  }, [referralCode]);
+
+  const checkReferralCode = async (code: string) => {
+    setReferralCode(code);
+    if (code.length < 4) {
+      setReferralInfo(null);
+      return;
+    }
+    setReferralChecking(true);
+    try {
+      const r = await fetch('/api/referral/code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      const data = await r.json();
+      if (data.success) {
+        setReferralInfo({ name: data.data.referrerName, isValid: true });
+      } else {
+        setReferralInfo({ name: '无效的推广码', isValid: false });
+      }
+    } catch {
+      setReferralInfo({ name: '验证失败', isValid: false });
+    } finally {
+      setReferralChecking(false);
+    }
+  };
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -42,7 +95,11 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: form.username, password: form.password })
+        body: JSON.stringify({
+          username: form.username,
+          password: form.password,
+          referralCode: referralCode || undefined
+        })
       });
 
       const data = await res.json();
@@ -110,6 +167,11 @@ ${installLinks}`;
               <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                 下面是你完整的创作凭证，<strong>一键复制后粘贴给 AI</strong>，剩下的交给 AI
               </p>
+              {referralInfo?.isValid && (
+                <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                  🎁 推广码已激活！获得 30 SEED + 3天VIP试用
+                </div>
+              )}
             </div>
 
             {/* === 凭证卡片 === */}
@@ -382,6 +444,42 @@ ${installLinks}`;
                 required
                 autoComplete="new-password"
               />
+            </div>
+
+            {/* 推广码 */}
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+                推广码（可选）
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => checkReferralCode(e.target.value.toUpperCase())}
+                  className="input flex-1"
+                  placeholder="输入6位推广码"
+                  maxLength={6}
+                />
+                {referralChecking && (
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-card)' }}>
+                    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                      <path d="M12 2a10 10 0 0110 10" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
+              {referralInfo && (
+                <div className={`mt-1.5 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 ${
+                  referralInfo.isValid ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-400'
+                }`}>
+                  <span>{referralInfo.isValid ? '✅' : '❌'}</span>
+                  <span>{referralInfo.isValid
+                    ? `邀请人: ${referralInfo.name}（注册送30 SEED + 3天VIP）`
+                    : referralInfo.name
+                  }</span>
+                </div>
+              )}
             </div>
 
             {error && (

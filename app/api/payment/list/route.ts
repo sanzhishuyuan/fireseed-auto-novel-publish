@@ -1,0 +1,91 @@
+import { NextRequest, NextResponse } from 'next/server';
+import db from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
+
+// 查询用户订单列表
+export async function GET(request: NextRequest) {
+  try {
+    const token = request.cookies.get('auth_token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    }
+
+    const user = verifyToken(token);
+    if (!user) {
+      return NextResponse.json({ error: '登录已过期' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status'); // 可选过滤条件
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    let query = `
+      SELECT id, order_no, amount, payment_method, status, paid_at, created_at
+      FROM payment_transactions
+      WHERE user_id = ?
+    `;
+    const params: any[] = [user.userId];
+
+    if (status) {
+      query += ` AND status = ?`;
+      params.push(status);
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const transactions = db.prepare(query).all(...params) as Array<{
+      id: string;
+      order_no: string;
+      amount: number;
+      payment_method: string;
+      status: string;
+      paid_at: string | null;
+      created_at: string;
+    }>;
+
+    // 获取总数
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM payment_transactions
+      WHERE user_id = ?
+    `;
+    const countParams: any[] = [user.userId];
+
+    if (status) {
+      countQuery += ` AND status = ?`;
+      countParams.push(status);
+    }
+
+    const { total } = db.prepare(countQuery).get(...countParams) as { total: number };
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        transactions: transactions.map(t => ({
+          id: t.id,
+          orderNo: t.order_no,
+          amount: t.amount,
+          paymentMethod: t.payment_method,
+          status: t.status,
+          paidAt: t.paid_at,
+          createdAt: t.created_at
+        })),
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + transactions.length < total
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Payment list error:', error);
+    return NextResponse.json(
+      { error: '查询订单失败' },
+      { status: 500 }
+    );
+  }
+}

@@ -1,25 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+
+interface Plan {
+  name: string;
+  price: number;
+  period: string;
+  features: string[];
+  color: string;
+  popular?: boolean;
+  button: string;
+  available: boolean;
+  action: string;
+  vipType: string;
+}
+
+interface VipStatus {
+  vipType: string;
+  isVipActive: boolean;
+  vipExpiresAt: string | null;
+  vipAutoRenew: boolean;
+  benefits: Array<{
+    key: string;
+    value: string;
+    description: string;
+  }>;
+  subscription: any;
+}
 
 export default function VIPPage() {
+  const router = useRouter();
   const [showNotice, setShowNotice] = useState(false);
+  const [vipStatus, setVipStatus] = useState<VipStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState<string | null>(null);
 
-  const plans = [
+  const plans: Plan[] = [
     {
       name: '免费用户',
-      price: '¥0',
+      price: 0,
       period: '',
       features: ['免费阅读主线章节', '基础阅读设置', '章节点赞'],
       color: 'gray',
       button: '当前身份',
       available: true,
-      action: 'free'
+      action: 'free',
+      vipType: 'free'
     },
     {
       name: '高级会员',
-      price: '¥9.9',
+      price: 9.9,
       period: '/月',
       features: [
         '解锁全部分支剧情',
@@ -32,11 +64,12 @@ export default function VIPPage() {
       popular: true,
       button: '立即开通',
       available: true,
-      action: 'monthly'
+      action: 'monthly',
+      vipType: 'monthly'
     },
     {
       name: '年度会员',
-      price: '¥99',
+      price: 99,
       period: '/年',
       features: [
         '高级会员全部权益',
@@ -48,17 +81,105 @@ export default function VIPPage() {
       color: 'purple',
       button: '超值之选',
       available: true,
-      action: 'yearly'
+      action: 'yearly',
+      vipType: 'yearly'
     }
   ];
 
-  const handlePlanClick = (action: string) => {
-    if (action === 'monthly') {
-      window.location.href = '/auth/login?redirect=/vip';
-    } else {
-      setShowNotice(true);
+  // 获取 VIP 状态
+  useEffect(() => {
+    fetchVipStatus();
+  }, []);
+
+  const fetchVipStatus = async () => {
+    try {
+      const res = await fetch('/api/vip/status', {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setVipStatus(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('获取VIP状态失败:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handlePlanClick = async (plan: Plan) => {
+    if (plan.action === 'free') {
+      return;
+    }
+
+    // 检查登录状态
+    try {
+      const authRes = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (!authRes.ok) {
+        router.push('/auth/login?redirect=/vip');
+        return;
+      }
+    } catch (error) {
+      router.push('/auth/login?redirect=/vip');
+      return;
+    }
+
+    // 开始订阅
+    setProcessing(plan.action);
+
+    try {
+      const res = await fetch('/api/vip/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          planType: plan.action,
+          paymentMethod: 'seed' // 默认使用 SEED 支付
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        alert(`订阅成功！${plan.name} 已激活。`);
+        fetchVipStatus(); // 刷新状态
+      } else {
+        alert(`订阅失败: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('订阅失败:', error);
+      alert('订阅失败，请稍后重试');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('zh-CN');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4" style={{ color: 'var(--text-secondary)' }}>加载中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
@@ -73,7 +194,16 @@ export default function VIPPage() {
             </Link>
             <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>会员中心</h1>
           </div>
-          <Link href="/novels" className="btn-ghost text-sm">返回阅读</Link>
+          <div className="flex items-center gap-2">
+            {vipStatus && vipStatus.isVipActive && (
+              <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+                {vipStatus.vipType === 'monthly' ? '高级会员' : '年度会员'} · 到期 {formatDate(vipStatus.vipExpiresAt)}
+              </span>
+            )}
+            <Link href="/crowdfunding" className="btn-ghost text-sm">众筹</Link>
+            <Link href="/referral" className="btn-ghost text-sm">推广</Link>
+            <Link href="/novels" className="btn-ghost text-sm">返回阅读</Link>
+          </div>
         </div>
       </header>
 
@@ -98,6 +228,18 @@ export default function VIPPage() {
           <p className="text-white/80 max-w-xl mx-auto">
             升级会员，探索每一条隐藏支线，体验完整的故事宇宙
           </p>
+
+          {/* 当前 VIP 状态 */}
+          {vipStatus && vipStatus.isVipActive && (
+            <div className="mt-6 inline-block px-6 py-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.2)' }}>
+              <p className="text-white font-medium">
+                🎉 您当前是 {vipStatus.vipType === 'monthly' ? '高级会员' : '年度会员'}
+              </p>
+              <p className="text-white/80 text-sm mt-1">
+                到期时间: {formatDate(vipStatus.vipExpiresAt)}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -120,7 +262,9 @@ export default function VIPPage() {
                   {plan.name}
                 </h3>
                 <div className="mb-5">
-                  <span className="text-3xl font-bold" style={{ color: 'var(--accent)' }}>{plan.price}</span>
+                  <span className="text-3xl font-bold" style={{ color: 'var(--accent)' }}>
+                    ¥{plan.price}
+                  </span>
                   {plan.period && <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{plan.period}</span>}
                 </div>
                 <div className="divider" />
@@ -135,12 +279,18 @@ export default function VIPPage() {
                   ))}
                 </ul>
                 <button
-                  onClick={() => handlePlanClick(plan.action)}
+                  onClick={() => handlePlanClick(plan)}
+                  disabled={processing === plan.action || (vipStatus && vipStatus.vipType === plan.vipType && vipStatus.isVipActive)}
                   className={`w-full py-2.5 rounded-lg text-sm font-medium ${
                     plan.popular ? 'btn-primary' : 'btn-secondary'
-                  }`}
+                  } ${processing === plan.action ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {plan.button}
+                  {processing === plan.action
+                    ? '处理中...'
+                    : vipStatus && vipStatus.vipType === plan.vipType && vipStatus.isVipActive
+                    ? '当前套餐'
+                    : plan.button
+                  }
                 </button>
               </div>
             </div>
@@ -187,9 +337,9 @@ export default function VIPPage() {
         </h3>
         <div className="space-y-3">
           {[
-            { q: '如何开通会员？', a: '点击上方「立即开通」按钮登录后即可开通。会员系统正在上线中，敬请期待。' },
+            { q: '如何开通会员？', a: '登录后点击上方「立即开通」按钮即可开通。目前支持 SEED 代币支付。' },
             { q: '会员权益何时生效？', a: '支付成功后，权益将立即生效，刷新页面即可体验。' },
-            { q: '支持哪些支付方式？', a: '目前支持微信支付、支付宝等主流支付方式。' },
+            { q: '支持哪些支付方式？', a: '目前支持 SEED 代币支付。微信支付、支付宝等主流支付方式即将上线。' },
             { q: '可以退款吗？', a: '虚拟商品一经购买不支持退款，感谢理解。' }
           ].map((item, i) => (
             <div key={i} className="card p-5">
