@@ -280,7 +280,7 @@ export default function VIPPage() {
                 </ul>
                 <button
                   onClick={() => handlePlanClick(plan)}
-                  disabled={processing === plan.action || (vipStatus && vipStatus.vipType === plan.vipType && vipStatus.isVipActive)}
+                  disabled={processing === plan.action || !!((vipStatus && vipStatus.vipType === plan.vipType && vipStatus.isVipActive) as boolean)}
                   className={`w-full py-2.5 rounded-lg text-sm font-medium ${
                     plan.popular ? 'btn-primary' : 'btn-secondary'
                   } ${processing === plan.action ? 'opacity-50 cursor-not-allowed' : ''}`}
