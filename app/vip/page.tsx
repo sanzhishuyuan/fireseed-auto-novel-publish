@@ -36,6 +36,8 @@ export default function VIPPage() {
   const [vipStatus, setVipStatus] = useState<VipStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string>('seed');
+  const [payInfo, setPayInfo] = useState<{ orderNo: string; amount: number; qrCodeUrl?: string; payUrl?: string; payTip?: string } | null>(null);
 
   const plans: Plan[] = [
     {
@@ -134,6 +136,7 @@ export default function VIPPage() {
 
     // 开始订阅
     setProcessing(plan.action);
+    setPayInfo(null);
 
     try {
       const res = await fetch('/api/vip/subscribe', {
@@ -144,15 +147,25 @@ export default function VIPPage() {
         credentials: 'include',
         body: JSON.stringify({
           planType: plan.action,
-          paymentMethod: 'seed' // 默认使用 SEED 支付
+          paymentMethod: selectedMethod
         })
       });
 
       const data = await res.json();
 
       if (data.success) {
-        alert(`订阅成功！${plan.name} 已激活。`);
-        fetchVipStatus(); // 刷新状态
+        if (data.data.paid) {
+          alert(`🎉 订阅成功！${plan.name} 已激活。`);
+          fetchVipStatus();
+        } else {
+          setPayInfo({
+            orderNo: data.data.orderNo,
+            amount: data.data.amount,
+            qrCodeUrl: data.data.qrCodeUrl,
+            payUrl: data.data.payUrl,
+            payTip: data.data.payTip
+          });
+        }
       } else {
         alert(`订阅失败: ${data.error}`);
       }
@@ -298,6 +311,92 @@ export default function VIPPage() {
           ))}
         </div>
       </div>
+
+      {/* 支付方式选择 */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 mt-8">
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>选择支付方式</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { id: 'seed', label: 'SEED 代币', icon: '🌱', desc: '余额: 待查' },
+              { id: 'wechat', label: '微信支付', icon: '💚', desc: '扫码支付' },
+              { id: 'alipay', label: '支付宝', icon: '💙', desc: '扫码支付' },
+              { id: 'simulate', label: '模拟支付', icon: '🔬', desc: '开发测试' },
+            ].map(m => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedMethod(m.id)}
+                className={`p-3 rounded-lg text-center transition-all ${
+                  selectedMethod === m.id
+                    ? 'ring-2 ring-indigo-500 bg-indigo-500/10'
+                    : 'hover:bg-white/5'
+                }`}
+              >
+                <div className="text-xl mb-1">{m.icon}</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{m.label}</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{m.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 支付弹窗 */}
+      {payInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="card max-w-sm w-full p-6 text-center animate-fade-in">
+            <div className="text-4xl mb-4">
+              {selectedMethod === 'wechat' ? '💚' : selectedMethod === 'alipay' ? '💙' : '🖼️'}
+            </div>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              请完成支付
+            </h3>
+            <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+              {payInfo.payTip || '支付中...'}
+            </p>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+              订单号: {payInfo.orderNo}
+            </p>
+            <div className="flex flex-col gap-3">
+              {/* 支付二维码模拟 */}
+              <div className="mx-auto w-48 h-48 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
+                <div className="text-center">
+                  <div className="text-5xl mb-2">📱</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    扫码支付 ¥{(payInfo.amount / 100).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-2">
+                <button onClick={() => setPayInfo(null)} className="flex-1 btn-secondary py-2.5">
+                  取消支付
+                </button>
+                <button
+                  onClick={async () => {
+                    // 模拟支付回调
+                    const res = await fetch('/api/payment/callback', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ orderNo: payInfo.orderNo, status: 'success' })
+                    });
+                    if (res.ok) {
+                      alert('🎉 支付成功！VIP 已激活');
+                      setPayInfo(null);
+                      fetchVipStatus();
+                    }
+                  }}
+                  className="flex-1 btn-primary py-2.5"
+                >
+                  模拟支付成功
+                </button>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                正式环境将接入微信/支付宝 SDK
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 提示弹窗 */}
       {showNotice && (

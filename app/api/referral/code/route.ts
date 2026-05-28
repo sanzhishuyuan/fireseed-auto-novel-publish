@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         totalUses: code.total_uses,
         successfulUses: code.successful_uses,
         isActive: code.is_active === 1,
-        shareUrl: `${request.nextUrl.origin}/auth/register?ref=${code.code}`,
+        shareUrl: `https://fireseed.online/auth/register?ref=${code.code}`,
         createdAt: code.created_at
       }
     });
