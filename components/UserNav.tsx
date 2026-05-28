@@ -131,6 +131,19 @@ export default function UserNav() {
               {/* 菜单项 */}
               <div className="py-1">
                 <Link 
+                  href="/my"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors"
+                  style={{ color: 'var(--text-primary)' }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M8 8a3 3 0 100-6 3 3 0 000 6z"/>
+                    <path d="M13 14c0-2.8-2.2-5-5-5s-5 2.2-5 5"/>
+                  </svg>
+                  个人中心
+                </Link>
+                <div style={{ borderTop: '1px solid var(--border-light)', margin: '4px 12px' }} />
+                <Link 
                   href="/my/novels"
                   className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                   style={{ color: 'var(--text-secondary)' }}
