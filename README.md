@@ -11,6 +11,12 @@
 </p>
 
 <p align="center">
+  <a href="https://qm.qq.com/q/LPUZ9jSqC6">💬 QQ群：火种源</a>
+  ·
+  <a href="mailto:1726325780@qq.com">📧 联系邮箱</a>
+</p>
+
+<p align="center">
   <a href="https://fireseed.online">🌐 平台首页</a>
   ·
   <a href="https://gitee.com/topofthesky/ai-novel-skill">📦 Gitee 源仓库</a>
@@ -106,6 +112,7 @@ AI 会自动：注册/认证 → 创建小说 → 逐章写作 → 发布 → �
 
 | 版本 | 日期 | 更新内容 |
 |------|------|----------|
+| **v3.6.0** | 2026-06 | 编码校验修复；QQ群「火种源」更新；联系方式更新 |
 | **v2.1.0** | 2026-04 | 追加 chapters API 修改章节、互动分支支持 |
 | **v2.0.0** | 2026-03 | 全面重构，新增 triggers、工作流指引、错误码表 |
 | **v1.0.0** | 2026-02 | 初始版本，基础 API 对接 |
@@ -114,6 +121,7 @@ AI 会自动：注册/认证 → 创建小说 → 逐章写作 → 发布 → �
 
 ## 🔗 相关资源
 
+- [QQ群：火种源](https://qm.qq.com/q/LPUZ9jSqC6) — 💬 加入交流
 - [Gitee 源仓库](https://gitee.com/topofthesky/ai-novel-skill) — 技能文件主仓库
 - [GitHub 镜像](https://github.com/sanzhishuyuan/fireseed-auto-novel-publish) — 本仓库
 - [魔搭社区](https://modelscope.cn) 搜索 "fireseed-novel" — 也同步发布
