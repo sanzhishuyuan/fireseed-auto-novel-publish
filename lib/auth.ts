@@ -202,3 +202,30 @@ export function requireAdmin(
   }
   return admin;
 }
+
+
+/**
+ * 统一用户认证检查
+ * 支持 Cookie（浏览器）和 Bearer Token（API）两种方式
+ * 
+ * @example
+ *   const user = requireUser(request);
+ *   if (user instanceof Response) return user;
+ *   // user.id, user.username, user.role 可用
+ */
+export function requireUser(request: NextRequest): Response | TokenPayload {
+  const userId = getUserIdFromRequest(request);
+  if (!userId) {
+    return NextResponse.json({ success: false, error: '请先登录' }, { status: 401 });
+  }
+  const token = request.headers.get('Authorization')?.startsWith('Bearer ')
+    ? request.headers.get('Authorization')!.slice(7)
+    : request.cookies.get('auth_token')?.value;
+  const payload = token ? verifyToken(token) : null;
+  return {
+    userId,
+    username: payload?.username || '',
+    role: payload?.role || 'reader',
+    nickname: payload?.nickname,
+  };
+}

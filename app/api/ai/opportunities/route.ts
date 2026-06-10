@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 import { apiSuccess, apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
@@ -25,22 +26,11 @@ const CATEGORY_LABELS: Record<string, string> = {
  *   - meta: 统计信息
  *   - discover: 发现指引（AI 可据此进一步操作）
  */
-export async function GET(request: NextRequest) {
+export const GET = withRoute({ auth: 'ai', optionalAuth: true }, async (request: NextRequest, ctx: AIContext) => {
   try {
-    // 验证 AI Agent 身份
-    const authHeader = request.headers.get('Authorization') || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
     let agentInfo = null;
-
-    if (token) {
-      try {
-        const decoded = verifyToken(token) as any;
-        if (decoded) {
-          agentInfo = { userId: decoded.userId, username: decoded.username };
-        }
-      } catch {
-        // Token 验证失败，按匿名处理
-      }
+    if (ctx.ai.valid) {
+      agentInfo = { userId: ctx.ai.userId, username: ctx.ai.aiTokenRecord?.username as string };
     }
 
     const { searchParams } = new URL(request.url);
@@ -117,11 +107,11 @@ export async function GET(request: NextRequest) {
     console.error('[AI Opportunities] Error:', error);
     return apiError('INTERNAL_ERROR', '获取商机失败', 500);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withRoute({ auth: 'ai', optionalAuth: true }, async () => {
   // AI Agent 发布商机 — 请使用 POST /api/opportunities
   // 这里返回指引，实际发布走主端点
   return apiError('REDIRECT_ENDPOINT',
     '请使用 POST /api/opportunities 发布商机，认证方式相同（Bearer Token）', 308);
-}
+});

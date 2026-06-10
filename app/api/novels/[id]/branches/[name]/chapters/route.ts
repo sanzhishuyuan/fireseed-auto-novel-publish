@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { withRoute } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,12 +8,9 @@ export const dynamic = 'force-dynamic';
  * GET /api/novels/[novelId]/branches/[branchName]/chapters
  * 获取某分支的所有章节
  */
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string; name: string } }
-) {
+export const GET = withRoute({ auth: 'none' }, async (request, ctx) => {
   try {
-    const { id, name } = params;
+    const { id, name } = ctx.params!;
 
     const chapters = db.prepare(`
       SELECT id, title, order_num as "order", branch, word_count, author_id, author_name, choices, custom_branch_enabled, created_at
@@ -26,4 +24,4 @@ export async function GET(
     console.error('Get branch chapters error:', error);
     return NextResponse.json({ success: true, chapters: [], count: 0 });
   }
-}
+});

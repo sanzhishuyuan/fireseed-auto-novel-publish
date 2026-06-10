@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { NextRequest } from 'next/server';
 import { getCrowdfundingById, supportCrowdfunding, postCrowdfundingUpdate } from '@/lib/crowdfunding-helper';
+import { withRoute } from '@/lib/with-route';
+import { apiSuccess, apiError } from '@/lib/api-response';
 
 /**
  * 众筹详情和支持API
@@ -9,115 +10,57 @@ import { getCrowdfundingById, supportCrowdfunding, postCrowdfundingUpdate } from
  * POST /api/crowdfunding/[id]/update - 发布更新（仅作者）
  */
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const projectId = params.id;
-    const { project, rewards } = getCrowdfundingById(projectId);
+export const GET = withRoute({ auth: 'none' }, async (request, ctx) => {
+  const projectId = ctx.params!.id!;
+  const { project, rewards } = getCrowdfundingById(projectId);
 
-    if (!project) {
-      return NextResponse.json(
-        { success: false, error: '众筹项目不存在' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      project,
-      rewards
-    });
-  } catch (error) {
-    console.error('获取众筹详情失败:', error);
-    return NextResponse.json(
-      { success: false, error: '服务器错误' },
-      { status: 500 }
-    );
+  if (!project) {
+    return apiError('NOT_FOUND', '众筹项目不存在', 404);
   }
-}
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // 验证用户登录
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: '请先登录' },
-        { status: 401 }
-      );
+  return apiSuccess({ project, rewards });
+});
+
+export const POST = withRoute({ auth: 'user', body: true }, async (request, ctx) => {
+  const projectId = ctx.params!.id!;
+  const action = ctx.body.action;
+
+  switch (action) {
+    case 'support': {
+      // 支持众筹
+      const { amount, reward_tier } = ctx.body;
+
+      if (!amount || amount < 10) {
+        return apiError('VALIDATION_REQUIRED', '支持金额至少10 SEED', 400);
+      }
+
+      const supportResult = supportCrowdfunding(projectId, ctx.user.id, parseInt(amount), reward_tier);
+      
+      if (!supportResult.success) {
+        return apiError('SUPPORT_FAILED', supportResult.error || 'SUPPORT_FAILED', 400);
+      }
+
+      return apiSuccess({ message: '支持成功！感谢您的支持' });
     }
 
-    const projectId = params.id;
-    const body = await request.json();
-    const action = body.action;
+    case 'update': {
+      // 发布更新（仅作者）
+      const { title, content } = ctx.body;
 
-    switch (action) {
-      case 'support':
-        // 支持众筹
-        const { amount, reward_tier } = body;
+      if (!title || !content) {
+        return apiError('VALIDATION_REQUIRED', '标题和内容不能为空', 400);
+      }
 
-        if (!amount || amount < 10) {
-          return NextResponse.json(
-            { success: false, error: '支持金额至少10 SEED' },
-            { status: 400 }
-          );
-        }
+      const updateResult = postCrowdfundingUpdate(projectId, ctx.user.id, title, content);
 
-        const supportResult = supportCrowdfunding(projectId, user.userId, parseInt(amount), reward_tier);
-        
-        if (!supportResult.success) {
-          return NextResponse.json(
-            { success: false, error: supportResult.error },
-            { status: 400 }
-          );
-        }
+      if (!updateResult.success) {
+        return apiError('UPDATE_FAILED', updateResult.error || 'UPDATE_FAILED', 400);
+      }
 
-        return NextResponse.json({
-          success: true,
-          message: '支持成功！感谢您的支持'
-        });
-
-      case 'update':
-        // 发布更新（仅作者）
-        const { title, content } = body;
-
-        if (!title || !content) {
-          return NextResponse.json(
-            { success: false, error: '标题和内容不能为空' },
-            { status: 400 }
-          );
-        }
-
-        const updateResult = postCrowdfundingUpdate(projectId, user.userId, title, content);
-
-        if (!updateResult.success) {
-          return NextResponse.json(
-            { success: false, error: updateResult.error },
-            { status: 400 }
-          );
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: '更新发布成功'
-        });
-
-      default:
-        return NextResponse.json(
-          { success: false, error: '无效的操作' },
-          { status: 400 }
-        );
+      return apiSuccess({ message: '更新发布成功' });
     }
-  } catch (error) {
-    console.error('众筹操作失败:', error);
-    return NextResponse.json(
-      { success: false, error: '服务器错误' },
-      { status: 500 }
-    );
+
+    default:
+      return apiError('VALIDATION_INVALID_PARAM', '无效的操作', 400);
   }
-}
+});

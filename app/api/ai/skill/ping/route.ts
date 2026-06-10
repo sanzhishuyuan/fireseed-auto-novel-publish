@@ -1,58 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
-interface TokenPayload {
-  userId: string;
-  username: string;
-  role: string;
-}
-
-function verifyToken(authHeader: string | null, bodyToken?: string): { valid: boolean; userId?: string; username?: string } {
-  const tryDecode = (t: string) => {
-    try {
-      const d = jwt.verify(t, JWT_SECRET) as TokenPayload;
-      return { valid: true, userId: d.userId, username: d.username };
-    } catch { /* 无效 */ }
-    // fallback: user_tokens
-    try {
-      const ut = db.prepare('SELECT user_id FROM user_tokens WHERE token = ? AND is_active = 1').get(t) as { user_id: string } | undefined;
-      if (ut) return { valid: true, userId: ut.user_id };
-    } catch { /* 忽略 */ }
-    return { valid: false };
-  };
-
-  if (authHeader?.startsWith('Bearer ')) {
-    const r = tryDecode(authHeader.slice(7));
-    if (r.valid) return r;
-  }
-  if (bodyToken) {
-    const r = tryDecode(bodyToken);
-    if (r.valid) return r;
-  }
-  return { valid: false };
-}
-
-/**
- * GET /api/ai/skill/ping
- * 技能激活心跳，记录每次技能被 AI 加载激活
- *
- * query: version (技能版本号)
- */
-export async function GET(request: NextRequest) {
+export const GET = withRoute({ auth: 'ai', optionalAuth: true }, async (request: NextRequest, ctx: AIContext) => {
   try {
-    const authHeader = request.headers.get('Authorization');
-    const bodyToken = request.nextUrl.searchParams.get('token');
-    const auth = verifyToken(authHeader, bodyToken || undefined);
+    const auth = ctx.ai;
 
     const version = request.nextUrl.searchParams.get('version') || 'unknown';
     const userId = auth.valid ? auth.userId : null;
-    const username = auth.valid ? (auth.username || 'unknown') : 'anonymous';
+    let username = 'anonymous';
+    if (userId) {
+      const u = db.prepare('SELECT username FROM users WHERE id = ?').get(userId) as { username: string } | undefined;
+      if (u) username = u.username;
+    }
 
     // 查询用户作品数
     const novelCount = userId
@@ -116,4 +81,4 @@ export async function GET(request: NextRequest) {
     console.error('Skill ping error:', error);
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 });
   }
-}
+});

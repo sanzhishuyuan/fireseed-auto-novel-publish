@@ -1,28 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getUserIdFromRequest } from '@/lib/auth';
+import { NextRequest } from 'next/server';
 import { getOrCreateWallet } from '@/lib/seed';
+import { withRoute } from '@/lib/with-route';
+import { apiSuccess, apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/seed/balance — 查看我的 SEED 余额
  */
-export async function GET(request: NextRequest) {
-  try {
-    const userId = getUserIdFromRequest(request);
-    if (!userId) {
-      return NextResponse.json({ success: false, error: '请先登录' }, { status: 401 });
-    }
-
-    const wallet = getOrCreateWallet(userId);
-    return NextResponse.json({
-      success: true,
-      balance: wallet.balance,
-      total_earned: wallet.total_earned,
-      total_spent: wallet.total_spent,
-    });
-  } catch (error) {
-    console.error('[Seed Balance] Error:', error);
-    return NextResponse.json({ success: false, error: '查询失败' }, { status: 500 });
-  }
-}
+export const GET = withRoute({ auth: 'user' }, async (request, ctx) => {
+  const wallet = getOrCreateWallet(ctx.user.id);
+  return apiSuccess({
+    balance: wallet.balance,
+    total_earned: wallet.total_earned,
+    total_spent: wallet.total_spent,
+  });
+});

@@ -4,81 +4,34 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
+import { apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
-interface Params {
-  params: Promise<{ novelId: string }>;
-}
-
-// 验证并提取用户信息
-function verifyAndGetUser(request: NextRequest): { valid: boolean; userId?: string; username?: string } {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return { valid: false };
-  const token = authHeader.slice(7);
-
-  // 1. JWT Token
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string };
-    return { valid: true, userId: decoded.userId, username: decoded.username };
-  } catch { /* 继续 */ }
-
-  // 2. user_tokens
-  const userToken = db.prepare(
-    'SELECT ut.user_id, u.username FROM user_tokens ut JOIN users u ON ut.user_id = u.id WHERE ut.token = ? AND ut.is_active = 1'
-  ).get(token) as { user_id: string; username: string } | undefined;
-  if (userToken) {
-    db.prepare('UPDATE user_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
-    return { valid: true, userId: userToken.user_id, username: userToken.username };
-  }
-
-  // 3. ai_tokens
-  const record = db.prepare('SELECT id FROM ai_tokens WHERE token = ? AND is_active = 1').get(token);
-  if (record) {
-    db.prepare('UPDATE ai_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
-    return { valid: true, userId: undefined, username: 'AI 作者' };
-  }
-
-  return { valid: false };
-}
-
-/**
- * POST /api/ai/novels/[novelId]/branches
- * 发布支线章节（任何有效 AI Token 均可为任何小说写分支）
- * 
- * body:
- *   branch: string           - 分支标识（如 'trust', 'caution'）
- *   branch_title: string     - 分支显示名称（如 '信任线', '警惕线'）
- *   title: string            - 章节标题
- *   content: string          - 章节正文（Markdown，至少1500字）
- *   choices?: array          - 下一步分歧选项
- *   custom_branch_enabled?: boolean
- *   source_chapter_id?: string - 从哪个章节分歧（可选）
- *   source_choice_text?: string - 分歧选项的文字
- */
-export async function POST(request: NextRequest, { params }: Params) {
+export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRequest, ctx: AIContext) => {
   const rateLimit = checkRateLimit(request, undefined, 'aiWrite');
   const rateLimitResponse_ = rateLimitResponse(rateLimit);
   if (rateLimitResponse_) return rateLimitResponse_;
 
-  const user = verifyAndGetUser(request);
-  if (!user.valid) {
-    return NextResponse.json({ error: '无效的 AI Token' }, { status: 401 });
+  // 获取用户名
+  let username = 'AI 作者';
+  if (ctx.ai.userId) {
+    const u = db.prepare('SELECT username FROM users WHERE id = ?').get(ctx.ai.userId) as { username: string } | undefined;
+    if (u) username = u.username;
   }
 
-  const { novelId } = await params;
+  const { novelId } = ctx.params!;
 
   try {
-    const body = await request.json();
     const {
       branch, branch_title, title, content,
       choices = [], custom_branch_enabled = false,
       source_chapter_id, source_choice_text
-    } = body;
+    } = ctx.body;
 
     if (!branch || !title || !content) {
       return NextResponse.json({ error: 'branch、title、content 均为必填' }, { status: 400 });
@@ -121,8 +74,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       title, book: novelId, branch,
       choices: finalChoices, custom_branch_enabled,
       word_count: wordCount,
-      author_id: user.userId,
-      author_name: user.username,
+      author_id: ctx.ai.userId,
+      author_name: username,
       created_at: new Date().toISOString()
     };
 
@@ -137,7 +90,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     `).run(
       dbChapterId, novelId, title, contentStr, 0, branch,
       wordCount, JSON.stringify(finalChoices), custom_branch_enabled ? 1 : 0,
-      user.userId || null, user.username || ''
+      ctx.ai.userId || null, username || ''
     );
 
     // 写入/更新 branches 元数据表
@@ -153,14 +106,14 @@ export async function POST(request: NextRequest, { params }: Params) {
       db.prepare(`
         INSERT INTO branches (id, novel_id, branch_name, title, author_id, author_name, source_chapter_id, source_choice_text, chapter_count, total_words)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-      `).run(uuidv4(), novelId, branch, displayName, user.userId || null, user.username || '', source_chapter_id || null, source_choice_text || null, wordCount);
+      `).run(uuidv4(), novelId, branch, displayName, ctx.ai.userId || null, username || '', source_chapter_id || null, source_choice_text || null, wordCount);
     }
 
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
 
     // 记录激活并获取任务推送
     const autoPing = recordActivationAndGetMissions({
-      userId: user.userId,
+      userId: ctx.ai.userId,
       version: 'create-branch',
       clientType: 'api-auto'
     });
@@ -172,7 +125,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       title,
       chapter_id: dbChapterId,
       word_count: wordCount,
-      author_name: user.username,
+      author_name: username,
       readerUrl: `${process.env.NEXT_PUBLIC_URL || 'https://fireseed.online'}/novels/${novelId}/${dbChapterId}`,
       missions: autoPing.missions,
       notice: autoPing.notice
@@ -181,4 +134,4 @@ export async function POST(request: NextRequest, { params }: Params) {
     console.error('AI publish branch error:', error);
     return NextResponse.json({ error: '支线发布失败' }, { status: 500 });
   }
-}
+});

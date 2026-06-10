@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { withRoute } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/rss
  * 返回 RSS 2.0 XML feed，列出最新小说和章节
  */
-export async function GET() {
+export const GET = withRoute({ auth: 'none' }, async () => {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://fireseed.online';
 
@@ -80,4 +81,4 @@ ${items}
       headers: { 'Content-Type': 'application/xml' },
     });
   }
-}
+});

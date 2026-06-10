@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
+import { safeParseJSON } from '@/lib/request-parser';
 
 // 创建访客作品
 export async function POST(request: NextRequest) {
   try {
-    const { guest_id, title, author, description, status, tags } = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { guest_id, title, author, description, status, tags } = parsed.data;
     
     if (!guest_id || !title) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });

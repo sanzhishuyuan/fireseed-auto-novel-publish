@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { orderNo, transactionId, status = 'success' } = body;
 
     if (!orderNo) {

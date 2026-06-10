@@ -179,7 +179,7 @@ export default function UserNav() {
                   认领作品
                 </Link>
                 <Link 
-                  href="/my/settings"
+                  href="/my"
                   className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                   style={{ color: 'var(--text-secondary)' }}
                   onClick={() => setMenuOpen(false)}

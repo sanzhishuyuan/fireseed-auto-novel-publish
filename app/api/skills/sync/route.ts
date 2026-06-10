@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, verifyAdminToken, ADMIN_PASSWORD } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,10 @@ export const dynamic = 'force-dynamic';
  * body: { repo_url: string, repo_type?: string, admin_key?: string }
  */
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
+  const bodyText = await request.text();
+  const parsed = safeParseJSON(bodyText);
+  if (!parsed.success) return parsed.response;
+  const body = parsed.data;
   // 支持 admin_key 直接在body中传入
   const bodyKey = (body.admin_key || '').trim();
   if (!bodyKey || bodyKey !== ADMIN_PASSWORD) {

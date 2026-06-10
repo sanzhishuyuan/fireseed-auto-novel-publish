@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { withRoute, type AdminContext } from '@/lib/with-route';
+import { apiSuccess, apiError } from '@/lib/api-response';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,47 +10,30 @@ export const dynamic = 'force-dynamic';
  * GET /api/admin/skills-market — 管理员查看所有技能（含未激活）
  * POST /api/admin/skills-market — 管理员添加技能
  */
-export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request, 'skill.manage');
-  if (admin instanceof Response) return admin;
+export const GET = withRoute({ auth: 'admin', permission: 'skill.manage' }, async (request, ctx: AdminContext) => {
+  const items = db.prepare('SELECT * FROM skill_marketplace ORDER BY sort_order ASC, created_at DESC').all();
+  return apiSuccess(items);
+});
 
-  try {
-    const items = db.prepare('SELECT * FROM skill_marketplace ORDER BY sort_order ASC, created_at DESC').all();
-    return NextResponse.json({ success: true, data: items });
-  } catch (error) {
-    console.error('[Admin SkillsMarket] GET error:', error);
-    return NextResponse.json({ success: false, error: '获取失败' }, { status: 500 });
+export const POST = withRoute({ auth: 'admin', permission: 'skill.manage', body: true }, async (request, ctx: AdminContext) => {
+  const { name, title, description, author, icon_emoji, tags, repo_url, repo_type, skill_version, download_count, star_count, is_active, sort_order } = ctx.body;
+
+  if (!name || !title) {
+    return apiError('BAD_REQUEST', '名称和标题不能为空', 400);
   }
-}
 
-export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request, 'skill.manage');
-  if (admin instanceof Response) return admin;
+  const id = uuidv4();
+  const now = new Date().toISOString();
 
-  try {
-    const body = await request.json();
-    const { name, title, description, author, icon_emoji, tags, repo_url, repo_type, skill_version, download_count, star_count, is_active, sort_order } = body;
+  db.prepare(`
+    INSERT INTO skill_marketplace (id, name, title, description, author, icon_emoji, tags, repo_url, repo_type, skill_version, download_count, star_count, is_active, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, name, title, description || '', author || '', icon_emoji || '📦', tags || '',
+    repo_url || '', repo_type || 'github', skill_version || '',
+    download_count || 0, star_count || 0, is_active ?? 1, sort_order || 0, now, now
+  );
 
-    if (!name || !title) {
-      return NextResponse.json({ success: false, error: '名称和标题不能为空' }, { status: 400 });
-    }
-
-    const id = uuidv4();
-    const now = new Date().toISOString();
-
-    db.prepare(`
-      INSERT INTO skill_marketplace (id, name, title, description, author, icon_emoji, tags, repo_url, repo_type, skill_version, download_count, star_count, is_active, sort_order, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id, name, title, description || '', author || '', icon_emoji || '📦', tags || '',
-      repo_url || '', repo_type || 'github', skill_version || '',
-      download_count || 0, star_count || 0, is_active ?? 1, sort_order || 0, now, now
-    );
-
-    const created = db.prepare('SELECT * FROM skill_marketplace WHERE id = ?').get(id);
-    return NextResponse.json({ success: true, data: created });
-  } catch (error) {
-    console.error('[Admin SkillsMarket] POST error:', error);
-    return NextResponse.json({ success: false, error: '创建失败' }, { status: 500 });
-  }
-}
+  const created = db.prepare('SELECT * FROM skill_marketplace WHERE id = ?').get(id);
+  return apiSuccess(created);
+});

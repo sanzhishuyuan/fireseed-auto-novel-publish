@@ -4,11 +4,15 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { safeParseJSON } from '@/lib/request-parser';
 
 // 认领访客作品
 export async function POST(request: NextRequest) {
   try {
-    const { guest_id, guest_novel_ids, user_id } = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { guest_id, guest_novel_ids, user_id } = parsed.data;
     
     if (!guest_id || !guest_novel_ids || !user_id) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });

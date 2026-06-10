@@ -1,35 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
-
-function getAuthUserId(request: NextRequest): string | null {
-  const authHeader = request.headers.get('Authorization');
-  const bodyToken = request.nextUrl.searchParams.get('token');
-
-  const tryDecode = (t: string) => {
-    try { return (jwt.verify(t, JWT_SECRET) as { userId: string }).userId; } catch { /* 忽略 */ }
-    try {
-      const ut = db.prepare('SELECT user_id FROM user_tokens WHERE token = ? AND is_active = 1').get(t) as { user_id: string } | undefined;
-      if (ut) return ut.user_id;
-    } catch { /* 忽略 */ }
-    return null;
-  };
-
-  if (authHeader?.startsWith('Bearer ')) { const id = tryDecode(authHeader.slice(7)); if (id) return id; }
-  if (bodyToken) { const id = tryDecode(bodyToken); if (id) return id; }
-  return null;
-}
 
 /**
  * GET /api/ai/skill/feed
  * 获取技能任务/动态推送（根据用户状态差异化返回）
  */
-export async function GET(request: NextRequest) {
+export const GET = withRoute({ auth: 'ai', optionalAuth: true }, async (request: NextRequest, ctx: AIContext) => {
   try {
-    const userId = getAuthUserId(request);
+    const auth = ctx.ai;
+    const userId = auth.valid ? auth.userId : null;
     const novelCount = userId
       ? (db.prepare('SELECT COUNT(*) as c FROM novels WHERE author_id = ? AND deleted_at IS NULL').get(userId) as { c: number }).c
       : 0;
@@ -93,4 +76,4 @@ export async function GET(request: NextRequest) {
     console.error('Skill feed error:', error);
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 });
   }
-}
+});

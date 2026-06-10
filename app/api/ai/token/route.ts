@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import crypto from 'crypto';
+import { safeParseJSON } from '@/lib/request-parser';
 
 // Token 验证中间件（仅供内部使用）
 function verifyUserToken(request: NextRequest): { valid: boolean; userId?: string; token?: string } {
@@ -96,7 +97,10 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    const { name, permissions } = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { name, permissions } = parsed.data;
     
     const tokenId = uuidv4();
     const token = generateToken();

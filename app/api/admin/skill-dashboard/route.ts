@@ -1,14 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { requireAdmin } from '@/lib/auth';
+import { NextRequest } from 'next/server';
+import { withRoute, type AdminContext } from '@/lib/with-route';
+import { apiSuccess } from '@/lib/api-response';
 import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request, 'skill.manage');
-  if (admin instanceof Response) return admin;
-
+export const GET = withRoute({ auth: 'admin', permission: 'skill.manage' }, async (request, ctx: AdminContext) => {
   // 任务列表
   const missions = db.prepare('SELECT * FROM skill_missions ORDER BY priority ASC').all();
 
@@ -31,7 +28,7 @@ export async function GET(request: NextRequest) {
   const eventsToday = (db.prepare("SELECT COUNT(*) as c FROM skill_events WHERE date(created_at) = date('now')").get() as { c: number }).c;
   const totalNovels = (db.prepare('SELECT COUNT(*) as c FROM novels WHERE deleted_at IS NULL').get() as { c: number }).c;
 
-  // 最近活跃用户（技能激活 + 发书，取最近时间）
+  // 最近活跃用户
   const activeUsers = db.prepare(`
     SELECT 
       u.id, u.username, u.nickname, u.created_at as registered_at,
@@ -55,7 +52,7 @@ export async function GET(request: NextRequest) {
     LIMIT 100
   `).all() as any[];
 
-  return NextResponse.json({
+  return apiSuccess({
     missions,
     activationStats: { total, today, this_week: thisWeek, by_version: byVersion, recent, totalUsers, authorsWithNovels: usersWithNovels, eventsToday },
     activeUsers,
@@ -66,4 +63,4 @@ export async function GET(request: NextRequest) {
       conversionRate: totalUsers > 0 ? ((usersWithNovels / totalUsers) * 100).toFixed(1) : '0.0',
     }
   });
-}
+});

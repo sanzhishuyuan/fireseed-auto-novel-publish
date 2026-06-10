@@ -3,6 +3,7 @@
  */
 
 import db from './db';
+import { getOrCreateWallet } from './seed';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface CreateCrowdfundingInput {
@@ -296,11 +297,8 @@ export function supportCrowdfunding(projectId: string, userId: string, amount: n
       return { success: false, error: '众筹已过期' };
     }
 
-    // 检查用户余额
-    const wallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ?').get(userId) as { balance: number } | undefined;
-    if (!wallet) {
-      return { success: false, error: '用户钱包不存在' };
-    }
+    // 检查用户余额（自动创建钱包）
+    const wallet = getOrCreateWallet(userId);
     if (wallet.balance < amount) {
       return { success: false, error: `余额不足，当前余额: ${wallet.balance} SEED，需要: ${amount} SEED` };
     }

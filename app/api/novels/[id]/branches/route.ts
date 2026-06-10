@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { withRoute } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,12 +8,9 @@ export const dynamic = 'force-dynamic';
  * GET /api/novels/[novelId]/branches
  * 获取小说的所有分支列表
  */
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const GET = withRoute({ auth: 'none' }, async (request, ctx) => {
   try {
-    const { id } = params;
+    const { id } = ctx.params!;
 
     // 检查小说是否存在
     const novel = db.prepare('SELECT id, deleted_at FROM novels WHERE id = ?').get(id) as any;
@@ -65,7 +63,7 @@ export async function GET(
     console.error('Get branches error:', error);
     return NextResponse.json({ success: true, branches: [] });
   }
-}
+});
 
 // uuid helpers
 function uuidv4() {

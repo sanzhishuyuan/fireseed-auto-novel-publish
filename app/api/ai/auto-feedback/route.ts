@@ -5,6 +5,7 @@ import { verifyToken } from '@/lib/auth';
 import { transferSeed, getBalance } from '@/lib/seed';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,8 +23,11 @@ export async function POST(request: NextRequest) {
     // 1. 验证 AI Agent 身份
     const authHeader = request.headers.get('Authorization') || '';
     const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    const bodyToken = (await request.json().catch(() => ({}))).token;
-    const token = bearerToken || bodyToken;
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
+    const token = bearerToken || body.token;
 
     let userId: string | null = null;
     if (token) {
@@ -31,7 +35,6 @@ export async function POST(request: NextRequest) {
         const decoded = verifyToken(token) as any;
         if (decoded?.userId) userId = decoded.userId;
       } catch {
-        // 尝试 user_tokens 验证
         const ut = db.prepare('SELECT user_id FROM user_tokens WHERE token = ? AND is_active = 1').get(token) as any;
         if (ut) userId = ut.user_id;
       }
@@ -46,7 +49,6 @@ export async function POST(request: NextRequest) {
     const rlResp = rateLimitResponse(rl);
     if (rlResp) return rlResp;
 
-    const body = await request.json().catch(() => ({}));
     const { resource_id, resource_type, vote } = body;
 
     if (!resource_id || !resource_type || !vote) {

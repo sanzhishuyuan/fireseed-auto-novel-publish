@@ -1,26 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
-
-function getAuthUserId(request: NextRequest, bodyToken?: string): string | null {
-  const authHeader = request.headers.get('Authorization');
-  const tryDecode = (t: string) => {
-    try { return (jwt.verify(t, JWT_SECRET) as { userId: string }).userId; } catch { /* 忽略 */ }
-    try {
-      const ut = db.prepare('SELECT user_id FROM user_tokens WHERE token = ? AND is_active = 1').get(t) as { user_id: string } | undefined;
-      if (ut) return ut.user_id;
-    } catch { /* 忽略 */ }
-    return null;
-  };
-  if (authHeader?.startsWith('Bearer ')) { const id = tryDecode(authHeader.slice(7)); if (id) return id; }
-  if (bodyToken) { const id = tryDecode(bodyToken); if (id) return id; }
-  return null;
-}
 
 /**
  * POST /api/ai/skill/event
@@ -39,17 +24,10 @@ function getAuthUserId(request: NextRequest, bodyToken?: string): string | null 
  *   milestone_10       - 达成10章
  *   milestone_50       - 达成50章
  */
-export async function POST(request: NextRequest) {
+export const POST = withRoute({ auth: 'ai', body: true, optionalAuth: true }, async (request: NextRequest, ctx: AIContext) => {
   try {
-    let body: any = {};
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-    }
-
-    const { token, event_type, event_data } = body;
-    const userId = getAuthUserId(request, token);
+    const { event_type, event_data } = ctx.body;
+    const userId = ctx.ai.valid ? (ctx.ai.userId || 'anonymous') : 'anonymous';
 
     if (!event_type) {
       return NextResponse.json({ error: 'event_type is required' }, { status: 400 });
@@ -62,7 +40,7 @@ export async function POST(request: NextRequest) {
     db.prepare(`
       INSERT INTO skill_events (id, user_id, event_type, event_data)
       VALUES (?, ?, ?, ?)
-    `    ).run(
+    `).run(
       uuidv4(),
       userId || 'anonymous',
       cleanType,
@@ -103,4 +81,4 @@ export async function POST(request: NextRequest) {
     console.error('Skill event error:', error);
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 });
   }
-}
+});

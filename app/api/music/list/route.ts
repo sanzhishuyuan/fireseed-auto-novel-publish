@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { withRoute } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
 const MUSIC_DIR = '/var/data/ai-novel/music';
 
-export async function GET() {
+export const GET = withRoute({ auth: 'none' }, async () => {
   try {
     if (!fs.existsSync(MUSIC_DIR)) {
       return NextResponse.json({ success: true, songs: [] });
@@ -24,4 +25,4 @@ export async function GET() {
     console.error('Get music list error:', error);
     return NextResponse.json({ success: false, songs: [] });
   }
-}
+});
