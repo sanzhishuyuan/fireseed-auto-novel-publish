@@ -3,6 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getTasksMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: getTasksMetadata().title,
+  description: getTasksMetadata().description,
+  keywords: getTasksMetadata().keywords?.join(', '),
+};
 
 interface Task {
   id: string;

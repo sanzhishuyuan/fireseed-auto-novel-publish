@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getMyCrowdfundingMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: getMyCrowdfundingMetadata().title,
+  description: getMyCrowdfundingMetadata().description,
+  keywords: getMyCrowdfundingMetadata().keywords?.join(', '),
+};
 
 interface MyProject {
   id: string;

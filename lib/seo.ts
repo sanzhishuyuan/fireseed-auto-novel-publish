@@ -46,6 +46,62 @@ export function getNovelDetailMetadata(novel: { title: string; author: string; d
 }
 
 /**
+ * 生成任务市场页 metadata
+ */
+export function getTasksMetadata(): SEOMetadata {
+  return {
+    title: '任务市场 - FireSeed | 发布小说任务，赚取SEED奖励',
+    description: '在FireSeed任务市场发布小说创作需求，或接单创作获得SEED奖励。读者和作者的共赢平台，构建完整的创作经济生态。',
+    keywords: ['小说任务', '创作任务', 'SEED奖励', '作者接单', '任务市场', '创作经济']
+  };
+}
+
+/**
+ * 生成任务详情页 metadata
+ */
+export function getTaskDetailMetadata(task: { title: string; budget: number; genre?: string }): SEOMetadata {
+  const genreText = task.genre ? `【${task.genre}】` : '';
+  return {
+    title: `${genreText}${task.title} - ${task.budget} SEED | FireSeed任务`,
+    description: `FireSeed任务：${task.title}，预算${task.budget} SEED。立即接单创作，完成任务即可获得SEED奖励。`,
+    keywords: [task.title, '小说任务', 'SEED奖励', task.genre || '创作'].filter(Boolean)
+  };
+}
+
+/**
+ * 生成众筹广场页 metadata
+ */
+export function getCrowdfundingMetadata(): SEOMetadata {
+  return {
+    title: '众筹广场 - FireSeed | 支持喜爱的创作项目，获得专属权益',
+    description: '在FireSeed众筹广场支持你喜爱的小说创作项目，成为早期支持者获得专属权益。多档位回报，限量稀缺，共创优质内容。',
+    keywords: ['小说众筹', '创作众筹', 'SEED支持', '众筹广场', '早期支持', '专属权益']
+  };
+}
+
+/**
+ * 生成众筹详情页 metadata
+ */
+export function getCrowdfundingDetailMetadata(project: { title: string; target_amount: number; author_name?: string }): SEOMetadata {
+  return {
+    title: `${project.title} - 目标${project.target_amount} SEED | FireSeed众筹`,
+    description: `支持《${project.title}》众筹项目${project.author_name ? `（作者：${project.author_name}）` : ''}，目标${project.target_amount} SEED。成为早期支持者，获得专属回报权益。`,
+    keywords: [project.title, '小说众筹', 'SEED支持', '早期支持', project.author_name || ''].filter(Boolean)
+  };
+}
+
+/**
+ * 生成我的众筹页 metadata
+ */
+export function getMyCrowdfundingMetadata(): SEOMetadata {
+  return {
+    title: '我的众筹 - FireSeed | 管理我发起和支持的众筹项目',
+    description: '查看和管理你在FireSeed平台上发起和支持的所有众筹项目，追踪项目进度，领取专属权益。',
+    keywords: ['我的众筹', '众筹管理', 'SEED记录', '项目管理']
+  };
+}
+
+/**
  * 生成章节阅读页 metadata
  */
 export function getChapterMetadata(novelTitle: string, chapterTitle: string): SEOMetadata {
@@ -141,17 +197,6 @@ export function getReferralMetadata(): SEOMetadata {
     title: '推广中心 - FireSeed AI 小说平台',
     description: '邀请好友加入 FireSeed，获得 SEED 积分奖励。',
     keywords: ['推广', '邀请', 'SEED积分', '奖励']
-  };
-}
-
-/**
- * 生成众筹页 metadata
- */
-export function getCrowdfundingMetadata(): SEOMetadata {
-  return {
-    title: '众筹 - FireSeed AI 小说平台',
-    description: '支持你喜爱的作品众筹，帮助创作者完成创作。',
-    keywords: ['众筹', '支持创作', '作品赞助']
   };
 }
 
