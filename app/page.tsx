@@ -71,46 +71,18 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }} id="main-content">
-      {/* 🔔 平台动态公告栏 */}
+      {/* 精简公告栏 */}
       <div
-        className="overflow-hidden whitespace-nowrap py-2 text-xs sm:text-sm"
-        role="marquee"
-        aria-label="平台公告"
+        className="py-2 text-center text-xs sm:text-sm"
         style={{
           background: 'linear-gradient(90deg, #1a1a2e, #0f3460)',
           color: '#e2e8f0',
         }}
       >
-        <div className="inline-block animate-marquee">
-          <span className="mx-4">🔥</span>
-          <span className="mx-4 font-medium">火种·百人AI作家共创计划正在招募中，用AI写小说，探索互动叙事的可能性</span>
-          <span className="mx-4">→</span>
-          <Link href="/plan" className="mx-4 underline underline-offset-2 hover:text-white transition-colors" style={{ color: '#60a5fa' }}>
-            了解方案
-          </Link>
-          <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">📚</span>
-          <span className="mx-4 font-medium">平台已收录 {stats.totalNovels || '—'} 部 AI 互动小说，累计 {stats.totalChapters || '—'} 章</span>
-          <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">🌱</span>
-          <span className="mx-4 font-medium">SEED 积分系统已上线，点赞、创作、互动均可获得积分奖励</span>
-          <span className="mx-4 text-white/50">||</span>
-          {/* 重复一次实现无缝滚动，aria-hidden 避免屏幕阅读器重复朗读 */}
-          <span aria-hidden="true">
-          <span className="mx-4">🔥</span>
-          <span className="mx-4 font-medium">火种·百人AI作家共创计划正在招募中，用AI写小说，探索互动叙事的可能性</span>
-          <span className="mx-4">→</span>
-          <Link href="/plan" className="mx-4 underline underline-offset-2 hover:text-white transition-colors" style={{ color: '#60a5fa' }}>
-            了解方案
-          </Link>
-          <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">📚</span>
-          <span className="mx-4 font-medium">平台已收录 {stats.totalNovels || '—'} 部 AI 互动小说，累计 {stats.totalChapters || '—'} 章</span>
-          <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">🌱</span>
-          <span className="mx-4 font-medium">SEED 积分系统已上线，点赞、创作、互动均可获得积分奖励</span>
-          </span>
-        </div>
+        <span>🔥 火种·百人AI作家共创计划招募中 · </span>
+        <Link href="/plan" className="underline underline-offset-2 hover:text-white transition-colors" style={{ color: '#60a5fa' }}>
+          了解方案 →
+        </Link>
       </div>
 
       {/* ========== Hero 区域（含数据亮点） ========== */}
@@ -137,7 +109,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-sm sm:text-base mb-8 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            在这里，你的选择将影响故事走向。AI 生成的分支剧情，每一次阅读都是独一无二的冒险。
+            你的每个选择，都将改写故事结局。
           </p>
 
           {/* CTA 按钮 */}
@@ -151,25 +123,6 @@ export default function HomePage() {
             <Link href="/auth/register" className="btn-secondary text-sm px-8 py-3">
               免费注册
             </Link>
-          </div>
-
-          {/* 数据亮点（内嵌 Hero 底部） */}
-          <div className="flex items-center justify-center gap-6 sm:gap-10 text-center">
-            {[
-              { value: stats.totalNovels || '—', label: '部作品' },
-              { value: stats.totalChapters || '—', label: '章内容' },
-              { value: stats.totalWords >= 10000 ? `${(stats.totalWords / 10000).toFixed(1)}万` : (stats.totalWords || '—'), label: '字累计' },
-              { value: stats.totalAuthors || '—', label: '位作者' },
-            ].map((item, i) => (
-              <div key={i}>
-                <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--accent)' }}>
-                  {item.value}
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {item.label}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
