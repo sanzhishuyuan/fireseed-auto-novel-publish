@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { getCrowdfundingMetadata } from '@/lib/seo';
 
 interface CrowdfundingProject {
   id: string;
@@ -58,8 +57,9 @@ export default function CrowdfundingPage() {
       const res = await fetch(`/api/crowdfunding/list?${params}`);
       const data = await res.json();
       if (data.success) {
-        setProjects(data.projects);
-        setTotalPages(data.totalPages);
+        const payload = (data as any).data || data;
+        setProjects(payload.projects || []);
+        setTotalPages(payload.totalPages || 1);
       }
     } catch (e) { console.error('加载众筹失败:', e); }
     finally { setLoading(false); }
@@ -109,7 +109,8 @@ export default function CrowdfundingPage() {
         setShowCreateModal(false);
         setShowVipTip(true);
       } else {
-        alert(`创建失败: ${data.error}`);
+        const errMsg = typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error);
+        alert(`创建失败: ${errMsg}`);
       }
     } catch { alert('创建失败，请重试'); }
     finally { setCreating(false); }

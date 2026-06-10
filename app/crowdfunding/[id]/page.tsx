@@ -53,8 +53,9 @@ export default function CrowdfundingDetailPage() {
       const data = await res.json();
 
       if (data.success) {
-        setProject(data.project);
-        setRewards(data.rewards || []);
+        const payload = (data as any).data || data;
+        setProject(payload.project || null);
+        setRewards(payload.rewards || []);
       } else {
         alert('项目不存在');
         router.push('/crowdfunding');
@@ -121,13 +122,15 @@ export default function CrowdfundingDetailPage() {
       const data = await res.json();
 
       if (data.success) {
-        alert(data.message);
+        const payload = (data as any).data || data;
+        alert(payload.message || '支持成功！');
         setShowSupportModal(false);
         setSelectedReward('');
         setCustomAmount('');
         loadProject(); // 刷新项目进度
       } else {
-        alert(`支持失败: ${data.error}`);
+        const errMsg = typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error);
+        alert(`支持失败: ${errMsg}`);
       }
     } catch (error) {
       console.error('支持失败:', error);
