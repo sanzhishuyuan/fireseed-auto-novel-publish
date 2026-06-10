@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import crypto from 'crypto';
+import { safeParseJSON } from '@/lib/request-parser';
 
 // 创建或获取访客会话
 export async function POST(request: NextRequest) {
   try {
-    const { device_id } = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const { device_id } = parsed.data;
     
     // 如果提供了 device_id，尝试查找现有会话
     if (device_id) {

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { requireAdmin, ADMIN_PASSWORD } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,10 @@ export const dynamic = 'force-dynamic';
  * body: { user_id: string, amount: number, reason?: string, admin_key?: string }
  */
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
+  const bodyText = await request.text();
+  const parsed = safeParseJSON(bodyText);
+  if (!parsed.success) return parsed.response;
+  const body = parsed.data;
   const key = (body.admin_key || '').trim();
   if (!key || key !== ADMIN_PASSWORD) {
     const admin = requireAdmin(request, 'admin.manage');

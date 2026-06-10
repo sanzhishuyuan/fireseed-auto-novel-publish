@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getCrowdfundingById, supportCrowdfunding, postCrowdfundingUpdate } from '@/lib/crowdfunding-helper';
+import { safeParseJSON } from '@/lib/request-parser';
 
 /**
  * 众筹详情和支持API
@@ -53,7 +54,10 @@ export async function POST(
     }
 
     const projectId = params.id;
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const action = body.action;
 
     switch (action) {

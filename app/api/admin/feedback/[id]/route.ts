@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 const VALID_STATUSES = ['open', 'in_progress', 'resolved', 'closed'];
 
@@ -27,7 +28,13 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: '反馈不存在' }, { status: 404 });
     }
 
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { status: newStatus, admin_reply } = body;
 
     const updates: string[] = [];

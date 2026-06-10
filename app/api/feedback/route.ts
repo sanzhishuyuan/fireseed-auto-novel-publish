@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
+import { safeParseJSON } from '@/lib/request-parser';
 
 // 反馈类型枚举
 const VALID_TYPES = ['bug', 'feature', 'question', 'other'] as const;
@@ -15,7 +16,10 @@ interface FeedbackBody {
 
 export async function POST(request: NextRequest) {
   try {
-    const body: FeedbackBody = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
 
     // 必填校验
     const type = body.type || 'other';

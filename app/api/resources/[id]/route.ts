@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import db from '@/lib/db';
 import { getUserIdFromRequest } from '@/lib/auth';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,7 +114,13 @@ export async function PATCH(
       return apiError('FORBIDDEN', '无权修改此资源', 403);
     }
 
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { title, url, description, tags } = body;
 
     // 构建更新字段

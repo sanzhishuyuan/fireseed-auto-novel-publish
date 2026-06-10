@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { getUserIdFromRequest } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -134,7 +135,13 @@ export async function POST(request: NextRequest) {
       return apiError('AUTH_REQUIRED', '请先登录后再提交资源', 401);
     }
 
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { title, url, description, category, tags } = body;
 
     // 验证必填字段

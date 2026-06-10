@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { requireUser } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,7 +10,13 @@ export async function POST(request: NextRequest) {
     const user = requireUser(request);
     if (user instanceof Response) return user;
 
-    const body = await request.json();
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { amount, paymentMethod = 'wechat', description = 'VIP订阅' } = body;
 
     if (!amount || amount <= 0) {

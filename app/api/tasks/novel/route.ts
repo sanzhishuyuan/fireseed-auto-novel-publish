@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { createTask, getTasks, getTaskById } from '@/lib/task-helper';
+import { safeParseJSON } from '@/lib/request-parser';
 
 /**
  * 任务系统API
@@ -54,7 +55,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 解析请求体
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { title, description, genre, target_words, budget, deadline } = body;
 
     // 验证必填字段

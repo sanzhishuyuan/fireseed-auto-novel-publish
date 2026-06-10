@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET, getUserIdFromRequest } from '@/lib/auth';
 import { transferBetweenUsers, transferSeed, getBalance } from '@/lib/seed';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,10 @@ export async function POST(
 ) {
   try {
     const { id: novelId } = await params;
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
 
     // 解析用户：Cookie > Authorization > body.token（向后兼容）
     let userId = getUserIdFromRequest(request);

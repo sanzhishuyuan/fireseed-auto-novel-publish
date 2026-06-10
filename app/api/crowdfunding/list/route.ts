@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { createCrowdfunding, getCrowdfundingProjects } from '@/lib/crowdfunding-helper';
+import { safeParseJSON } from '@/lib/request-parser';
 
 /**
  * 众筹系统API
@@ -54,7 +55,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 解析请求体
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { title, description, target_amount, deadline, rewards } = body;
 
     // 验证必填字段

@@ -5,6 +5,7 @@ import { getUserIdFromRequest } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +45,10 @@ export async function POST(
     if (rlResponse) return rlResponse;
 
     // 3. 解析请求体
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { vote, reason } = body;
 
     if (!vote || !VALID_VOTES.includes(vote as VoteType)) {

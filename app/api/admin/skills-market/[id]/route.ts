@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,13 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: '技能不存在' }, { status: 404 });
     }
 
-    const body = await request.json();
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const allowed = ['name', 'title', 'description', 'author', 'icon_emoji', 'tags', 'repo_url', 'repo_type', 'skill_version', 'download_count', 'star_count', 'is_active', 'sort_order'];
 
     const updates: string[] = [];

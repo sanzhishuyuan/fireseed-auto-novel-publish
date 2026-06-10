@@ -4,6 +4,7 @@ import { JWT_SECRET, verifyAdminToken } from '@/lib/auth';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
+import { safeParseJSON } from '@/lib/request-parser';
 
 const COVERS_DIR = '/var/data/ai-novel/covers';
 
@@ -25,7 +26,13 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'novel not found' }, { status: 404 });
     }
 
-    const body = await request.json();
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { cover_image } = body;
 
     if (!cover_image) {

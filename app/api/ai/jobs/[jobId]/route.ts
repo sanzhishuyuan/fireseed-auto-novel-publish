@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { requireAI } from '@/lib/ai-auth';
 import { apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,10 @@ export async function GET(
 export async function POST(request: NextRequest) {
   const auth = requireAI(request);
   if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
-  const { job_type, novel_id, chapter_id, payload } = await request.json();
+  const bodyText = await request.text();
+  const parsed = safeParseJSON(bodyText);
+  if (!parsed.success) return parsed.response;
+  const { job_type, novel_id, chapter_id, payload } = parsed.data;
   if (!job_type || !['publish_chapter'].includes(job_type)) {
     return NextResponse.json({ error: 'Invalid job_type', code: 'bad_request' }, { status: 400 });
   }

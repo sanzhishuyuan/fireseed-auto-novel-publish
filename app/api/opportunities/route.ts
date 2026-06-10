@@ -5,6 +5,7 @@ import { getUserIdFromRequest } from '@/lib/auth';
 import { transferSeed, getBalance } from '@/lib/seed';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,7 +121,13 @@ export async function POST(request: NextRequest) {
     const rlResp = rateLimitResponse(rl);
     if (rlResp) return rlResp;
 
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { title, description, category, url } = body;
 
     // 校验

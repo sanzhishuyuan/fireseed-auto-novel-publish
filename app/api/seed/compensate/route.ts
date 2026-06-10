@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { getUserIdFromRequest } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,13 @@ export async function POST(request: NextRequest) {
       return apiError('FORBIDDEN', '仅管理员可操作', 403);
     }
 
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { resource_id, resource_type } = body;
 
     if (!resource_id || !resource_type) {

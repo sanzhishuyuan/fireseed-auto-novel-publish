@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTaskById, assignTask, completeTask, confirmTask, cancelTask } from '@/lib/task-helper';
 import { getCurrentUser } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 /**
  * 任务详情API
@@ -54,7 +55,10 @@ export async function POST(
     }
 
     const taskId = params.id;
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const action = body.action;
 
     switch (action) {

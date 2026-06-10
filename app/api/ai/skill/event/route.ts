@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { transferSeed } from '@/lib/seed';
 import { requireAI } from '@/lib/ai-auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,12 +26,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   try {
-    let body: any = {};
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-    }
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
 
     const { token, event_type, event_data } = body;
     const aiAuth = requireAI(request, token);

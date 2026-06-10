@@ -4,6 +4,7 @@ import { apiSuccess, apiError } from '@/lib/api-response';
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
+import { safeParseJSON } from '@/lib/request-parser';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -16,7 +17,10 @@ export async function PUT(request: NextRequest, { params }: Props) {
   const { id } = await params;
 
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { title, content, order, branch, choices } = body;
 
     const chapter = db.prepare('SELECT * FROM chapters WHERE id = ?').get(id) as any;

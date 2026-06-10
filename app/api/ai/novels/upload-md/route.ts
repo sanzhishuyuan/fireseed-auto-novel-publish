@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { JWT_SECRET, verifyAdminToken } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
+import { safeParseJSON } from '@/lib/request-parser';
 
 interface ChapterInfo {
   title: string;
@@ -96,7 +97,10 @@ export async function POST(request: NextRequest) {
   if (rateLimitResponse_) return rateLimitResponse_;
 
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const jsonParsed = safeParseJSON(bodyText);
+    if (!jsonParsed.success) return jsonParsed.response;
+    const body = jsonParsed.data;
     const { token, admin_key, content, title, author, description, tags } = body;
 
     if (!token && !admin_key) {

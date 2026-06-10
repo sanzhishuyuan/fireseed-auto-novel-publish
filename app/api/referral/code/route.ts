@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { requireUser } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 // 获取/生成用户的推广码
 export async function GET(request: NextRequest) {
@@ -67,7 +68,10 @@ export async function GET(request: NextRequest) {
 // 外部查询推广码信息（注册时用）
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { code } = body;
 
     if (!code) {

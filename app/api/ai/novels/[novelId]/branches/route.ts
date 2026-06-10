@@ -8,6 +8,7 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 import { requireAI } from '@/lib/ai-auth';
 import { apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { novelId } = await params;
 
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const {
       branch, branch_title, title, content,
       choices = [], custom_branch_enabled = false,

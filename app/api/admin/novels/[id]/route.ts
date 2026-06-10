@@ -5,6 +5,7 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { safeParseJSON } from '@/lib/request-parser';
 
 const COVERS_DIR = '/var/data/ai-novel/covers';
 
@@ -25,7 +26,13 @@ export async function PUT(request: NextRequest, { params }: Props) {
       return NextResponse.json({ error: '小说不存在' }, { status: 404 });
     }
 
-    const body = await request.json();
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { title, author, description, tags, status, cover_image } = body;
 
     // 构建更新字段

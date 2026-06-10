@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { ADMIN_ROLES, type Role } from '@/lib/permissions';
 import { v4 as uuidv4 } from 'uuid';
 import { requireUser } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 /**
  * POST /api/crowdfunding/create
@@ -41,7 +42,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── 参数校验 ───
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { title, description, targetAmount, deadline, novelId, rewards = [] } = body;
 
     if (!title || title.trim().length < 5) {

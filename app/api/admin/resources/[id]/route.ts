@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import db from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +45,13 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { status } = body;
 
     if (!status || !VALID_STATUSES.includes(status as StatusType)) {

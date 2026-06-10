@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { requireUser, getAdminUser } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,7 +84,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '请先登录后再发送消息' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { room, content, reply_to } = body;
 
     if (!room || !VALID_ROOMS.includes(room as any)) {

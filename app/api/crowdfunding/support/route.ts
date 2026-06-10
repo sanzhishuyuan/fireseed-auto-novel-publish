@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { requireUser } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export async function POST(request: NextRequest) {
   try {
     const user = requireUser(request);
     if (user instanceof Response) return user;
 
-    const body = await request.json();
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { projectId, amount } = body;
 
     if (!projectId || !amount || amount < 10) {

@@ -4,6 +4,7 @@ import { getUserIdFromRequest } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,13 @@ export async function POST(
     const rlResp = rateLimitResponse(rl);
     if (rlResp) return rlResp;
 
-    const body = await request.json().catch(() => ({}));
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { vote } = body;
     if (!['useful', 'useless'].includes(vote)) {
       return apiError('VALIDATION_INVALID_PARAM', '无效的投票类型', 400);

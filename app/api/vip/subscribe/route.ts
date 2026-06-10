@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { createPaymentOrder, PaymentMethod, simulatePayment, PAYMENT_CONFIG } from '@/lib/payment';
 import { requireUser } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 // VIP 套餐价格（单位：分）
 const PLAN_PRICES: Record<string, number> = {
@@ -21,7 +22,13 @@ export async function POST(request: NextRequest) {
     const user = requireUser(request);
     if (user instanceof Response) return user;
 
-    const body = await request.json();
+    const bodyText = await request.text();
+
+    const parsed = safeParseJSON(bodyText);
+
+    if (!parsed.success) return parsed.response;
+
+    const body = parsed.data;
     const { planType, paymentMethod } = body;
 
     // 验证套餐类型

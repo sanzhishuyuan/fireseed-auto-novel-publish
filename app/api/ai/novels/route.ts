@@ -9,6 +9,7 @@ import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 import { transferSeed } from '@/lib/seed';
 import { requireAI, tryAI } from '@/lib/ai-auth';
 import { apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +53,10 @@ export async function POST(request: NextRequest) {
   const auth = requireAI(request);
   if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { id: customId, title, author, description, status, tags, cover_url } = body;
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
 

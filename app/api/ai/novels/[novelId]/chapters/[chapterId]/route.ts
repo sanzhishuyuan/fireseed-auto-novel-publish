@@ -5,6 +5,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { requireAI } from '@/lib/ai-auth';
 import { apiError } from '@/lib/api-response';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const { novelId, chapterId } = await params;
 
   let body: any;
-  try { body = await request.json(); } catch { return apiError('INVALID_JSON', 'Invalid JSON', 400); }
+  const bodyText = await request.text();
+  const parsed = safeParseJSON(bodyText);
+  if (!parsed.success) return parsed.response;
+  body = parsed.data;
 
   const auth = requireAI(request, body?.token);
   if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);

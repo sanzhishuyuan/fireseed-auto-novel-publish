@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,10 @@ export async function POST(request: NextRequest) {
   if (admin instanceof Response) return admin;
 
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const parsed = safeParseJSON(bodyText);
+    if (!parsed.success) return parsed.response;
+    const body = parsed.data;
     const { name, title, description, author, icon_emoji, tags, repo_url, repo_type, skill_version, download_count, star_count, is_active, sort_order } = body;
 
     if (!name || !title) {
