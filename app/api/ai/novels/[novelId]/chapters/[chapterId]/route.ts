@@ -3,27 +3,17 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import { requireAI } from '@/lib/ai-auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 import { apiError } from '@/lib/api-response';
-import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
-interface Params { params: Promise<{ novelId: string; chapterId: string }>; }
-export async function PUT(request: NextRequest, { params }: Params) {
-  const { novelId, chapterId } = await params;
-
-  let body: any;
-  const bodyText = await request.text();
-  const parsed = safeParseJSON(bodyText);
-  if (!parsed.success) return parsed.response;
-  body = parsed.data;
-
-  const auth = requireAI(request, body?.token);
-  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
+export const PUT = withRoute({ auth: 'ai', body: true }, async (request: NextRequest, ctx: AIContext) => {
+  const { novelId, chapterId } = ctx.params!;
 
   try {
-    const { title, content, order, branch, choices, custom_branch_enabled } = body;
+    const { title, content, order, branch, choices, custom_branch_enabled } = ctx.body;
 
     if (!content) {
       return NextResponse.json({ error: 'content is required' }, { status: 400 });
@@ -123,4 +113,4 @@ export async function PUT(request: NextRequest, { params }: Params) {
     console.error('Update chapter error:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
-}
+});

@@ -49,23 +49,24 @@ interface RouteContextBase {
   params?: Record<string, string>;
 }
 
-interface PublicContext extends RouteContextBase {
+export interface PublicContext extends RouteContextBase {
   auth: 'none';
+  body?: any;
 }
 
-interface UserContext extends RouteContextBase {
+export interface UserContext extends RouteContextBase {
   auth: 'user';
   user: { id: string; username: string; role: string; nickname?: string };
   body?: any;
 }
 
-interface AdminContext extends RouteContextBase {
+export interface AdminContext extends RouteContextBase {
   auth: 'admin';
   admin: AdminUser;
   body?: any;
 }
 
-interface AIContext extends RouteContextBase {
+export interface AIContext extends RouteContextBase {
   auth: 'ai';
   ai: AIAuthResult;
   body?: any;
@@ -82,17 +83,29 @@ export interface RouteOptions {
   permission?: Permission;
   /** 是否自动解析 JSON 请求体 */
   body?: boolean;
+  /** AI 认证是否可选（tryAI 模式） */
+  optionalAuth?: boolean;
   /** 允许的内容大小（字节），默认 500KB */
   maxBodySize?: number;
 }
 
 // ─── 路由处理函数签名 ───
 
-type HandlerFn = (request: NextRequest, ctx: RouteContext) => Promise<Response>;
+type ContextForAuth<T extends string | undefined> =
+  T extends 'admin' ? AdminContext :
+  T extends 'user' ? UserContext :
+  T extends 'ai' ? AIContext :
+  PublicContext;
+
+type HandlerFn<Ctx = RouteContext> = (request: NextRequest, ctx: Ctx) => Promise<Response>;
 
 // ─── 核心包装器 ───
 
-export function withRoute(options: RouteOptions, handler: HandlerFn) {
+export function withRoute<T extends RouteOptions['auth']>(
+  options: RouteOptions & { auth?: T },
+  handler: HandlerFn<ContextForAuth<T>>
+) {
+
   return async (request: NextRequest, routeCtx: { params?: Promise<Record<string, string>> }) => {
     try {
       // 1. 解析动态路由参数
@@ -173,12 +186,12 @@ export function withRoute(options: RouteOptions, handler: HandlerFn) {
       }
 
       // 4. AI 认证最终检查（body 解析后）
-      if (options.auth === 'ai' && !(ctx as AIContext).ai.valid) {
+      if (options.auth === 'ai' && !(ctx as AIContext).ai.valid && !options.optionalAuth) {
         return apiError('UNAUTHORIZED', 'Unauthorized', 401);
       }
 
       // 5. 执行业务逻辑
-      const result = await handler(request, ctx);
+      const result = await handler(request, ctx as ContextForAuth<T>);
       return result;
 
     } catch (error) {

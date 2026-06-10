@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
-import { requireAI } from '@/lib/ai-auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 import { apiError } from '@/lib/api-response';
-import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> }
-) {
-  const auth = requireAI(request);
-  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
-  const { jobId } = await params;
-  const job = db.prepare('SELECT * FROM ai_jobs WHERE id = ? AND token = ?').get(jobId, auth.token) as Record<string, unknown> | undefined;
+export const GET = withRoute({ auth: 'ai' }, async (request: NextRequest, ctx: AIContext) => {
+  const { jobId } = ctx.params!;
+  const job = db.prepare('SELECT * FROM ai_jobs WHERE id = ? AND token = ?').get(jobId, ctx.ai.token) as Record<string, unknown> | undefined;
   if (!job) return NextResponse.json({ error: 'Job not found', code: 'not_found' }, { status: 404 });
   const result = job.result ? JSON.parse(job.result as string) : null;
   return NextResponse.json({
@@ -24,21 +19,16 @@ export async function GET(
     result, error: job.error,
     created_at: job.created_at, updated_at: job.updated_at
   });
-}
+});
 
-export async function POST(request: NextRequest) {
-  const auth = requireAI(request);
-  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
-  const bodyText = await request.text();
-  const parsed = safeParseJSON(bodyText);
-  if (!parsed.success) return parsed.response;
-  const { job_type, novel_id, chapter_id, payload } = parsed.data;
+export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRequest, ctx: AIContext) => {
+  const { job_type, novel_id, chapter_id, payload } = ctx.body;
   if (!job_type || !['publish_chapter'].includes(job_type)) {
     return NextResponse.json({ error: 'Invalid job_type', code: 'bad_request' }, { status: 400 });
   }
   const jobId = uuidv4();
   db.prepare(
     'INSERT INTO ai_jobs (id, token, job_type, novel_id, chapter_id, status, stage, result) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(jobId, auth.token, job_type, novel_id || null, chapter_id || null, 'queued', 'queued', JSON.stringify(payload));
+  ).run(jobId, ctx.ai.token, job_type, novel_id || null, chapter_id || null, 'queued', 'queued', JSON.stringify(payload));
   return NextResponse.json({ success: true, job_id: jobId, status: 'queued' });
-}
+});

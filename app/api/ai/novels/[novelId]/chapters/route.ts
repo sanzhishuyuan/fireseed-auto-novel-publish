@@ -9,47 +9,27 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 import { transferSeed } from '@/lib/seed';
 import { extractChoicesFromContent } from '@/lib/markdown-flow';
-import { requireAI } from '@/lib/ai-auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 import { apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
-interface Params { params: Promise<{ novelId: string }>; }
-
-export async function GET(request: NextRequest, { params }: Params) {
-  const auth = requireAI(request);
-  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
-  const { novelId } = await params;
+export const GET = withRoute({ auth: 'ai' }, async (request: NextRequest, ctx: AIContext) => {
+  const { novelId } = ctx.params!;
   const chapters = db.prepare('SELECT * FROM chapters WHERE novel_id = ? ORDER BY order_num ASC').all(novelId);
   return NextResponse.json({ success: true, chapters });
-}
+});
 
-export async function POST(request: NextRequest, { params }: Params) {
+export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRequest, ctx: AIContext) => {
   // P0-4: AI 发布接口速率限制（每分钟最多30次）
   const rateLimit = checkRateLimit(request, undefined, 'aiWrite');
   const rateLimitResponse_ = rateLimitResponse(rateLimit);
   if (rateLimitResponse_) return rateLimitResponse_;
 
-  // 先解析 body 获取可能的内嵌 token（兼容 upload-md 风格 body 传 token）
-  let bodyToken: string | undefined;
-  let body: any;
-  try {
-    const rawText = await request.text();
-    try {
-      body = JSON.parse(rawText);
-      bodyToken = body?.token;
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-    }
-    // 重新构造 request 给后续用（实际上后续直接用 body 变量）
-  } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
-  }
-
-  const auth = requireAI(request, bodyToken);
-  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
+  const auth = ctx.ai;
   const isUser = auth.tokenType === 'jwt' || auth.tokenType === 'user_token';
-  const { novelId } = await params;
+  const { novelId } = ctx.params!;
   const record = auth.aiTokenRecord!;
   
   // user_tokens 不检查旧配额限制
@@ -68,7 +48,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
   
   try {
-    const { title, content, order: rawOrder, branch = 'main', choices = [], custom_branch_enabled = false } = body || {};
+    const { title, content, order: rawOrder, branch = 'main', choices = [], custom_branch_enabled = false } = ctx.body || {};
     
     // 验证必填字段
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
@@ -181,4 +161,4 @@ export async function POST(request: NextRequest, { params }: Params) {
     console.error('AI publish chapter error:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
-}
+});

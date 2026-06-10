@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
-import { tryAI } from '@/lib/ai-auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
-export async function GET(request: NextRequest) {
+
+export const GET = withRoute({ auth: 'ai', optionalAuth: true }, async (request: NextRequest, ctx: AIContext) => {
   try {
-    const bodyToken = request.nextUrl.searchParams.get('token');
-    const auth = tryAI(request);
+    const auth = ctx.ai;
 
     const version = request.nextUrl.searchParams.get('version') || 'unknown';
     const userId = auth.valid ? auth.userId : null;
@@ -80,4 +81,4 @@ export async function GET(request: NextRequest) {
     console.error('Skill ping error:', error);
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 });
   }
-}
+});

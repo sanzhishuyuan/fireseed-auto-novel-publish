@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { transferSeed } from '@/lib/seed';
-import { requireAI } from '@/lib/ai-auth';
-import { safeParseJSON } from '@/lib/request-parser';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,16 +24,10 @@ export const dynamic = 'force-dynamic';
  *   milestone_10       - 达成10章
  *   milestone_50       - 达成50章
  */
-export async function POST(request: NextRequest) {
+export const POST = withRoute({ auth: 'ai', body: true, optionalAuth: true }, async (request: NextRequest, ctx: AIContext) => {
   try {
-    const bodyText = await request.text();
-    const parsed = safeParseJSON(bodyText);
-    if (!parsed.success) return parsed.response;
-    const body = parsed.data;
-
-    const { token, event_type, event_data } = body;
-    const aiAuth = requireAI(request, token);
-    const userId = aiAuth.valid ? (aiAuth.userId || 'anonymous') : 'anonymous';
+    const { event_type, event_data } = ctx.body;
+    const userId = ctx.ai.valid ? (ctx.ai.userId || 'anonymous') : 'anonymous';
 
     if (!event_type) {
       return NextResponse.json({ error: 'event_type is required' }, { status: 400 });
@@ -46,7 +40,7 @@ export async function POST(request: NextRequest) {
     db.prepare(`
       INSERT INTO skill_events (id, user_id, event_type, event_data)
       VALUES (?, ?, ?, ?)
-    `    ).run(
+    `).run(
       uuidv4(),
       userId || 'anonymous',
       cleanType,
@@ -87,4 +81,4 @@ export async function POST(request: NextRequest) {
     console.error('Skill event error:', error);
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 });
   }
-}
+});

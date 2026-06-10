@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getTaskById, assignTask, completeTask, confirmTask, cancelTask } from '@/lib/task-helper';
-import { getCurrentUser } from '@/lib/auth';
-import { safeParseJSON } from '@/lib/request-parser';
+import { withRoute } from '@/lib/with-route';
+import { apiSuccess, apiError } from '@/lib/api-response';
 
 /**
  * 任务详情API
@@ -12,135 +12,70 @@ import { safeParseJSON } from '@/lib/request-parser';
  * POST /api/tasks/novel/[id]/cancel - 取消任务
  */
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const taskId = params.id;
-    const task = getTaskById(taskId);
+export const GET = withRoute({ auth: 'none' }, async (request, ctx) => {
+  const taskId = ctx.params!.id!;
+  const task = getTaskById(taskId);
 
-    if (!task) {
-      return NextResponse.json(
-        { success: false, error: '任务不存在' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      task
-    });
-  } catch (error) {
-    console.error('获取任务详情失败:', error);
-    return NextResponse.json(
-      { success: false, error: '服务器错误' },
-      { status: 500 }
-    );
+  if (!task) {
+    return apiError('NOT_FOUND', '任务不存在', 404);
   }
-}
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // 验证用户登录
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: '请先登录' },
-        { status: 401 }
+  return apiSuccess({ task });
+});
+
+export const POST = withRoute({ auth: 'user', body: true }, async (request, ctx) => {
+  const taskId = ctx.params!.id!;
+  const action = ctx.body.action;
+
+  switch (action) {
+    case 'assign': {
+      // 接单
+      const assignResult = assignTask(taskId, ctx.user.id);
+      if (!assignResult.success) {
+        return apiError('ASSIGN_FAILED', assignResult.error || 'ASSIGN_FAILED', 400);
+      }
+      return apiSuccess({ message: '接单成功' });
+    }
+
+    case 'complete': {
+      // 提交完成
+      if (!ctx.body.delivery_url) {
+        return apiError('VALIDATION_REQUIRED', '请提供交付链接', 400);
+      }
+      const completeResult = completeTask(taskId, ctx.user.id, ctx.body.delivery_url);
+      if (!completeResult.success) {
+        return apiError('COMPLETE_FAILED', completeResult.error || 'COMPLETE_FAILED', 400);
+      }
+      return apiSuccess({ message: '已提交完成，等待发布者确认' });
+    }
+
+    case 'confirm': {
+      // 确认完成
+      const confirmResult = confirmTask(
+        taskId,
+        ctx.user.id,
+        ctx.body.rating,
+        ctx.body.review
       );
+      if (!confirmResult.success) {
+        return apiError('CONFIRM_FAILED', confirmResult.error || 'CONFIRM_FAILED', 400);
+      }
+      return apiSuccess({ message: '任务已完成，SEED已支付给作者' });
     }
 
-    const taskId = params.id;
-    const bodyText = await request.text();
-    const parsed = safeParseJSON(bodyText);
-    if (!parsed.success) return parsed.response;
-    const body = parsed.data;
-    const action = body.action;
-
-    switch (action) {
-      case 'assign':
-        // 接单
-        const assignResult = assignTask(taskId, user.userId);
-        if (!assignResult.success) {
-          return NextResponse.json(
-            { success: false, error: assignResult.error },
-            { status: 400 }
-          );
-        }
-        return NextResponse.json({
-          success: true,
-          message: '接单成功'
-        });
-
-      case 'complete':
-        // 提交完成
-        if (!body.delivery_url) {
-          return NextResponse.json(
-            { success: false, error: '请提供交付链接' },
-            { status: 400 }
-          );
-        }
-        const completeResult = completeTask(taskId, user.userId, body.delivery_url);
-        if (!completeResult.success) {
-          return NextResponse.json(
-            { success: false, error: completeResult.error },
-            { status: 400 }
-          );
-        }
-        return NextResponse.json({
-          success: true,
-          message: '已提交完成，等待发布者确认'
-        });
-
-      case 'confirm':
-        // 确认完成
-        const confirmResult = confirmTask(
-          taskId,
-          user.userId,
-          body.rating,
-          body.review
-        );
-        if (!confirmResult.success) {
-          return NextResponse.json(
-            { success: false, error: confirmResult.error },
-            { status: 400 }
-          );
-        }
-        return NextResponse.json({
-          success: true,
-          message: '任务已完成，SEED已支付给作者'
-        });
-
-      case 'cancel':
-        // 取消任务
-        const cancelResult = cancelTask(taskId, user.userId);
-        if (!cancelResult.success) {
-          return NextResponse.json(
-            { success: false, error: cancelResult.error },
-            { status: 400 }
-          );
-        }
-        return NextResponse.json({
-          success: true,
-          refundAmount: cancelResult.refundAmount,
-          message: '任务已取消，SEED已退还'
-        });
-
-      default:
-        return NextResponse.json(
-          { success: false, error: '无效的操作' },
-          { status: 400 }
-        );
+    case 'cancel': {
+      // 取消任务
+      const cancelResult = cancelTask(taskId, ctx.user.id);
+      if (!cancelResult.success) {
+        return apiError('CANCEL_FAILED', cancelResult.error || 'CANCEL_FAILED', 400);
+      }
+      return apiSuccess({
+        refundAmount: cancelResult.refundAmount,
+        message: '任务已取消，SEED已退还'
+      });
     }
-  } catch (error) {
-    console.error('任务操作失败:', error);
-    return NextResponse.json(
-      { success: false, error: '服务器错误' },
-      { status: 500 }
-    );
+
+    default:
+      return apiError('VALIDATION_INVALID_PARAM', '无效的操作', 400);
   }
-}
+});

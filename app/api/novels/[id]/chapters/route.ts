@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getNovelChapters } from '@/lib/novels';
 import db from '@/lib/db';
+import { withRoute } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const GET = withRoute({ auth: 'none' }, async (request, ctx) => {
   try {
+    const { id } = ctx.params!;
+
     // 检查小说是否已删除
-    const novel = db.prepare('SELECT deleted_at, id FROM novels WHERE id = ?').get(params.id) as { deleted_at: string | null; id: string } | undefined;
+    const novel = db.prepare('SELECT deleted_at, id FROM novels WHERE id = ?').get(id) as { deleted_at: string | null; id: string } | undefined;
     if (novel?.deleted_at) {
       return NextResponse.json({ success: false, chapters: [], Count: 0 }, { status: 404 });
     }
@@ -21,7 +21,7 @@ export async function GET(
         SELECT id, title, order_num as "order", branch, word_count, author_id, author_name, choices, custom_branch_enabled, created_at
         FROM chapters WHERE novel_id = ?
         ORDER BY order_num ASC, created_at ASC
-      `).all(params.id) as any[];
+      `).all(id) as any[];
 
       if (dbChapters.length > 0) {
         return NextResponse.json({
@@ -33,11 +33,10 @@ export async function GET(
     }
 
     // 回退：从文件系统读取（兼容旧版内容目录小说）
-    const chapters = getNovelChapters(params.id);
+    const chapters = getNovelChapters(id);
     return NextResponse.json({ success: true, chapters, Count: chapters.length });
   } catch (error) {
     console.error('Get chapters error:', error);
     return NextResponse.json({ success: false, chapters: [], Count: 0 }, { status: 500 });
   }
-}
-
+});

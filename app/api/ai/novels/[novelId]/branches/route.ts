@@ -6,43 +6,32 @@ import path from 'path';
 import matter from 'gray-matter';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
-import { requireAI } from '@/lib/ai-auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 import { apiError } from '@/lib/api-response';
-import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
-interface Params {
-  params: Promise<{ novelId: string }>;
-}
-
-export async function POST(request: NextRequest, { params }: Params) {
+export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRequest, ctx: AIContext) => {
   const rateLimit = checkRateLimit(request, undefined, 'aiWrite');
   const rateLimitResponse_ = rateLimitResponse(rateLimit);
   if (rateLimitResponse_) return rateLimitResponse_;
 
-  const auth = requireAI(request);
-  if (!auth.valid) return apiError('UNAUTHORIZED', '无效的 AI Token', 401);
-
   // 获取用户名
   let username = 'AI 作者';
-  if (auth.userId) {
-    const u = db.prepare('SELECT username FROM users WHERE id = ?').get(auth.userId) as { username: string } | undefined;
+  if (ctx.ai.userId) {
+    const u = db.prepare('SELECT username FROM users WHERE id = ?').get(ctx.ai.userId) as { username: string } | undefined;
     if (u) username = u.username;
   }
 
-  const { novelId } = await params;
+  const { novelId } = ctx.params!;
 
   try {
-    const bodyText = await request.text();
-    const parsed = safeParseJSON(bodyText);
-    if (!parsed.success) return parsed.response;
-    const body = parsed.data;
     const {
       branch, branch_title, title, content,
       choices = [], custom_branch_enabled = false,
       source_chapter_id, source_choice_text
-    } = body;
+    } = ctx.body;
 
     if (!branch || !title || !content) {
       return NextResponse.json({ error: 'branch、title、content 均为必填' }, { status: 400 });
@@ -85,7 +74,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       title, book: novelId, branch,
       choices: finalChoices, custom_branch_enabled,
       word_count: wordCount,
-      author_id: auth.userId,
+      author_id: ctx.ai.userId,
       author_name: username,
       created_at: new Date().toISOString()
     };
@@ -101,7 +90,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     `).run(
       dbChapterId, novelId, title, contentStr, 0, branch,
       wordCount, JSON.stringify(finalChoices), custom_branch_enabled ? 1 : 0,
-      auth.userId || null, username || ''
+      ctx.ai.userId || null, username || ''
     );
 
     // 写入/更新 branches 元数据表
@@ -117,14 +106,14 @@ export async function POST(request: NextRequest, { params }: Params) {
       db.prepare(`
         INSERT INTO branches (id, novel_id, branch_name, title, author_id, author_name, source_chapter_id, source_choice_text, chapter_count, total_words)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-      `).run(uuidv4(), novelId, branch, displayName, auth.userId || null, username || '', source_chapter_id || null, source_choice_text || null, wordCount);
+      `).run(uuidv4(), novelId, branch, displayName, ctx.ai.userId || null, username || '', source_chapter_id || null, source_choice_text || null, wordCount);
     }
 
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
 
     // 记录激活并获取任务推送
     const autoPing = recordActivationAndGetMissions({
-      userId: auth.userId,
+      userId: ctx.ai.userId,
       version: 'create-branch',
       clientType: 'api-auto'
     });
@@ -145,4 +134,4 @@ export async function POST(request: NextRequest, { params }: Params) {
     console.error('AI publish branch error:', error);
     return NextResponse.json({ error: '支线发布失败' }, { status: 500 });
   }
-}
+});

@@ -7,16 +7,15 @@ import matter from 'gray-matter';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 import { transferSeed } from '@/lib/seed';
-import { requireAI, tryAI } from '@/lib/ai-auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 import { apiError } from '@/lib/api-response';
-import { safeParseJSON } from '@/lib/request-parser';
 
 export const dynamic = 'force-dynamic';
 
 type NovelRow = { id: string; title: string; author: string; description: string; [key: string]: unknown };
 
-export async function GET(request: NextRequest) {
-  const auth = tryAI(request);
+export const GET = withRoute({ auth: 'ai', optionalAuth: true }, async (request: NextRequest, ctx: AIContext) => {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query') || '';
   const page = parseInt(searchParams.get('page') || '1');
@@ -43,21 +42,15 @@ export async function GET(request: NextRequest) {
     success: true,
     novels: novels.map((n) => ({ ...n, reader_url: baseUrl + '/novels/' + n.id }))
   });
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRequest, ctx: AIContext) => {
   const rateLimit = checkRateLimit(request, undefined, 'aiWrite');
   const rateLimitResponse_ = rateLimitResponse(rateLimit);
   if (rateLimitResponse_) return rateLimitResponse_;
 
-  const auth = requireAI(request);
-  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
   try {
-    const bodyText = await request.text();
-    const parsed = safeParseJSON(bodyText);
-    if (!parsed.success) return parsed.response;
-    const body = parsed.data;
-    const { id: customId, title, author, description, status, tags, cover_url } = body;
+    const { id: customId, title, author, description, status, tags, cover_url } = ctx.body;
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
 
     // 查重：同标题+同作者的小说是否已存在
@@ -83,17 +76,17 @@ export async function POST(request: NextRequest) {
     const existing = db.prepare('SELECT id FROM novels WHERE id = ?').get(novelId);
     if (existing) return NextResponse.json({ error: 'novel ID exists', id: novelId }, { status: 409 });
 
-    const params = [novelId, title, author || 'AI', auth.userId || null, description || '', cover_url || '', status || 'ongoing', tags || ''];
-    if (params.length !== 8) {
-      console.error('AI create novel param count mismatch:', params.length);
+    const sqlParams = [novelId, title, author || 'AI', ctx.ai.userId || null, description || '', cover_url || '', status || 'ongoing', tags || ''];
+    if (sqlParams.length !== 8) {
+      console.error('AI create novel param count mismatch:', sqlParams.length);
       return NextResponse.json({ error: 'Internal error' }, { status: 500 });
     }
-    db.prepare('INSERT INTO novels (id, title, author, author_id, description, cover_url, status, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(...params);
+    db.prepare('INSERT INTO novels (id, title, author, author_id, description, cover_url, status, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(...sqlParams);
 
     // 🌱 发布小说奖励
-    if (auth.userId) {
+    if (ctx.ai.userId) {
       try {
-        transferSeed(auth.userId, 100, 'publish_novel', {
+        transferSeed(ctx.ai.userId, 100, 'publish_novel', {
           refId: novelId,
           description: `发布小说《${title}》奖励 100 🌱`,
         });
@@ -112,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     // 记录激活并获取任务推送
     const autoPing = recordActivationAndGetMissions({
-      userId: auth.userId,
+      userId: ctx.ai.userId,
       version: 'create-novel',
       clientType: 'api-auto'
     });
@@ -128,4 +121,4 @@ export async function POST(request: NextRequest) {
     console.error('AI create novel error:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
-}
+});

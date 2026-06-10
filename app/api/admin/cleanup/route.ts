@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { withRoute, type AdminContext } from '@/lib/with-route';
+import { apiSuccess, apiError } from '@/lib/api-response';
 import db from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,155 +11,112 @@ export const dynamic = 'force-dynamic';
  * GET /api/admin/cleanup
  * 列出待清理的小说（已软删除超过保留期）
  */
-export async function GET(request: NextRequest) {
-  try {
-    const admin = requireAdmin(request, 'cleanup.execute');
-    if (admin instanceof Response) return admin;
+export const GET = withRoute({ auth: 'admin', permission: 'cleanup.execute' }, async (request, ctx: AdminContext) => {
+  const now = new Date();
+  const novelsToCleanup = db.prepare(`
+    SELECT 
+      id, title, author, author_id,
+      deleted_at,
+      retention_days,
+      datetime(deleted_at, '+' || retention_days || ' days') as cleanup_date,
+      CASE 
+        WHEN datetime(deleted_at, '+' || retention_days || ' days') <= datetime('now') 
+        THEN 1 ELSE 0 
+      END as ready_to_cleanup
+    FROM novels 
+    WHERE deleted_at IS NOT NULL
+    ORDER BY deleted_at ASC
+  `).all() as Array<{
+    id: string;
+    title: string;
+    author: string;
+    author_id: string;
+    deleted_at: string;
+    retention_days: number;
+    cleanup_date: string;
+    ready_to_cleanup: number;
+  }>;
 
-    // 查询已软删除且超过保留期的小说
-    const now = new Date();
-    const novelsToCleanup = db.prepare(`
-      SELECT 
-        id, title, author, author_id,
-        deleted_at,
-        retention_days,
-        datetime(deleted_at, '+' || retention_days || ' days') as cleanup_date,
-        CASE 
-          WHEN datetime(deleted_at, '+' || retention_days || ' days') <= datetime('now') 
-          THEN 1 ELSE 0 
-        END as ready_to_cleanup
-      FROM novels 
-      WHERE deleted_at IS NOT NULL
-      ORDER BY deleted_at ASC
-    `).all() as Array<{
-      id: string;
-      title: string;
-      author: string;
-      author_id: string;
-      deleted_at: string;
-      retention_days: number;
-      cleanup_date: string;
-      ready_to_cleanup: number;
-    }>;
+  const contentDir = path.join(process.cwd(), 'content', 'novels');
+  const novelsWithFileStatus = novelsToCleanup.map(novel => {
+    const novelDir = path.join(contentDir, novel.id);
+    const metaPath = path.join(novelDir, 'meta.md');
+    const hasFiles = fs.existsSync(metaPath);
+    return {
+      ...novel,
+      has_files: hasFiles,
+      days_since_deleted: Math.floor((now.getTime() - new Date(novel.deleted_at).getTime()) / (1000 * 60 * 60 * 24))
+    };
+  });
 
-    // 检查实际文件是否存在
-    const contentDir = path.join(process.cwd(), 'content', 'novels');
-    const novelsWithFileStatus = novelsToCleanup.map(novel => {
-      const novelDir = path.join(contentDir, novel.id);
-      const metaPath = path.join(novelDir, 'meta.md');
-      const hasFiles = fs.existsSync(metaPath);
-      return {
-        ...novel,
-        has_files: hasFiles,
-        days_since_deleted: Math.floor((now.getTime() - new Date(novel.deleted_at).getTime()) / (1000 * 60 * 60 * 24))
-      };
-    });
+  const readyToCleanup = novelsWithFileStatus.filter(n => n.ready_to_cleanup && n.has_files);
+  const pending = novelsWithFileStatus.filter(n => !n.ready_to_cleanup);
 
-    // 分类：可清理 vs 待观察
-    const readyToCleanup = novelsWithFileStatus.filter(n => n.ready_to_cleanup && n.has_files);
-    const pending = novelsWithFileStatus.filter(n => !n.ready_to_cleanup);
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        summary: {
-          total_deleted: novelsToCleanup.length,
-          ready_to_cleanup: readyToCleanup.length,
-          pending: pending.length
-        },
-        ready_to_cleanup: readyToCleanup,
-        pending: pending
-      }
-    });
-  } catch (error) {
-    console.error('Get cleanup list error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: '获取清理列表失败' 
-    }, { status: 500 });
-  }
-}
+  return apiSuccess({
+    summary: {
+      total_deleted: novelsToCleanup.length,
+      ready_to_cleanup: readyToCleanup.length,
+      pending: pending.length
+    },
+    ready_to_cleanup: readyToCleanup,
+    pending: pending
+  });
+});
 
 /**
  * DELETE /api/admin/cleanup
  * 执行清理：永久删除已过保留期的小说
- * 可选参数: novel_id - 只清理指定小说
  */
-export async function DELETE(request: NextRequest) {
-  try {
-    const admin = requireAdmin(request, 'cleanup.execute');
-    if (admin instanceof Response) return admin;
+export const DELETE = withRoute({ auth: 'admin', permission: 'cleanup.execute' }, async (request, ctx: AdminContext) => {
+  const url = new URL(request.url);
+  const novelId = url.searchParams.get('novel_id');
 
-    const url = new URL(request.url);
-    const novelId = url.searchParams.get('novel_id');
+  const contentDir = path.join(process.cwd(), 'content', 'novels');
+  const deletedRecords: string[] = [];
 
-    const contentDir = path.join(process.cwd(), 'content', 'novels');
-    const deletedRecords: string[] = [];
+  if (novelId) {
+    const novel = db.prepare(`
+      SELECT id, title, deleted_at, retention_days
+      FROM novels 
+      WHERE id = ? AND deleted_at IS NOT NULL
+    `).get(novelId) as { id: string; title: string; deleted_at: string; retention_days: number } | undefined;
 
-    if (novelId) {
-      // 清理指定小说
-      const novel = db.prepare(`
-        SELECT id, title, deleted_at, retention_days
-        FROM novels 
-        WHERE id = ? AND deleted_at IS NOT NULL
-      `).get(novelId) as { id: string; title: string; deleted_at: string; retention_days: number } | undefined;
+    if (!novel) {
+      return apiError('NOT_FOUND', '小说不存在或未标记删除', 404);
+    }
 
-      if (!novel) {
-        return NextResponse.json({ 
-          success: false, 
-          error: '小说不存在或未标记删除' 
-        }, { status: 404 });
-      }
+    const cleanupDate = new Date(new Date(novel.deleted_at).getTime() + novel.retention_days * 24 * 60 * 60 * 1000);
+    if (cleanupDate > new Date()) {
+      return apiError('BAD_REQUEST', `小说仍在保留期内，将在 ${cleanupDate.toLocaleDateString('zh-CN')} 后可清理`, 400);
+    }
 
-      // 检查是否超过保留期
-      const cleanupDate = new Date(new Date(novel.deleted_at).getTime() + novel.retention_days * 24 * 60 * 60 * 1000);
-      if (cleanupDate > new Date()) {
-        return NextResponse.json({ 
-          success: false, 
-          error: `小说仍在保留期内，将在 ${cleanupDate.toLocaleDateString('zh-CN')} 后可清理` 
-        }, { status: 400 });
-      }
+    const novelDir = path.join(contentDir, novel.id);
+    if (fs.existsSync(novelDir)) {
+      fs.rmSync(novelDir, { recursive: true });
+    }
 
-      // 删除文件
+    db.prepare('DELETE FROM novels WHERE id = ?').run(novelId);
+    deletedRecords.push(novel.id);
+  } else {
+    const novelsToDelete = db.prepare(`
+      SELECT id, deleted_at, retention_days
+      FROM novels 
+      WHERE deleted_at IS NOT NULL
+      AND datetime(deleted_at, '+' || retention_days || ' days') <= datetime('now')
+    `).all() as Array<{ id: string; deleted_at: string; retention_days: number }>;
+
+    for (const novel of novelsToDelete) {
       const novelDir = path.join(contentDir, novel.id);
       if (fs.existsSync(novelDir)) {
         fs.rmSync(novelDir, { recursive: true });
       }
-
-      // 从数据库删除记录
-      db.prepare('DELETE FROM novels WHERE id = ?').run(novelId);
+      db.prepare('DELETE FROM novels WHERE id = ?').run(novel.id);
       deletedRecords.push(novel.id);
-    } else {
-      // 清理所有已过保留期的小说
-      const novelsToDelete = db.prepare(`
-        SELECT id, deleted_at, retention_days
-        FROM novels 
-        WHERE deleted_at IS NOT NULL
-        AND datetime(deleted_at, '+' || retention_days || ' days') <= datetime('now')
-      `).all() as Array<{ id: string; deleted_at: string; retention_days: number }>;
-
-      for (const novel of novelsToDelete) {
-        const novelDir = path.join(contentDir, novel.id);
-        if (fs.existsSync(novelDir)) {
-          fs.rmSync(novelDir, { recursive: true });
-        }
-        db.prepare('DELETE FROM novels WHERE id = ?').run(novel.id);
-        deletedRecords.push(novel.id);
-      }
     }
-
-    return NextResponse.json({
-      success: true,
-      message: `已永久删除 ${deletedRecords.length} 篇小说`,
-      data: {
-        deleted_novels: deletedRecords
-      }
-    });
-  } catch (error) {
-    console.error('Cleanup error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: '清理失败' 
-    }, { status: 500 });
   }
-}
+
+  return apiSuccess({
+    message: `已永久删除 ${deletedRecords.length} 篇小说`,
+    deleted_novels: deletedRecords
+  });
+});

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllNovelIds } from '@/lib/novels';
 import db from '@/lib/db';
+import { withRoute } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,7 @@ function hasGarbledTitle(title: string): boolean {
   return false;
 }
 
-export async function GET() {
+export const GET = withRoute({ auth: 'none' }, async () => {
   try {
     // 1. 从数据库读取所有未删除的小说
     const dbNovels = db.prepare(`
@@ -100,4 +101,4 @@ export async function GET() {
     console.error('Get novels error:', error);
     return NextResponse.json({ success: false, novels: [] }, { status: 500 });
   }
-}
+});

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { withRoute } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/skills
  * 公开技能排行榜 — 返回所有启用的技能，支持排序和搜索
  */
-export async function GET(request: NextRequest) {
+export const GET = withRoute({ auth: 'none' }, async (request: NextRequest) => {
   try {
     const { searchParams } = request.nextUrl;
     const sort = searchParams.get('sort') || 'hot';
@@ -54,4 +55,4 @@ export async function GET(request: NextRequest) {
     console.error('[Skills] GET error:', error);
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 });
   }
-}
+});

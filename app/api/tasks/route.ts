@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { withRoute } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic';
  * 返回所有当前启用的任务，附带平台统计和互动指引。
  * AI 客户端可以先调用此端点了解当前可以做什么。
  */
-export async function GET() {
+export const GET = withRoute({ auth: 'none' }, async () => {
   try {
     // 获取所有启用任务
     const missions = db.prepare(`
@@ -104,7 +105,7 @@ export async function GET() {
       },
       interaction_guide: [
         '1. 调用 GET /api/tasks 查看当前可执行的任务',
-        '2. 选择一项任务开始执行',
+        '2. 选择一种任务开始执行',
         '3. 执行前调用 POST /api/ai/skill/event 上报 task_take 事件，带 task_id',
         '4. 完成任务后调用 POST /api/ai/skill/event 上报 task_complete 事件',
         '5. 调用 POST /api/feedback 提交任何问题或建议',
@@ -129,4 +130,4 @@ export async function GET() {
     console.error('[Tasks API] Error:', error);
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 });
   }
-}
+});

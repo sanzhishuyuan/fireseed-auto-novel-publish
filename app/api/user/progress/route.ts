@@ -1,40 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireUser } from '@/lib/auth';
+import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
-import { safeParseJSON } from '@/lib/request-parser';
+import { withRoute } from '@/lib/with-route';
+import { apiSuccess, apiError } from '@/lib/api-response';
 
-export async function POST(request: NextRequest) {
-  const user = requireUser(request);
-  if (user instanceof Response) return user;
+export const POST = withRoute({ auth: 'user', body: true }, async (request, ctx) => {
+  const { novelId, branch, chapterId } = ctx.body;
+  const userId = ctx.user.id;
 
-  try {
-    // 修复: request.json() 解析异常兼容
-    const bodyText = await request.text();
-      const parsed = safeParseJSON(bodyText);
-    if (!parsed.success) return parsed.response;
-    const { novelId, branch, chapterId } = parsed.data;
-    const userId = user.userId;
+  const existing = db.prepare('SELECT id FROM user_progress WHERE user_id = ? AND novel_id = ?')
+    .get(userId, novelId);
 
-    const existing = db.prepare('SELECT id FROM user_progress WHERE user_id = ? AND novel_id = ?')
-      .get(userId, novelId);
-
-    if (existing) {
-      db.prepare(`
-        UPDATE user_progress 
-        SET branch = ?, chapter_id = ?, updated_at = CURRENT_TIMESTAMP 
-        WHERE user_id = ? AND novel_id = ?
-      `).run(branch, chapterId, userId, novelId);
-    } else {
-      db.prepare(`
-        INSERT INTO user_progress (id, user_id, novel_id, branch, chapter_id)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(uuidv4(), userId, novelId, branch, chapterId);
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Update progress error:', error);
-    return NextResponse.json({ error: '更新失败' }, { status: 500 });
+  if (existing) {
+    db.prepare(`
+      UPDATE user_progress 
+      SET branch = ?, chapter_id = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_id = ? AND novel_id = ?
+    `).run(branch, chapterId, userId, novelId);
+  } else {
+    db.prepare(`
+      INSERT INTO user_progress (id, user_id, novel_id, branch, chapter_id)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(uuidv4(), userId, novelId, branch, chapterId);
   }
-}
+
+  return apiSuccess(true);
+});

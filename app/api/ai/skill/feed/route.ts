@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { tryAI } from '@/lib/ai-auth';
+import { withRoute } from '@/lib/with-route';
+import type { AIContext } from '@/lib/with-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,9 +9,9 @@ export const dynamic = 'force-dynamic';
  * GET /api/ai/skill/feed
  * 获取技能任务/动态推送（根据用户状态差异化返回）
  */
-export async function GET(request: NextRequest) {
+export const GET = withRoute({ auth: 'ai', optionalAuth: true }, async (request: NextRequest, ctx: AIContext) => {
   try {
-    const auth = tryAI(request);
+    const auth = ctx.ai;
     const userId = auth.valid ? auth.userId : null;
     const novelCount = userId
       ? (db.prepare('SELECT COUNT(*) as c FROM novels WHERE author_id = ? AND deleted_at IS NULL').get(userId) as { c: number }).c
@@ -75,4 +76,4 @@ export async function GET(request: NextRequest) {
     console.error('Skill feed error:', error);
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 });
   }
-}
+});

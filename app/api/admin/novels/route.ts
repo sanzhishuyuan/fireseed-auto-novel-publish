@@ -1,62 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { requireAdmin } from '@/lib/auth';
+import { withRoute, type AdminContext } from '@/lib/with-route';
+import { apiSuccess, apiError } from '@/lib/api-response';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import { safeParseJSON } from '@/lib/request-parser';
 
-export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request, 'content.view');
-  if (admin instanceof Response) return admin;
-
+export const GET = withRoute({ auth: 'admin', permission: 'content.view' }, async (request, ctx: AdminContext) => {
   const novels = db.prepare('SELECT * FROM novels ORDER BY created_at DESC').all();
   return NextResponse.json({ novels });
-}
+});
 
-export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request, 'content.create');
-  if (admin instanceof Response) return admin;
+export const POST = withRoute({ auth: 'admin', permission: 'content.create', body: true }, async (request, ctx: AdminContext) => {
+  const { title, author, description, status, tags } = ctx.body;
+  const id = uuidv4();
 
-  try {
-    // 修复: request.json() 解析异常兼容
-    const bodyText = await request.text();
+  // 保存到数据库
+  db.prepare(`
+    INSERT INTO novels (id, title, author, description, status, tags)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(id, title, author || '', description || '', status || 'ongoing', tags || '');
 
-    // 安全解析 JSON，非法请求体返回 400 而非 500
-    const parsed = safeParseJSON(bodyText);
-    if (!parsed.success) return parsed.response;
+  // 创建小说内容目录
+  const novelsDir = path.join(process.cwd(), 'content', 'novels', id);
+  fs.mkdirSync(novelsDir, { recursive: true });
+  fs.mkdirSync(path.join(novelsDir, 'chapters'), { recursive: true });
+  fs.mkdirSync(path.join(novelsDir, 'branches'), { recursive: true });
 
-    const { title, author, description, status, tags } = parsed.data;
-    const id = uuidv4();
+  // 创建meta.md
+  const meta = matter.stringify('', {
+    title,
+    author,
+    description,
+    status,
+    tags,
+    created_at: new Date().toISOString()
+  });
+  fs.writeFileSync(path.join(novelsDir, 'meta.md'), meta);
 
-    // 保存到数据库
-    db.prepare(`
-      INSERT INTO novels (id, title, author, description, status, tags)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, title, author || '', description || '', status || 'ongoing', tags || '');
-
-    // 创建小说内容目录
-    const novelsDir = path.join(process.cwd(), 'content', 'novels', id);
-    fs.mkdirSync(novelsDir, { recursive: true });
-    fs.mkdirSync(path.join(novelsDir, 'chapters'), { recursive: true });
-    fs.mkdirSync(path.join(novelsDir, 'branches'), { recursive: true });
-
-    // 创建meta.md
-    const meta = matter.stringify('', {
-      title,
-      author,
-      description,
-      status,
-      tags,
-      created_at: new Date().toISOString()
-    });
-    fs.writeFileSync(path.join(novelsDir, 'meta.md'), meta);
-
-    return NextResponse.json({ success: true, id });
-  } catch (error) {
-    console.error('Create novel error:', error);
-    return NextResponse.json({ error: '创建失败' }, { status: 500 });
-  }
-}
+  return apiSuccess({ id });
+});

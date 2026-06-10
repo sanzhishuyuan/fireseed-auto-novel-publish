@@ -1,63 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
-import { safeParseJSON } from '@/lib/request-parser';
+import { withRoute } from '@/lib/with-route';
+import { apiSuccess, apiError } from '@/lib/api-response';
 
 // 反馈类型枚举
 const VALID_TYPES = ['bug', 'feature', 'question', 'other'] as const;
 type FeedbackType = typeof VALID_TYPES[number];
 
-interface FeedbackBody {
-  type?: string;
-  title?: string;
-  message?: string;
-  contact?: string;
-}
+export const POST = withRoute({ auth: 'none', body: true }, async (request, ctx) => {
+  // 必填校验
+  const type = ctx.body.type || 'other';
+  const title = (ctx.body.title || '').trim();
+  const message = (ctx.body.message || '').trim();
 
-export async function POST(request: NextRequest) {
-  try {
-    const bodyText = await request.text();
-    const parsed = safeParseJSON(bodyText);
-    if (!parsed.success) return parsed.response;
-    const body = parsed.data;
-
-    // 必填校验
-    const type = body.type || 'other';
-    const title = (body.title || '').trim();
-    const message = (body.message || '').trim();
-
-    if (!title) {
-      return NextResponse.json({ success: false, error: '请填写反馈标题' }, { status: 400 });
-    }
-    if (title.length > 200) {
-      return NextResponse.json({ success: false, error: '标题过长，最多200字' }, { status: 400 });
-    }
-    if (!message) {
-      return NextResponse.json({ success: false, error: '请填写反馈内容' }, { status: 400 });
-    }
-    if (message.length > 5000) {
-      return NextResponse.json({ success: false, error: '反馈内容过长，最多5000字' }, { status: 400 });
-    }
-    if (!VALID_TYPES.includes(type as FeedbackType)) {
-      return NextResponse.json({ success: false, error: '无效的反馈类型' }, { status: 400 });
-    }
-
-    const contact = (body.contact || '').trim().slice(0, 200);
-    const id = uuidv4();
-    const now = new Date().toISOString();
-
-    db.prepare(`
-      INSERT INTO feedback (id, type, title, message, contact, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 'open', ?, ?)
-    `).run(id, type, title, message, contact || null, now, now);
-
-    return NextResponse.json({
-      success: true,
-      message: '反馈已提交，感谢您的宝贵意见！',
-      id,
-    });
-  } catch (error) {
-    console.error('[Feedback] POST error:', error);
-    return NextResponse.json({ success: false, error: '提交失败，请稍后重试' }, { status: 500 });
+  if (!title) {
+    return apiError('VALIDATION_REQUIRED', '请填写反馈标题', 400);
   }
-}
+  if (title.length > 200) {
+    return apiError('VALIDATION_INVALID_PARAM', '标题过长，最多200字', 400);
+  }
+  if (!message) {
+    return apiError('VALIDATION_REQUIRED', '请填写反馈内容', 400);
+  }
+  if (message.length > 5000) {
+    return apiError('VALIDATION_INVALID_PARAM', '反馈内容过长，最多5000字', 400);
+  }
+  if (!VALID_TYPES.includes(type as FeedbackType)) {
+    return apiError('VALIDATION_INVALID_PARAM', '无效的反馈类型', 400);
+  }
+
+  const contact = (ctx.body.contact || '').trim().slice(0, 200);
+  const id = uuidv4();
+  const now = new Date().toISOString();
+
+  db.prepare(`
+    INSERT INTO feedback (id, type, title, message, contact, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'open', ?, ?)
+  `).run(id, type, title, message, contact || null, now, now);
+
+  return apiSuccess({ message: '反馈已提交，感谢您的宝贵意见！', id });
+});

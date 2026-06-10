@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { withRoute } from '@/lib/with-route';
 
 const COVERS_DIR = '/var/data/ai-novel/covers';
 
@@ -12,12 +13,9 @@ const MIME_MAP: Record<string, string> = {
   'gif': 'image/gif',
 };
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET = withRoute({ auth: 'none' }, async (_request: NextRequest, ctx) => {
   try {
-    const { id } = params;
+    const { id } = ctx.params!;
     const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
 
     for (const ext of ['webp', 'jpg', 'jpeg', 'png', 'gif']) {
@@ -40,4 +38,4 @@ export async function GET(
     console.error('Get cover error:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
   }
-}
+});
