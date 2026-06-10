@@ -73,9 +73,10 @@ export default function TasksPage() {
       const data: TasksResponse = await res.json();
 
       if (data.success) {
-        setTasks(data.tasks);
-        setTotal(data.total);
-        setTotalPages(data.totalPages);
+        const payload = (data as any).data || data;
+        setTasks(payload.tasks || []);
+        setTotal(payload.total || 0);
+        setTotalPages(payload.totalPages || 1);
       }
     } catch (error) {
       console.error('加载任务失败:', error);
