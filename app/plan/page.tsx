@@ -1,9 +1,7 @@
-import { getPlanMetadata } from '@/lib/seo';
-import type { Metadata } from 'next';
-
-
-
 'use client';
+
+import { getPlanMetadata } from '@/lib/seo';
+
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';

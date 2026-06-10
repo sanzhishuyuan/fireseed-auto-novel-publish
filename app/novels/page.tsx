@@ -1,11 +1,7 @@
-import { getNovelsListMetadata } from '@/lib/seo';
-import { generateItemListSchema } from '@/lib/structured-data';
-import type { Metadata } from 'next';
-
-
-
 'use client';
 
+import { getNovelsListMetadata } from '@/lib/seo';
+import { generateItemListSchema } from '@/lib/structured-data';
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';

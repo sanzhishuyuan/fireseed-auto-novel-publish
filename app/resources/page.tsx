@@ -1,9 +1,7 @@
-import { getResourcesMetadata } from '@/lib/seo';
-import type { Metadata } from 'next';
-
-
-
 'use client';
+
+import { getResourcesMetadata } from '@/lib/seo';
+
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';

@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getCrowdfundingMetadata } from '@/lib/seo';
-import type { Metadata } from 'next';
-
 
 
 interface CrowdfundingProject {
