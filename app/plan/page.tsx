@@ -1,11 +1,7 @@
 import { getPlanMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: getPlanMetadata().title,
-  description: getPlanMetadata().description,
-  keywords: getPlanMetadata().keywords?.join(', '),
-};
+
 
 'use client';
 

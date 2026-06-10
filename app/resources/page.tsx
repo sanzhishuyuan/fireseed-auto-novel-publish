@@ -1,11 +1,7 @@
 import { getResourcesMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: getResourcesMetadata().title,
-  description: getResourcesMetadata().description,
-  keywords: getResourcesMetadata().keywords?.join(', '),
-};
+
 
 'use client';
 
