@@ -14,7 +14,7 @@ const NAV_LINKS = [
   { href: '/chat', label: '社区' },
   { href: '/resources', label: '可信资源' },
   { href: '/opportunities', label: '商机动态' },
-  { href: '/download', label: '下载' },
+  { href: '/download', label: '火种基地' },
 ];
 
 const DRAWER_NAV_LINKS = [
@@ -25,7 +25,7 @@ const DRAWER_NAV_LINKS = [
   { href: '/chat', label: '社区', icon: 'M2 4h12v8H4l-2 2zM6 8h.01M9 8h.01M12 8h.01' },
   { href: '/resources', label: '可信资源', icon: 'M2 2h12v12H2zM6 6h4M6 9h2' },
   { href: '/opportunities', label: '商机动态', icon: 'M2 12l5-5 3 3 5-7' },
-  { href: '/download', label: '下载', icon: 'M8 2v8m0 0l-3-3m3 3l3-3M3 12v1a2 2 0 002 2h6a2 2 0 002-2v-1' },
+  { href: '/download', label: '火种基地', icon: 'M12 3v10m0 0l-4-4m4 4l4-4M4 15v1a2 2 0 002 2h8a2 2 0 002-2v-1' },
 ];
 
 /** Route-based default title map */
@@ -35,7 +35,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/plan': '共创计划',
   '/resources': '可信资源',
   '/opportunities': '商机动态',
-  '/download': '下载',
+  '/download': '火种基地',
   '/feedback': '意见反馈',
   '/referral': '推广中心',
   '/crowdfunding': '众筹',

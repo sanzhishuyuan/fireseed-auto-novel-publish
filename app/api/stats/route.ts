@@ -9,12 +9,12 @@ export async function GET() {
     const novelCount = (db.prepare('SELECT COUNT(*) as count FROM novels WHERE deleted_at IS NULL').get() as { count: number }).count;
 
     // 章节总数
-    const chapterCount = (db.prepare('SELECT COUNT(*) as count FROM chapters').get() as { count: number }).count;
+    const chapterCount = (db.prepare('SELECT COUNT(*) as count FROM chapters c INNER JOIN novels n ON c.novel_id = n.id WHERE n.deleted_at IS NULL').get() as { count: number }).count;
 
     // 总字数 — 优先用 word_count 列，降级为章节数 × 2000 估算
     let totalWords = 0;
     try {
-      totalWords = (db.prepare('SELECT COALESCE(SUM(word_count), 0) as total FROM chapters').get() as { total: number }).total;
+      totalWords = (db.prepare('SELECT COALESCE(SUM(c.word_count), 0) as total FROM chapters c INNER JOIN novels n ON c.novel_id = n.id WHERE n.deleted_at IS NULL').get() as { total: number }).total;
     } catch {
       totalWords = chapterCount * 2000;
     }

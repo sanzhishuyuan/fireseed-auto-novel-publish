@@ -28,18 +28,18 @@ export async function GET(request: NextRequest) {
 
     // 小说统计（直接查数据库，不遍历文件系统）
     const novelCount = (db.prepare('SELECT COUNT(*) as count FROM novels WHERE deleted_at IS NULL').get() as { count: number }).count;
-    const chapterStats = db.prepare('SELECT COUNT(*) as count, COALESCE(SUM(word_count), 0) as words FROM chapters').get() as { count: number; words: number };
+    const chapterStats = db.prepare('SELECT COUNT(*) as count, COALESCE(SUM(c.word_count), 0) as words FROM chapters c INNER JOIN novels n ON c.novel_id = n.id WHERE n.deleted_at IS NULL').get() as { count: number; words: number };
     const totalChapters = chapterStats.count;
     const totalWords = chapterStats.words;
 
     // 今日更新统计
     const todayChapters = db.prepare(`
-      SELECT COUNT(*) as count FROM chapters 
-      WHERE created_at >= ?
+      SELECT COUNT(*) as count FROM chapters c INNER JOIN novels n ON c.novel_id = n.id
+      WHERE n.deleted_at IS NULL AND c.created_at >= ?
     `).get(todayStart) as { count: number };
     const todayWords = db.prepare(`
-      SELECT SUM(word_count) as total FROM chapters 
-      WHERE created_at >= ?
+      SELECT SUM(c.word_count) as total FROM chapters c INNER JOIN novels n ON c.novel_id = n.id
+      WHERE n.deleted_at IS NULL AND c.created_at >= ?
     `).get(todayStart) as { total: number | null };
 
     // 待清理统计（软删除）
