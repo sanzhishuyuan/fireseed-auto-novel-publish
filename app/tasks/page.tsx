@@ -103,6 +103,7 @@ export default function TasksPage() {
       const res = await fetch('/api/tasks/novel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           budget: parseInt(formData.budget),
@@ -125,7 +126,8 @@ export default function TasksPage() {
         });
         loadTasks(); // 刷新列表
       } else {
-        alert(`发布失败: ${data.error}`);
+        const errMsg = typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error);
+        alert(`发布失败: ${errMsg}`);
       }
     } catch (error) {
       console.error('发布任务失败:', error);
