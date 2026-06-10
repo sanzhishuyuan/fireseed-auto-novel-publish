@@ -2,11 +2,7 @@ import { getNovelsListMetadata } from '@/lib/seo';
 import { generateItemListSchema } from '@/lib/structured-data';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: getNovelsListMetadata().title,
-  description: getNovelsListMetadata().description,
-  keywords: getNovelsListMetadata().keywords?.join(', '),
-};
+
 
 'use client';
 

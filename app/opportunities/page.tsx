@@ -1,11 +1,7 @@
 import { getOpportunitiesMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: getOpportunitiesMetadata().title,
-  description: getOpportunitiesMetadata().description,
-  keywords: getOpportunitiesMetadata().keywords?.join(', '),
-};
+
 
 'use client';
 
