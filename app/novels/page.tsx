@@ -102,13 +102,13 @@ function NovelsContent() {
     // 排序
     switch (activeSort) {
       case '最新更新':
-        filtered.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+        filtered.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
         break;
       case '最多章节':
         filtered.sort((a, b) => b.chapterCount - a.chapterCount);
         break;
       case '新书上架':
-        filtered.sort((a, b) => new Date(a.updatedAt || 0).getTime() - new Date(b.updatedAt || 0).getTime());
+        filtered.sort((a, b) => new Date(a.updated_at || 0).getTime() - new Date(b.updated_at || 0).getTime());
         break;
     }
     
@@ -126,7 +126,7 @@ function NovelsContent() {
         const list = Array.isArray(data) ? data : (data?.novels || []);
         const novelsWithTime = list.map((novel: Novel, i: number) => ({
           ...novel,
-          updatedAt: novel.updatedAt || new Date(Date.now() - i * 86400000).toISOString()
+          updated_at: novel.updated_at || new Date(Date.now() - i * 86400000).toISOString()
         }));
         setNovels(novelsWithTime);
 
