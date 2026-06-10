@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { createPaymentOrder, PaymentMethod, simulatePayment, PAYMENT_CONFIG } from '@/lib/payment';
+import { requireUser } from '@/lib/auth';
 
 // VIP 套餐价格（单位：分）
 const PLAN_PRICES: Record<string, number> = {
@@ -18,15 +18,8 @@ const PLAN_NAMES: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     // 验证用户身份
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
-    }
-
-    const user = verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: '登录已过期' }, { status: 401 });
-    }
+    const user = requireUser(request);
+    if (user instanceof Response) return user;
 
     const body = await request.json();
     const { planType, paymentMethod } = body;

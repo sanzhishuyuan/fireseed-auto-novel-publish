@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { requireUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
     // 验证用户身份
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
-    }
-
-    const user = verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: '登录已过期' }, { status: 401 });
-    }
+    const user = requireUser(request);
+    if (user instanceof Response) return user;
 
     const body = await request.json();
     const { amount, paymentMethod = 'wechat', description = 'VIP订阅' } = body;

@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 
 // 查询用户订单列表
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
-    }
-
-    const user = verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: '登录已过期' }, { status: 401 });
-    }
+    const user = requireUser(request);
+    if (user instanceof Response) return user;
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // 可选过滤条件

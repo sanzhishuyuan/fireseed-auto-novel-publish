@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 
 // 取消 VIP 自动续费
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
-    }
-
-    const user = verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: '登录已过期' }, { status: 401 });
-    }
+    const user = requireUser(request);
+    if (user instanceof Response) return user;
 
     // 取消自动续费
     db.prepare(`
@@ -46,15 +39,8 @@ export async function POST(request: NextRequest) {
 // 获取 VIP 订阅历史
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
-    }
-
-    const user = verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: '登录已过期' }, { status: 401 });
-    }
+    const user = requireUser(request);
+    if (user instanceof Response) return user;
 
     const subscriptions = db.prepare(`
       SELECT id, plan_type, start_date, end_date, status, payment_method, amount, created_at

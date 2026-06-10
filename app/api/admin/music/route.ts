@@ -1,29 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/auth';
+import { NextRequest } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
+import { apiSuccess, apiError } from '@/lib/api-response';
 import fs from 'fs';
 import path from 'path';
 
 const MUSIC_DIR = '/var/data/ai-novel/music';
 
-function requireAdmin() {
-  return async () => {
-    const cookieStore = await cookies();
-    if (!verifyAdminToken(cookieStore.get('admin_token')?.value || '')) {
-      return NextResponse.json({ error: '未授权' }, { status: 401 });
-    }
-    return null;
-  };
-}
-
 // GET: 获取音乐列表
-export async function GET() {
-  const authError = await requireAdmin()();
-  if (authError) return authError;
+export async function GET(request: NextRequest) {
+  const admin = requireAdmin(request);
+  if (admin instanceof Response) return admin;
 
   try {
     if (!fs.existsSync(MUSIC_DIR)) {
-      return NextResponse.json({ success: true, songs: [] });
+      return apiSuccess({ songs: [] });
     }
 
     const files = fs.readdirSync(MUSIC_DIR)
@@ -42,47 +32,45 @@ export async function GET() {
       })
       .sort((a, b) => b.modified.localeCompare(a.modified));
 
-    return NextResponse.json({ success: true, songs: files });
+    return apiSuccess({ songs: files });
   } catch (error) {
     console.error('Get music list error:', error);
-    return NextResponse.json({ error: '获取失败' }, { status: 500 });
+    return apiError('INTERNAL', '获取失败', 500);
   }
 }
 
 // POST: 上传音乐
 export async function POST(request: NextRequest) {
-  const authError = await requireAdmin()();
-  if (authError) return authError;
+  const admin = requireAdmin(request);
+  if (admin instanceof Response) return admin;
 
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: '请选择音乐文件' }, { status: 400 });
+      return apiError('BAD_REQUEST', '请选择音乐文件', 400);
     }
 
     if (!file.name.match(/\.(mp3|wav|ogg|flac|aac|m4a)$/i)) {
-      return NextResponse.json({ error: '不支持的音频格式，支持 mp3/wav/ogg/flac/aac/m4a' }, { status: 400 });
+      return apiError('BAD_REQUEST', '不支持的音频格式，支持 mp3/wav/ogg/flac/aac/m4a', 400);
     }
 
     const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
-      return NextResponse.json({ error: '文件太大，最大 20MB' }, { status: 400 });
+      return apiError('BAD_REQUEST', '文件太大，最大 20MB', 400);
     }
 
     if (!fs.existsSync(MUSIC_DIR)) {
       fs.mkdirSync(MUSIC_DIR, { recursive: true });
     }
 
-    // 避免文件名冲突，加时间戳前缀
     const safeName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filePath = path.join(MUSIC_DIR, safeName);
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filePath, buffer);
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       song: {
         name: safeName,
         size: buffer.length,
@@ -91,35 +79,35 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Upload music error:', error);
-    return NextResponse.json({ error: '上传失败' }, { status: 500 });
+    return apiError('INTERNAL', '上传失败', 500);
   }
 }
 
 // DELETE: 删除音乐
 export async function DELETE(request: NextRequest) {
-  const authError = await requireAdmin()();
-  if (authError) return authError;
+  const admin = requireAdmin(request);
+  if (admin instanceof Response) return admin;
 
   try {
     const { searchParams } = new URL(request.url);
     const fileName = searchParams.get('file');
 
     if (!fileName) {
-      return NextResponse.json({ error: '缺少文件名' }, { status: 400 });
+      return apiError('BAD_REQUEST', '缺少文件名', 400);
     }
 
     const safeName = path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, '_');
     const filePath = path.join(MUSIC_DIR, safeName);
 
     if (!fs.existsSync(filePath)) {
-      return NextResponse.json({ error: '文件不存在' }, { status: 404 });
+      return apiError('NOT_FOUND', '文件不存在', 404);
     }
 
     fs.unlinkSync(filePath);
 
-    return NextResponse.json({ success: true, message: '已删除' });
+    return apiSuccess({ message: '已删除' });
   } catch (error) {
     console.error('Delete music error:', error);
-    return NextResponse.json({ error: '删除失败' }, { status: 500 });
+    return apiError('INTERNAL', '删除失败', 500);
   }
 }

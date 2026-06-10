@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
 import { ADMIN_ROLES, type Role } from '@/lib/permissions';
 import { v4 as uuidv4 } from 'uuid';
+import { requireUser } from '@/lib/auth';
 
 /**
  * POST /api/crowdfunding/create
@@ -10,15 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
-    }
-
-    const user = verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: '登录已过期' }, { status: 401 });
-    }
+    const user = requireUser(request);
+    if (user instanceof Response) return user;
 
     // ─── 权限校验：管理员 OR 有效VIP ───
     const isAdmin = ADMIN_ROLES.includes(user.role as Role);

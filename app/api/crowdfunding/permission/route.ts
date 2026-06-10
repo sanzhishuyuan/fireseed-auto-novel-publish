@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { getUserIdFromRequest, verifyToken } from '@/lib/auth';
 import { ADMIN_ROLES, type Role } from '@/lib/permissions';
 
 /**
  * GET /api/crowdfunding/permission
- * 检查当前用户是否有权发起众筹
+ * 检查当前用户是否有权发起众筹（soft-fail：未登录返回 canCreate: false）
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
+    const userId = getUserIdFromRequest(request);
+    if (!userId) {
       return NextResponse.json({
         success: true,
         canCreate: false,
@@ -19,8 +19,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const user = verifyToken(token);
-    if (!user) {
+    const token = request.cookies.get('auth_token')?.value;
+    const payload = token ? verifyToken(token) : null;
+    if (!payload) {
       return NextResponse.json({
         success: true,
         canCreate: false,
@@ -30,20 +31,20 @@ export async function GET(request: NextRequest) {
     }
 
     // 管理员始终可以
-    const isAdmin = ADMIN_ROLES.includes(user.role as Role);
+    const isAdmin = ADMIN_ROLES.includes(payload.role as Role);
     if (isAdmin) {
       return NextResponse.json({
         success: true,
         canCreate: true,
         via: 'admin',
-        role: user.role,
+        role: payload.role,
       });
     }
 
     // 检查 VIP
     const userData = db.prepare(
       'SELECT vip_type, vip_expires_at FROM users WHERE id = ?'
-    ).get(user.userId) as { vip_type: string; vip_expires_at: string | null } | undefined;
+    ).get(userId) as { vip_type: string; vip_expires_at: string | null } | undefined;
 
     if (userData && userData.vip_type !== 'free' && userData.vip_expires_at) {
       const expiresAt = new Date(userData.vip_expires_at);

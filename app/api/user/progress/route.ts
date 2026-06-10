@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import { safeParseJSON } from '@/lib/request-parser';
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
-
-  if (!token) {
-    return NextResponse.json({ error: '请先登录' }, { status: 401 });
-  }
-
-  const payload = verifyToken(token);
-  if (!payload) {
-    return NextResponse.json({ error: '无效的Token' }, { status: 401 });
-  }
+  const user = requireUser(request);
+  if (user instanceof Response) return user;
 
   try {
     // 修复: request.json() 解析异常兼容
@@ -24,7 +14,7 @@ export async function POST(request: NextRequest) {
       const parsed = safeParseJSON(bodyText);
     if (!parsed.success) return parsed.response;
     const { novelId, branch, chapterId } = parsed.data;
-    const userId = payload.userId;
+    const userId = user.userId;
 
     const existing = db.prepare('SELECT id FROM user_progress WHERE user_id = ? AND novel_id = ?')
       .get(userId, novelId);

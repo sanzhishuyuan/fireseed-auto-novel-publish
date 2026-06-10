@@ -1,25 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import db from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: '未登录' },
-        { status: 401 }
-      );
-    }
-
-    const user = verifyToken(token);
-    if (!user) {
-      return NextResponse.json(
-        { error: '登录已过期' },
-        { status: 401 }
-      );
-    }
+    const user = requireUser(request);
+    if (user instanceof Response) return user;
 
     // 获取用户信息
     const userData = db.prepare(`
