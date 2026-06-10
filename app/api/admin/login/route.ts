@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 方式2: ADMIN_PASSWORD 环境变量（紧急后门，仅需密码）
-    if (password && verifyAdminPassword(password)) {
+    if (password && await verifyAdminPassword(password)) {
       // 查找或创建后门管理员记录
       let adminUser = db.prepare("SELECT * FROM users WHERE username = '__admin__'").get() as any;
       if (!adminUser) {
