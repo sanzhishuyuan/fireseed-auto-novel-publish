@@ -1491,9 +1491,9 @@ export default function HomePage() {
               诚招有兴趣玩玩的核心伙伴，不以工作为目的，只以共建专属创作者的免费AI写作发布平台为初心，慢慢打磨、共同成长。<br /><br />
               期待同频的你，一起守着这份热爱，深耕网文创作，完善专属我们的创作工具。
             </div>
-            <a href="mailto:1726325780@qq.com"
+            <a href="mailto:50541358@qq.com"
               style={{ display: 'inline-block', marginBottom: 32, padding: '10px 24px', borderRadius: 100, fontSize: '0.85rem', fontWeight: 500, background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: '#fff', textDecoration: 'none' }}>
-              联系我们 → 1726325780@qq.com
+              联系我们 → 50541358@qq.com
             </a>
 
             <div className="footer-inner" style={{ borderTop: '1px solid var(--border)', paddingTop: 24, marginTop: 0 }}>
