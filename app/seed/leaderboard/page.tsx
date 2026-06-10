@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -28,16 +27,6 @@ export default function SeedLeaderboardPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>🏆 SEED 富豪榜</span>
-          <div className="flex gap-2">
-            <Link href="/skills" className="btn-ghost text-sm">技能排行</Link>
-            <Link href="/" className="btn-ghost text-sm">首页</Link>
-          </div>
-        </div>
-      </header>
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>🏆 SEED 富豪榜</h1>

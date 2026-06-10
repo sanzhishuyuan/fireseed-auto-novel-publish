@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useHeaderConfig } from '@/components/HeaderContext';
 
 interface Task {
   id: string;
@@ -19,6 +20,10 @@ export default function SeedTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // 隐藏全局 Header（此页面使用自定义内联 Header）
+  const { setConfig } = useHeaderConfig();
+  useEffect(() => { setConfig({ hideHeader: true }); return () => setConfig({}); }, [setConfig]);
 
   useEffect(() => {
     Promise.all([

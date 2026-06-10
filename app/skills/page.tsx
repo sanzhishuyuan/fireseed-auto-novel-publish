@@ -66,23 +66,6 @@ export default function SkillsPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      {/* Header */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-              <circle cx="14" cy="14" r="14" fill="url(#sg)"/><path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/><circle cx="14" cy="14" r="3" fill="white"/>
-              <defs><linearGradient id="sg" x1="0" y1="0" x2="28" y2="28"><stop offset="0%" stopColor="var(--accent)"/><stop offset="100%" stopColor="var(--accent-light)"/></linearGradient></defs>
-            </svg>
-            <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>FireSeed</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/" className="btn-ghost text-sm">首页</Link>
-            <Link href="/novels" className="btn-ghost text-sm">作品</Link>
-          </div>
-        </div>
-      </header>
-
       {/* Hero */}
       <section className="relative overflow-hidden py-10 text-center">
         <div className="absolute inset-0 opacity-15" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent)' }} />

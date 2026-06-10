@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useHeaderConfig } from '@/components/HeaderContext';
 
 interface BranchChapter {
   id: string;
@@ -61,6 +62,12 @@ export default function BranchPage({ params }: { params: { id: string; name: str
       .finally(() => setLoading(false));
   }, [params.id, params.name]);
 
+  // 配置全局 Header
+  const { setConfig } = useHeaderConfig();
+  useEffect(() => {
+    if (novelTitle) setConfig({ title: `${novelTitle} - ${branchInfo?.title || params.name} 分支`, backHref: `/novels/${params.id}` });
+  }, [novelTitle, branchInfo, params.name, params.id, setConfig]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
@@ -73,26 +80,6 @@ export default function BranchPage({ params }: { params: { id: string; name: str
 
   return (
     <div className="min-h-screen pb-20" style={{ background: 'var(--bg-primary)' }}>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href={`/novels/${params.id}`} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13 8H3M7 4L3 8l4 4"/>
-              </svg>
-            </Link>
-            <div>
-              <p className="text-sm font-medium truncate max-w-[200px]" style={{ color: 'var(--text-primary)' }}>{novelTitle}</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>🌿 {branchInfo?.title || params.name} 分支</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href={`/novels/${params.id}`} className="btn-ghost text-sm">返回目录</Link>
-          </div>
-        </div>
-      </header>
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* 分支信息卡 */}
         <div className="card p-6 mb-6">

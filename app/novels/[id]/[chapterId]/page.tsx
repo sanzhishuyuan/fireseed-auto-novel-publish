@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
+import HideHeader from '@/components/HideHeader';
 import ReadingControls from './ReadingControls';
 import BranchChoice from './BranchChoice';
 import BranchInviteCard from './BranchInviteCard';
@@ -234,6 +235,7 @@ export default async function ChapterPage({ params }: Props) {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+      <HideHeader />
       {/* 顶部导航 */}
       <header
         className="glass sticky top-0 z-50"

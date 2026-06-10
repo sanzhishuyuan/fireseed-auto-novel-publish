@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 
 interface EconomyData {
   today_issued: number;
@@ -46,17 +45,6 @@ export default function EconomyStatsPage() {
 
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M13 8H3M7 4L3 8l4 4"/>
-            </svg>
-          </Link>
-          <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>SEED 经济概况</h1>
-        </div>
-      </header>
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {data && (
           <>

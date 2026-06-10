@@ -1,6 +1,15 @@
+import { getOpportunitiesMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: getOpportunitiesMetadata().title,
+  description: getOpportunitiesMetadata().description,
+  keywords: getOpportunitiesMetadata().keywords?.join(', '),
+};
+
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -62,8 +71,6 @@ export default function OpportunitiesPage() {
   const [items, setItems] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const [activeCategory, setActiveCategory] = useState('');
   const [meta, setMeta] = useState<ApiMeta | null>(null);
   const [error, setError] = useState('');
@@ -102,17 +109,6 @@ export default function OpportunitiesPage() {
       .catch(() => {});
   }, []);
 
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-      setUser(null);
-      setMenuOpen(false);
-      router.push('/');
-    } catch {} finally { setLoggingOut(false); }
-  };
-
   // 投票
   const handleVote = async (id: string, vote: 'useful' | 'useless') => {
     if (!user) { router.push('/auth/login'); return; }
@@ -149,70 +145,6 @@ export default function OpportunitiesPage() {
 
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
-      {/* Header */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13 8H3M7 4L3 8l4 4"/>
-              </svg>
-            </Link>
-            <div>
-              <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>AI 商机动态</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {loading ? '加载中...' : meta ? `${meta.total} 条商机` : ''}
-              </p>
-            </div>
-          </div>
-          <nav className="flex items-center gap-1">
-            <Link href="/" className="btn-ghost text-sm hide-mobile">首页</Link>
-            <Link href="/novels" className="btn-ghost text-sm hide-mobile">作品</Link>
-            <Link href="/resources" className="btn-ghost text-sm hide-mobile">可信资源</Link>
-            {user ? (
-              <div className="relative ml-2">
-                <button onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-                  style={{ background: menuOpen ? 'var(--bg-secondary)' : 'transparent', color: 'var(--text-primary)' }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}>
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-sm font-medium hide-mobile">{user.username}</span>
-                </button>
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-20"
-                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
-                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
-                        <Link href="/my" className="flex items-center gap-2 text-sm font-medium"
-                          onClick={() => setMenuOpen(false)} style={{ color: 'var(--text-primary)' }}>
-                          👤 个人中心
-                        </Link>
-                      </div>
-                      {user.role === 'admin' && (
-                        <Link href="/admin" className="flex items-center gap-3 px-4 py-2.5 text-sm"
-                          style={{ color: 'var(--accent)' }} onClick={() => setMenuOpen(false)}>管理后台</Link>
-                      )}
-                      <button onClick={handleLogout} disabled={loggingOut}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm w-full text-left" style={{ color: '#ef4444' }}>
-                        {loggingOut ? '退出中...' : '退出登录'}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                <Link href="/auth/login" className="btn-ghost text-sm py-2">登录</Link>
-                <Link href="/auth/register" className="btn-primary text-sm py-2 px-4">注册</Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
-
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         {/* 分类筛选 */}
         <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide mb-4">

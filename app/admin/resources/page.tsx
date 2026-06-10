@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { verifyAdminToken } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import db from '@/lib/db';
+import HideHeader from '@/components/HideHeader';
 import ResourceManager from './ResourceManager';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,7 @@ export default async function AdminResourcesPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+      <HideHeader />
       <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <a href="/admin/dashboard" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>

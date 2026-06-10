@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useHeaderConfig } from '@/components/HeaderContext';
 
 interface User {
   id: string;
@@ -96,8 +97,6 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
   const [user, setUser] = useState<User | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
 
@@ -142,20 +141,11 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
       .catch(console.error);
   }, [params.id]);
 
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-      setUser(null);
-      setMenuOpen(false);
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setLoggingOut(false);
-    }
-  };
+  // 配置全局 Header
+  const { setConfig } = useHeaderConfig();
+  useEffect(() => {
+    if (novel?.title) setConfig({ title: novel.title, backHref: '/novels' });
+  }, [novel, setConfig]);
 
   const handleFavorite = async () => {
     if (!user) {
@@ -193,16 +183,6 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
   if (loading) {
     return (
       <div className="min-h-screen pb-20" style={{ background: 'var(--bg-primary)' }}>
-        <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg animate-pulse" style={{ background: 'var(--bg-secondary)' }} />
-              <div>
-                <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--bg-secondary)' }} />
-              </div>
-            </div>
-          </div>
-        </header>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
           <div className="animate-pulse">
             <div className="h-6 w-48 rounded mb-4" style={{ background: 'var(--bg-secondary)' }} />
@@ -228,132 +208,6 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
 
   return (
     <div className="min-h-screen pb-20" style={{ background: 'var(--bg-primary)' }}>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/novels" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13 8H3M7 4L3 8l4 4"/>
-              </svg>
-            </Link>
-            <div className="min-w-0">
-              <h1 className="text-sm font-semibold truncate max-w-[200px]" style={{ color: 'var(--text-primary)' }}>
-                {novel.title}
-              </h1>
-              <p className="text-xs hide-mobile" style={{ color: 'var(--text-muted)' }}>
-                {mainChapters.length} 章
-              </p>
-            </div>
-          </div>
-          <nav className="flex items-center gap-2">
-            <Link href="/novels" className="btn-ghost text-sm hide-mobile">
-              返回
-            </Link>
-            <button
-              onClick={handleFavorite}
-              disabled={favoriteLoading}
-              className={isFavorite ? 'btn-secondary text-sm py-2 px-4' : 'btn-primary text-sm py-2 px-4'}
-              style={isFavorite ? { color: '#ef4444' } : {}}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
-                <path d="M7 12.5S1 8.5 1 4.5a2.5 2.5 0 0 1 4-1.8 2.5 2.5 0 0 1 4 1.8c0 4-6 8-6 8z"/>
-              </svg>
-              {isFavorite ? '已收藏' : '收藏'}
-            </button>
-            
-            {/* 用户菜单（桌面端） */}
-            {user && (
-              <div className="relative ml-2 hide-mobile">
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-                  style={{ 
-                    background: menuOpen ? 'var(--bg-secondary)' : 'transparent',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}
-                  >
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                  <svg 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 16 16" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5"
-                    className={`transition-transform ${menuOpen ? 'rotate-180' : ''}`}
-                  >
-                    <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                    <div 
-                      className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-20"
-                      style={{ 
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        boxShadow: 'var(--shadow-lg)'
-                      }}
-                    >
-                      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {user.username}
-                        </p>
-                      </div>
-                      <div className="py-1">
-                        <Link 
-                          href="/my"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors"
-                          style={{ color: 'var(--text-primary)' }}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          个人中心
-                        </Link>
-                        <Link 
-                          href="/my/settings"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                          style={{ color: 'var(--text-secondary)' }}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          个人设置
-                        </Link>
-                        {user.role === 'admin' && (
-                          <Link 
-                            href="/admin"
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm"
-                            style={{ color: 'var(--accent)' }}
-                            onClick={() => setMenuOpen(false)}
-                          >
-                            管理后台
-                          </Link>
-                        )}
-                      </div>
-                      <div style={{ borderTop: '1px solid var(--border-light)' }}>
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm w-full text-left"
-                          style={{ color: '#ef4444' }}
-                        >
-                          退出登录
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </nav>
-        </div>
-      </header>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* 左侧信息卡 */}
@@ -418,6 +272,21 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                   {novel.status === 'completed' ? '已完结' : '连载中'}
                 </span>
               </div>
+
+              {/* 收藏按钮 */}
+              <button
+                onClick={handleFavorite}
+                disabled={favoriteLoading}
+                className={`w-full flex items-center justify-center gap-2 text-sm py-2.5 px-4 rounded-lg mb-5 transition-all ${
+                  isFavorite ? 'btn-secondary' : 'btn-primary'
+                }`}
+                style={isFavorite ? { color: '#ef4444' } : {}}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
+                  <path d="M7 12.5S1 8.5 1 4.5a2.5 2.5 0 0 1 4-1.8 2.5 2.5 0 0 1 4 1.8c0 4-6 8-6 8z"/>
+                </svg>
+                {isFavorite ? '已收藏' : '收藏'}
+              </button>
 
               {/* 开始阅读 */}
               {mainChapters.length > 0 && (

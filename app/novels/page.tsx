@@ -1,37 +1,56 @@
+import { getNovelsListMetadata } from '@/lib/seo';
+import { generateItemListSchema } from '@/lib/structured-data';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: getNovelsListMetadata().title,
+  description: getNovelsListMetadata().description,
+  keywords: getNovelsListMetadata().keywords?.join(', '),
+};
+
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SafeCover from '@/components/SafeCover';
+import type { User, Novel, StatsData } from '@/types';
 
-interface User {
-  id: string;
-  username: string;
-  role: string;
-}
-
-interface Novel {
-  id: string;
-  title: string;
-  author: string;
-  description: string;
-  cover_url?: string;
-  tags: string;
-  status: string;
-  chapterCount: number;
-  updatedAt?: string;
-}
-
+// 页面包装组件 — 提供 Suspense 边界（useSearchParams 需要）
 export default function NovelsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="text-center">
+          <div className="animate-pulse text-4xl mb-3">📚</div>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>加载中...</p>
+        </div>
+      </div>
+    }>
+      <NovelsContent />
+    </Suspense>
+  );
+}
+
+function NovelsContent() {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('全部');
   const [activeSort, setActiveSort] = useState<string>('最新更新');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showEmpty, setShowEmpty] = useState<boolean>(false);
+  const [stats, setStats] = useState({ totalChapters: 0, totalNovels: 0, totalWords: 0, totalAuthors: 0 });
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // 从 URL 参数预筛选品类（从首页品类入口跳转时）
+  useEffect(() => {
+    const tagParam = searchParams.get('tag');
+    if (tagParam) {
+      setActiveFilter(tagParam);
+    }
+  }, [searchParams]);
 
   // 类型标签配置
   const tagEmojis: Record<string, string> = {
@@ -65,10 +84,26 @@ export default function NovelsPage() {
   const filteredNovels = useMemo(() => {
     let filtered = [...novels];
     
-    // 分类筛选
+    // 搜索筛选
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(novel =>
+        novel.title?.toLowerCase().includes(query) ||
+        novel.author?.toLowerCase().includes(query) ||
+        novel.tags?.toLowerCase().includes(query) ||
+        novel.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // 隐藏空作品（默认开启）
+    if (!showEmpty) {
+      filtered = filtered.filter(novel => (novel.chapterCount || 0) > 0);
+    }
+
+    // 分类筛选（精确匹配标签）
     if (activeFilter !== '全部') {
-      filtered = filtered.filter(novel => 
-        novel.tags?.includes(activeFilter)
+      filtered = filtered.filter(novel =>
+        novel.tags?.split(',').map((t: string) => t.trim()).includes(activeFilter)
       );
     }
     
@@ -86,20 +121,35 @@ export default function NovelsPage() {
     }
     
     return filtered;
-  }, [novels, activeFilter, activeSort]);
+  }, [novels, activeFilter, activeSort, searchQuery, showEmpty]);
 
   // 获取小说列表
   useEffect(() => {
-    fetch('/api/novels')
-      .then(res => res.json())
-      .then(data => {
-        // 兼容旧格式（直接返回数组）和新格式（{success, novels}）
+    Promise.all([
+      fetch('/api/novels').then(res => res.json()).catch(() => ({ novels: [] })),
+      fetch('/api/stats').then(res => res.json()).catch(() => ({ success: false }))
+    ])
+      .then(([data, statsData]) => {
+        // 处理小说列表
         const list = Array.isArray(data) ? data : (data?.novels || []);
         const novelsWithTime = list.map((novel: Novel, i: number) => ({
           ...novel,
           updatedAt: novel.updatedAt || new Date(Date.now() - i * 86400000).toISOString()
         }));
         setNovels(novelsWithTime);
+
+        // 注入结构化数据（JSON-LD）
+        if (novelsWithTime.length > 0) {
+          const schemaScript = document.createElement('script');
+          schemaScript.type = 'application/ld+json';
+          schemaScript.textContent = generateItemListSchema(novelsWithTime.slice(0, 20), '全部作品');
+          document.head.appendChild(schemaScript);
+        }
+
+        // 处理统计数据
+        if (statsData?.success && statsData?.data) {
+          setStats(statsData.data);
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -117,170 +167,62 @@ export default function NovelsPage() {
       .catch(console.error);
   }, []);
 
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-      setUser(null);
-      setMenuOpen(false);
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setLoggingOut(false);
-    }
-  };
-
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13 8H3M7 4L3 8l4 4"/>
-              </svg>
-            </Link>
-            <div>
-              <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>全部作品</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {loading ? '加载中...' : `${novels.length} 部作品`}
-              </p>
-            </div>
-          </div>
-          
-          <nav className="flex items-center gap-1">
-            <Link href="/" className="btn-ghost text-sm hide-mobile">首页</Link>
-            <Link href="/resources" className="btn-ghost text-sm hide-mobile">可信资源</Link>
-            <Link href="/opportunities" className="btn-ghost text-sm hide-mobile">商机动态</Link>
-            <Link href="/seed/stats" className="btn-ghost text-sm hide-mobile">经济概况</Link>
-            <Link href="/chat" className="btn-ghost text-sm hide-mobile">社区</Link>
-            
-            {/* 用户菜单 */}
-            {user ? (
-              <div className="relative ml-2">
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-                  style={{ 
-                    background: menuOpen ? 'var(--bg-secondary)' : 'transparent',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}
-                  >
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-sm font-medium hide-mobile">
-                    {user.username}
-                  </span>
-                  <svg 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 16 16" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5"
-                    className={`transition-transform ${menuOpen ? 'rotate-180' : ''}`}
-                  >
-                    <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                    <div 
-                      className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-20"
-                      style={{ 
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        boxShadow: 'var(--shadow-lg)'
-                      }}
-                    >
-                      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {user.username}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          {user.role === 'admin' ? '管理员' : '普通用户'}
-                        </p>
-                      </div>
-                      <div className="py-1">
-                        <Link 
-                          href="/my"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors"
-                          style={{ color: 'var(--text-primary)' }}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M8 8a3 3 0 100-6 3 3 0 000 6z"/>
-                            <path d="M13 14c0-2.8-2.2-5-5-5s-5 2.2-5 5"/>
-                          </svg>
-                          个人中心
-                        </Link>
-                        <Link 
-                          href="/my/settings"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                          style={{ color: 'var(--text-secondary)' }}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <circle cx="8" cy="8" r="2"/>
-                            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41"/>
-                          </svg>
-                          个人设置
-                        </Link>
-                        {user.role === 'admin' && (
-                          <Link 
-                            href="/admin"
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                            style={{ color: 'var(--accent)' }}
-                            onClick={() => setMenuOpen(false)}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                              <rect x="2" y="3" width="12" height="10" rx="2"/>
-                              <path d="M5 7h6M5 10h4"/>
-                            </svg>
-                            管理后台
-                          </Link>
-                        )}
-                      </div>
-                      <div style={{ borderTop: '1px solid var(--border-light)' }}>
-                        <button
-                          onClick={handleLogout}
-                          disabled={loggingOut}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm w-full text-left transition-colors"
-                          style={{ color: '#ef4444' }}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3M11 11l3-3-3-3M14 8H6"/>
-                          </svg>
-                          {loggingOut ? '退出中...' : '退出登录'}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                <Link href="/auth/login" className="btn-ghost text-sm py-2">登录</Link>
-                <Link href="/auth/register" className="btn-primary text-sm py-2 px-4">注册</Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {/* 数据看板 — 从首页迁移 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          {[
+            { label: '作品总数', value: stats.totalNovels.toString(), unit: '部', icon: '📚', color: '#10b981' },
+            { label: '累计章节', value: stats.totalChapters.toString(), unit: '章', icon: '📖', color: 'var(--accent)' },
+            { label: '累计字数', value: stats.totalWords >= 10000 ? (stats.totalWords / 10000).toFixed(1) : stats.totalWords.toString(), unit: stats.totalWords >= 10000 ? '万字' : '字', icon: '✍️', color: '#f59e0b' },
+            { label: '注册作者', value: stats.totalAuthors.toString(), unit: '人', icon: '✍️', color: '#8b5cf6' }
+          ].map((stat, i) => (
+            <div key={i} className="card p-3 text-center animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-lg">{stat.icon}</span>
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-bold" style={{ color: stat.color }}>{stat.value}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{stat.unit}</span>
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* 筛选与排序栏 - 借鉴 kanshuclaw */}
         {!loading && novels.length > 0 && (
           <div className="mb-8 space-y-4">
+            {/* 搜索框 */}
+            <div className="relative">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" className="absolute left-3 top-1/2 -translate-y-1/2">
+                <circle cx="7" cy="7" r="5"/>
+                <path d="M11 11l3 3" strokeLinecap="round"/>
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索书名、作者、标签..."
+                aria-label="搜索书名、作者、标签"
+                className="input pl-10 py-2.5 text-sm"
+                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  aria-label="清除搜索"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             {/* 分类标签筛选 */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {categories.slice(0, 8).map((category) => (
@@ -300,10 +242,22 @@ export default function NovelsPage() {
             </div>
 
             {/* 排序选项 */}
-            <div className="flex items-center justify-between">
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                共 <span className="font-medium" style={{ color: 'var(--accent)' }}>{filteredNovels.length}</span> 部作品
-              </p>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  共 <span className="font-medium" style={{ color: 'var(--accent)' }}>{filteredNovels.length}</span> 部作品
+                </p>
+                <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>
+                  <input
+                    type="checkbox"
+                    checked={showEmpty}
+                    onChange={(e) => setShowEmpty(e.target.checked)}
+                    className="rounded"
+                    style={{ accentColor: 'var(--accent)' }}
+                  />
+                  显示筹备中作品
+                </label>
+              </div>
               <div className="flex items-center gap-2">
                 {sortOptions.map((option) => (
                   <button
@@ -346,7 +300,7 @@ export default function NovelsPage() {
               const primaryTag = novel.tags?.split(',')[0]?.trim() || '故事';
               const emoji = tagEmojis[primaryTag] || '✨';
               const totalChapters = 30;
-              const progress = Math.min((novel.chapterCount / totalChapters) * 100, 100);
+              const progress = Math.min(((novel.chapterCount || 0) / totalChapters) * 100, 100);
 
               return (
                 <Link
@@ -380,13 +334,15 @@ export default function NovelsPage() {
                     {/* 悬停双按钮 */}
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(245,158,11,0.85), rgba(245,158,11,0.3))' }}>
                       <div className="absolute bottom-4 left-3 right-3 space-y-2">
-                        <button 
-                          className="w-full py-2 rounded-lg text-sm font-medium backdrop-blur-sm transition-transform hover:scale-105"
+                        <span 
+                          role="button"
+                          tabIndex={-1}
+                          className="block w-full py-2 rounded-lg text-sm font-medium text-center backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer"
                           style={{ background: 'rgba(255,255,255,0.95)', color: 'var(--accent)' }}
-                          onClick={(e) => { e.preventDefault(); router.push(`/novels/${novel.id}`); }}
-                        >
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/novels/${novel.id}`); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/novels/${novel.id}`); } }}>
                           继续阅读
-                        </button>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -396,7 +352,7 @@ export default function NovelsPage() {
                       {novel.title}
                     </h3>
                     <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-                      {novel.author || 'Spark AI'} · {novel.chapterCount} 章
+                      {novel.author || 'FireSeed AI'} · {novel.chapterCount || 0} 章
                     </p>
 
                     {/* AI 生成进度条 */}
@@ -443,7 +399,10 @@ export default function NovelsPage() {
             </div>
             <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>暂无匹配结果</h3>
             <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-              没有找到 "{activeFilter}" 分类下的作品
+              {searchQuery
+                ? `没有找到与 "${searchQuery}" 相关的作品`
+                : `没有找到 "${activeFilter}" 分类下的作品`
+              }
             </p>
             <button 
               onClick={() => setActiveFilter('全部')}

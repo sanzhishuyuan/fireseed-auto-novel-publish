@@ -1,86 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+import { createCrowdfunding, getCrowdfundingProjects } from '@/lib/crowdfunding-helper';
+
+/**
+ * 众筹系统API
+ * GET /api/crowdfunding/list - 获取众筹列表
+ * POST /api/crowdfunding/create - 发起众筹
+ */
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'active';
+    
+    // 获取查询参数
+    const status = searchParams.get('status') || undefined;
+    const sort = searchParams.get('sort') || 'newest';
+    const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = parseInt(searchParams.get('offset') || '0');
 
-    let query = `
-      SELECT p.id, p.author_id, p.novel_id, p.title, p.description,
-             p.target_amount, p.current_amount, p.supporter_count,
-             p.deadline, p.status, p.rewards, p.created_at,
-             u.username as author_name
-      FROM crowdfunding_projects p
-      LEFT JOIN users u ON p.author_id = u.id
-      WHERE p.status = ?
-      ORDER BY p.created_at DESC
-      LIMIT ? OFFSET ?
-    `;
+    // 验证分页参数
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json(
+        { success: false, error: '无效的分页参数' },
+        { status: 400 }
+      );
+    }
 
-    const projects = db.prepare(query).all(status, limit, offset) as Array<{
-      id: string;
-      author_id: string;
-      novel_id: string | null;
-      title: string;
-      description: string;
-      target_amount: number;
-      current_amount: number;
-      supporter_count: number;
-      deadline: string;
-      status: string;
-      rewards: string;
-      created_at: string;
-      author_name: string;
-    }>;
-
-    const { total } = db.prepare(`
-      SELECT COUNT(*) as total FROM crowdfunding_projects WHERE status = ?
-    `).get(status) as { total: number };
-
-    const now = new Date().toISOString();
-
-    const data = projects.map(p => {
-      const progress = p.target_amount > 0
-        ? Math.min(Math.round((p.current_amount / p.target_amount) * 100), 100)
-        : 0;
-      const isExpired = p.deadline < now;
-      let displayStatus = p.status;
-      if (isExpired && p.status === 'active') {
-        displayStatus = p.current_amount >= p.target_amount ? 'funded' : 'failed';
-      }
-
-      return {
-        id: p.id,
-        authorId: p.author_id,
-        authorName: p.author_name,
-        novelId: p.novel_id,
-        title: p.title,
-        description: p.description,
-        targetAmount: p.target_amount,
-        currentAmount: p.current_amount,
-        progress,
-        supporterCount: p.supporter_count,
-        deadline: p.deadline,
-        status: displayStatus,
-        isExpired,
-        rewards: JSON.parse(p.rewards || '{}'),
-        createdAt: p.created_at
-      };
-    });
+    // 获取众筹列表
+    const result = getCrowdfundingProjects({ status, sort, page, limit });
 
     return NextResponse.json({
       success: true,
-      data: {
-        projects: data,
-        pagination: { total, limit, offset }
-      }
+      ...result
+    });
+  } catch (error) {
+    console.error('获取众筹列表失败:', error);
+    return NextResponse.json(
+      { success: false, error: '服务器错误' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // 验证用户登录
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: '请先登录' },
+        { status: 401 }
+      );
+    }
+
+    // 解析请求体
+    const body = await request.json();
+    const { title, description, target_amount, deadline, rewards } = body;
+
+    // 验证必填字段
+    if (!title || !description || !target_amount || !deadline) {
+      return NextResponse.json(
+        { success: false, error: '缺少必填字段' },
+        { status: 400 }
+      );
+    }
+
+    // 创建众筹项目
+    const result = createCrowdfunding(user.userId, {
+      title,
+      description,
+      target_amount: parseInt(target_amount),
+      deadline,
+      rewards
     });
 
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.error },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      projectId: result.projectId,
+      message: '众筹项目创建成功'
+    }, { status: 201 });
   } catch (error) {
-    console.error('Crowdfunding list error:', error);
-    return NextResponse.json({ error: '获取众筹列表失败' }, { status: 500 });
+    console.error('创建众筹项目失败:', error);
+    return NextResponse.json(
+      { success: false, error: '服务器错误' },
+      { status: 500 }
+    );
   }
 }

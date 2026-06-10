@@ -1,56 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useTheme, type ThemeMode } from '@/components/ThemeProvider';
 
-interface ReadSettings {
-  fontSize: number;
-  lineHeight: number;
-  theme: 'light' | 'dark' | 'eye-care';
-}
+const themes: { key: ThemeMode; label: string }[] = [
+  { key: 'light', label: '白天' },
+  { key: 'dark', label: '夜间' },
+  { key: 'eye-care', label: '护眼' },
+];
 
 export default function ReadingControls() {
-  const [settings, setSettings] = useState<ReadSettings>({
-    fontSize: 18,
-    lineHeight: 1.9,
-    theme: 'light'
-  });
+  const { mode, setMode, reading, setReadingPref } = useTheme();
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('readSettings');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setSettings(parsed);
-      applySettings(parsed);
-    }
-  }, []);
-
-  const applySettings = (s: ReadSettings) => {
-    document.documentElement.style.setProperty('--reading-font-size', `${s.fontSize}px`);
-    document.documentElement.style.setProperty('--reading-line-height', String(s.lineHeight));
-
-    // 移除所有主题类
-    document.documentElement.classList.remove('dark', 'dark-mode', 'eye-care-bg', 'eye-care-text');
-
-    if (s.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else if (s.theme === 'eye-care') {
-      document.documentElement.classList.add('eye-care-bg');
-    }
+  const adjustFontSize = (delta: number) => {
+    const next = Math.min(28, Math.max(12, reading.fontSize + delta));
+    setReadingPref({ fontSize: next });
   };
 
-  const updateSettings = (key: keyof ReadSettings, value: number | string) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    localStorage.setItem('readSettings', JSON.stringify(newSettings));
-    applySettings(newSettings);
+  const adjustLineHeight = (delta: number) => {
+    const next = Math.min(2.5, Math.max(1.4, parseFloat((reading.lineHeight + delta).toFixed(1))));
+    setReadingPref({ lineHeight: next });
   };
-
-  const themes = [
-    { key: 'light', label: '白天', bg: '#ffffff', text: '#1a1a2e' },
-    { key: 'dark', label: '夜间', bg: '#0f0f1a', text: '#f0f0f5' },
-    { key: 'eye-care', label: '护眼', bg: '#fdf6e3', text: '#3d3d3d' }
-  ] as const;
 
   return (
     <div className="relative">
@@ -58,6 +29,8 @@ export default function ReadingControls() {
         onClick={() => setOpen(!open)}
         className="btn-ghost p-2"
         title="阅读设置"
+        aria-label="阅读设置"
+        aria-expanded={open}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="9" cy="9" r="2"/>
@@ -82,19 +55,21 @@ export default function ReadingControls() {
               </label>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => updateSettings('fontSize', Math.max(12, settings.fontSize - 1))}
+                  onClick={() => adjustFontSize(-1)}
                   className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-medium"
                   style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                  aria-label="减小字号"
                 >
                   A—
                 </button>
                 <span className="flex-1 text-center text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                  {settings.fontSize}px
+                  {reading.fontSize}px
                 </span>
                 <button
-                  onClick={() => updateSettings('fontSize', Math.min(24, settings.fontSize + 1))}
+                  onClick={() => adjustFontSize(1)}
                   className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-medium"
                   style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                  aria-label="增大字号"
                 >
                   A+
                 </button>
@@ -108,19 +83,21 @@ export default function ReadingControls() {
               </label>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => updateSettings('lineHeight', Math.max(1.4, parseFloat((settings.lineHeight - 0.1).toFixed(1))))}
+                  onClick={() => adjustLineHeight(-0.1)}
                   className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-medium"
                   style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                  aria-label="减小行距"
                 >
                   ≡—
                 </button>
                 <span className="flex-1 text-center text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                  {settings.lineHeight.toFixed(1)}
+                  {reading.lineHeight.toFixed(1)}
                 </span>
                 <button
-                  onClick={() => updateSettings('lineHeight', Math.min(2.5, parseFloat((settings.lineHeight + 0.1).toFixed(1))))}
+                  onClick={() => adjustLineHeight(0.1)}
                   className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-medium"
                   style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                  aria-label="增大行距"
                 >
                   ≡+
                 </button>
@@ -136,11 +113,11 @@ export default function ReadingControls() {
                 {themes.map(t => (
                   <button
                     key={t.key}
-                    onClick={() => updateSettings('theme', t.key)}
+                    onClick={() => setMode(t.key)}
                     className="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
                     style={{
-                      background: settings.theme === t.key ? 'var(--accent)' : 'var(--bg-secondary)',
-                      color: settings.theme === t.key ? '#fff' : 'var(--text-secondary)'
+                      background: mode === t.key ? 'var(--accent)' : 'var(--bg-secondary)',
+                      color: mode === t.key ? '#fff' : 'var(--text-secondary)'
                     }}
                   >
                     {t.label}

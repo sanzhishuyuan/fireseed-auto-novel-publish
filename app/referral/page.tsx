@@ -106,25 +106,6 @@ export default function ReferralPage() {
 
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13 8H3M7 4L3 8l4 4"/>
-              </svg>
-            </Link>
-            <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>推广中心</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href="/crowdfunding" className="btn-ghost text-sm">众筹</Link>
-            <Link href="/vip" className="btn-ghost text-sm">会员中心</Link>
-            <Link href="/my" className="btn-ghost text-sm">个人中心</Link>
-          </div>
-        </div>
-      </header>
-
       {/* Banner */}
       <div className="relative py-12 overflow-hidden" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)' }}>
         <div className="relative max-w-4xl mx-auto px-4 text-center">

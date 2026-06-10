@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { Role } from '@/lib/permissions';
 import { checkPermission, type Permission } from '@/lib/permissions';
+import bcrypt from 'bcryptjs';
 
 // 生产环境必须设置这些环境变量
 const ENV_JWT_SECRET = process.env.JWT_SECRET;
@@ -84,9 +85,21 @@ export function getUserIdFromRequest(request: NextRequest): string | null {
   return null;
 }
 
-// 验证管理员密码
-export function verifyAdminPassword(password: string): boolean {
-  return password === ADMIN_PASSWORD;
+// 验证管理员密码（使用 bcrypt 哈希）
+export async function verifyAdminPassword(password: string): Promise<boolean> {
+  // 从数据库获取管理员用户的哈希密码
+  const adminUser = db.prepare('SELECT password FROM users WHERE role = ? LIMIT 1').get('admin') as { password: string } | undefined;
+  
+  if (!adminUser) {
+    // 如果数据库中没有管理员，回退到环境变量（仅用于首次设置）
+    if (ENV_ADMIN_PASSWORD) {
+      return password === ENV_ADMIN_PASSWORD;
+    }
+    return false;
+  }
+  
+  // 使用 bcrypt 比较密码
+  return bcrypt.compare(password, adminUser.password);
 }
 
 // 生成 Admin JWT Token（替代明文密码 Cookie）

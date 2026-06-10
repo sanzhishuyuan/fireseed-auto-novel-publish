@@ -1,3 +1,12 @@
+import { getVIPMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: getVIPMetadata().title,
+  description: getVIPMetadata().description,
+  keywords: getVIPMetadata().keywords?.join(', '),
+};
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -196,31 +205,6 @@ export default function VIPPage() {
 
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13 8H3M7 4L3 8l4 4"/>
-              </svg>
-            </Link>
-            <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>会员中心</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {vipStatus && vipStatus.isVipActive && (
-              <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
-                {vipStatus.vipType === 'monthly' ? '高级会员' : '年度会员'} · 到期 {formatDate(vipStatus.vipExpiresAt)}
-              </span>
-            )}
-            <Link href="/crowdfunding" className="btn-ghost text-sm">众筹</Link>
-            <Link href="/referral" className="btn-ghost text-sm">推广</Link>
-            <Link href="/my" className="btn-ghost text-sm">个人中心</Link>
-            <Link href="/novels" className="btn-ghost text-sm">返回阅读</Link>
-          </div>
-        </div>
-      </header>
-
       {/* Banner */}
       <div
         className="relative py-16 sm:py-20 overflow-hidden"
@@ -318,15 +302,17 @@ export default function VIPPage() {
           <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>选择支付方式</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { id: 'seed', label: 'SEED 代币', icon: '🌱', desc: '余额: 待查' },
-              { id: 'wechat', label: '微信支付', icon: '💚', desc: '扫码支付' },
-              { id: 'alipay', label: '支付宝', icon: '💙', desc: '扫码支付' },
-              { id: 'simulate', label: '模拟支付', icon: '🔬', desc: '开发测试' },
+              { id: 'seed', label: 'SEED 代币', icon: '🌱', desc: '余额支付', available: true },
+              { id: 'wechat', label: '微信支付', icon: '💚', desc: '即将上线', available: false },
+              { id: 'alipay', label: '支付宝', icon: '💙', desc: '即将上线', available: false },
+              { id: 'simulate', label: '模拟支付', icon: '🔬', desc: '开发测试', available: true },
             ].map(m => (
               <button
                 key={m.id}
-                onClick={() => setSelectedMethod(m.id)}
+                onClick={() => m.available && setSelectedMethod(m.id)}
+                disabled={!m.available}
                 className={`p-3 rounded-lg text-center transition-all ${
+                  !m.available ? 'opacity-50 cursor-not-allowed' :
                   selectedMethod === m.id
                     ? 'ring-2 ring-indigo-500 bg-indigo-500/10'
                     : 'hover:bg-white/5'
@@ -437,9 +423,9 @@ export default function VIPPage() {
         </h3>
         <div className="space-y-3">
           {[
-            { q: '如何开通会员？', a: '登录后点击上方「立即开通」按钮即可开通。目前支持 SEED 代币支付。' },
+            { q: '如何开通会员？', a: '登录后点击上方「立即开通」按钮，选择支付方式即可开通。目前支持 SEED 代币支付，微信/支付宝即将上线。' },
             { q: '会员权益何时生效？', a: '支付成功后，权益将立即生效，刷新页面即可体验。' },
-            { q: '支持哪些支付方式？', a: '目前支持 SEED 代币支付。微信支付、支付宝等主流支付方式即将上线。' },
+            { q: '支持哪些支付方式？', a: '目前支持 SEED 代币支付（使用平台内 SEED 余额）。微信支付和支付宝正在对接中，预计近期上线。' },
             { q: '可以退款吗？', a: '虚拟商品一经购买不支持退款，感谢理解。' }
           ].map((item, i) => (
             <div key={i} className="card p-5">

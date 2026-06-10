@@ -1,34 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useTheme } from './ThemeProvider';
 
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(true);
+  const { mode, toggleDark } = useTheme();
 
-  useEffect(() => {
-    // 初始化：读取 localStorage 或默认暗色
-    const saved = localStorage.getItem('theme');
-    const isDark = saved ? saved === 'dark' : true;
-    setDark(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
-
-  const toggle = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('theme', next ? 'dark' : 'light');
-  };
+  // 三种模式对应三种图标
+  const icon = mode === 'dark' ? '☀️' : mode === 'eye-care' ? '🌿' : '🌙';
+  const label = mode === 'dark'
+    ? '切换日间模式'
+    : mode === 'eye-care'
+      ? '切换夜间模式（当前：护眼）'
+      : '切换夜间模式';
 
   return (
     <button
-      onClick={toggle}
+      onClick={toggleDark}
       className="btn-ghost"
       style={{ fontSize: '18px', lineHeight: 1 }}
-      title={dark ? '切换日间模式' : '切换夜间模式'}
-      aria-label={dark ? '切换日间模式' : '切换夜间模式'}
+      title={label}
+      aria-label={label}
     >
-      {dark ? '☀️' : '🌙'}
+      {icon}
     </button>
   );
 }

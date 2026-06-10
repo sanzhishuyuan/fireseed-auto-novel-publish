@@ -37,18 +37,6 @@ export default function DownloadPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      {/* 导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>FireSeed</span>
-          </Link>
-          <Link href="/my/tokens" className="btn-primary text-sm py-2 px-4">
-            获取 Token
-          </Link>
-        </div>
-      </header>
-
       <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
 
         {/* 标题 */}

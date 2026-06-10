@@ -1,14 +1,16 @@
+import { getResourcesMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: getResourcesMetadata().title,
+  description: getResourcesMetadata().description,
+  keywords: getResourcesMetadata().keywords?.join(', '),
+};
+
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-
-interface User {
-  id: string;
-  username: string;
-  role: string;
-}
 
 interface Resource {
   id: string;
@@ -84,14 +86,10 @@ const SORT_OPTIONS = [
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [activeSort, setActiveSort] = useState<string>('useful');
   const [meta, setMeta] = useState<ApiMeta | null>(null);
   const [page, setPage] = useState(1);
-  const router = useRouter();
 
   const fetchResources = useCallback(async (cat: string, sort: string, p: number) => {
     setLoading(true);
@@ -119,32 +117,6 @@ export default function ResourcesPage() {
     fetchResources(activeCategory, activeSort, page);
   }, [activeCategory, activeSort, page, fetchResources]);
 
-  useEffect(() => {
-    fetch('/api/user/me', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.loggedIn && data.user) {
-          setUser(data.user);
-        }
-      })
-      .catch(console.error);
-  }, []);
-
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-      setUser(null);
-      setMenuOpen(false);
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setLoggingOut(false);
-    }
-  };
-
   const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
     setPage(1);
@@ -159,128 +131,6 @@ export default function ResourcesPage() {
 
   return (
     <div className="min-h-screen pb-16" style={{ background: 'var(--bg-primary)' }}>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13 8H3M7 4L3 8l4 4"/>
-              </svg>
-            </Link>
-            <div>
-              <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>可信资源库</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {loading ? '加载中...' : meta ? `${meta.total} 个资源` : ''}
-              </p>
-            </div>
-          </div>
-
-          <nav className="flex items-center gap-1">
-            <Link href="/" className="btn-ghost text-sm hide-mobile">首页</Link>
-            <Link href="/novels" className="btn-ghost text-sm hide-mobile">作品</Link>
-            <Link href="/opportunities" className="btn-ghost text-sm hide-mobile">商机动态</Link>
-            <Link href="/seed/stats" className="btn-ghost text-sm hide-mobile">经济概况</Link>
-
-            {user ? (
-              <div className="relative ml-2">
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-                  style={{
-                    background: menuOpen ? 'var(--bg-secondary)' : 'transparent',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}
-                  >
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-sm font-medium hide-mobile">
-                    {user.username}
-                  </span>
-                  <svg
-                    width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-                    className={`transition-transform ${menuOpen ? 'rotate-180' : ''}`}
-                  >
-                    <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                    <div
-                      className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-20"
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        boxShadow: 'var(--shadow-lg)'
-                      }}
-                    >
-                      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {user.username}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          {user.role === 'admin' ? '管理员' : '普通用户'}
-                        </p>
-                      </div>
-                      <div className="py-1">
-                        <Link href="/my"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors"
-                          style={{ color: 'var(--text-primary)' }}
-                          onClick={() => setMenuOpen(false)}>
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M8 8a3 3 0 100-6 3 3 0 000 6z"/>
-                            <path d="M13 14c0-2.8-2.2-5-5-5s-5 2.2-5 5"/>
-                          </svg>
-                          个人中心
-                        </Link>
-                        {user.role === 'admin' && (
-                          <Link
-                            href="/admin"
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                            style={{ color: 'var(--accent)' }}
-                            onClick={() => setMenuOpen(false)}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                              <rect x="2" y="3" width="12" height="10" rx="2"/>
-                              <path d="M5 7h6M5 10h4"/>
-                            </svg>
-                            管理后台
-                          </Link>
-                        )}
-                      </div>
-                      <div style={{ borderTop: '1px solid var(--border-light)' }}>
-                        <button
-                          onClick={handleLogout}
-                          disabled={loggingOut}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm w-full text-left transition-colors"
-                          style={{ color: '#ef4444' }}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3M11 11l3-3-3-3M14 8H6"/>
-                          </svg>
-                          {loggingOut ? '退出中...' : '退出登录'}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                <Link href="/auth/login" className="btn-ghost text-sm py-2">登录</Link>
-                <Link href="/auth/register" className="btn-primary text-sm py-2 px-4">注册</Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* 分类筛选 */}
         <div className="mb-6">

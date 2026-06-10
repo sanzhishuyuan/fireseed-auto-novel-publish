@@ -11,11 +11,35 @@ export async function GET() {
     // 章节总数
     const chapterCount = (db.prepare('SELECT COUNT(*) as count FROM chapters').get() as { count: number }).count;
 
-    // 总字数
-    const totalWords = (db.prepare('SELECT COALESCE(SUM(word_count), 0) as total FROM chapters').get() as { total: number }).total;
+    // 总字数 — 优先用 word_count 列，降级为章节数 × 2000 估算
+    let totalWords = 0;
+    try {
+      totalWords = (db.prepare('SELECT COALESCE(SUM(word_count), 0) as total FROM chapters').get() as { total: number }).total;
+    } catch {
+      totalWords = chapterCount * 2000;
+    }
+    if (totalWords === 0 && chapterCount > 0) {
+      totalWords = chapterCount * 2000;
+    }
 
-    // 注册作者数（有作品的用户数）
-    const authorCount = (db.prepare('SELECT COUNT(DISTINCT author_id) as count FROM novels WHERE author_id IS NOT NULL AND deleted_at IS NULL').get() as { count: number }).count;
+    // 注册作者数 — 优先用 author_id，降级用 author 文本字段去重
+    let authorCount = 0;
+    try {
+      authorCount = (db.prepare(
+        "SELECT COUNT(DISTINCT author_id) as count FROM novels WHERE author_id IS NOT NULL AND author_id != '' AND deleted_at IS NULL"
+      ).get() as { count: number }).count;
+    } catch {
+      // author_id 列可能不存在
+    }
+    if (authorCount === 0) {
+      try {
+        authorCount = (db.prepare(
+          "SELECT COUNT(DISTINCT author) as count FROM novels WHERE author IS NOT NULL AND author != '' AND author != 'FireSeed AI' AND deleted_at IS NULL"
+        ).get() as { count: number }).count;
+      } catch {
+        // 忽略
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -833,4 +833,91 @@ try {
   // 索引已存在，忽略
 }
 
+// ===== Phase 4: 任务系统表 =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS novel_tasks (
+    id TEXT PRIMARY KEY,
+    publisher_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    genre TEXT,
+    target_words INTEGER,
+    budget INTEGER NOT NULL,
+    deadline DATETIME NOT NULL,
+    status TEXT DEFAULT 'open',
+    assignee_id TEXT,
+    assigned_at DATETIME,
+    completed_at DATETIME,
+    delivery_url TEXT,
+    rating INTEGER,
+    review TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (publisher_id) REFERENCES users(id),
+    FOREIGN KEY (assignee_id) REFERENCES users(id)
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_status ON novel_tasks(status, deadline)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_publisher ON novel_tasks(publisher_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON novel_tasks(assignee_id)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
+// ===== Phase 4: 众筹系统增强表 =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS crowdfunding_updates (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES crowdfunding_projects(id)
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_crowdfunding_updates ON crowdfunding_updates(project_id, created_at)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS crowdfunding_rewards (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    tier_name TEXT NOT NULL,
+    min_amount INTEGER NOT NULL,
+    benefits TEXT NOT NULL,
+    limit_count INTEGER DEFAULT 0,
+    claimed_count INTEGER DEFAULT 0,
+    FOREIGN KEY (project_id) REFERENCES crowdfunding_projects(id)
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_crowdfunding_rewards ON crowdfunding_rewards(project_id, min_amount)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
+// 补充crowdfunding_projects字段
+try {
+  db.exec(`ALTER TABLE crowdfunding_projects ADD COLUMN min_support_amount INTEGER DEFAULT 10;`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE crowdfunding_projects ADD COLUMN stretch_goals TEXT DEFAULT '[]';`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE crowdfunding_projects ADD COLUMN updates_count INTEGER DEFAULT 0;`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE crowdfunding_projects ADD COLUMN success_stories TEXT DEFAULT '';`);
+} catch (e) {}
+
 export default db;

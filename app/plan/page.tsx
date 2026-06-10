@@ -1,3 +1,12 @@
+import { getPlanMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: getPlanMetadata().title,
+  description: getPlanMetadata().description,
+  keywords: getPlanMetadata().keywords?.join(', '),
+};
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -33,35 +42,6 @@ export default function PlanPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" aria-label="FireSeed 首页">
-            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-              <circle cx="14" cy="14" r="14" fill="url(#grad)" />
-              <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
-              <circle cx="14" cy="14" r="3" fill="white"/>
-              <defs>
-                <linearGradient id="grad" x1="0" y1="0" x2="28" y2="28">
-                  <stop offset="0%" stopColor="var(--accent)"/>
-                  <stop offset="100%" stopColor="var(--accent-light)"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <span className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-              FireSeed
-            </span>
-          </Link>
-          <Link
-            href="/"
-            className="text-sm px-4 py-2 rounded-lg transition-all"
-            style={{ color: 'var(--text-secondary)', background: 'var(--bg-secondary)' }}
-          >
-            ← 返回首页
-          </Link>
-        </div>
-      </header>
-
       {/* 文档内容 */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <article

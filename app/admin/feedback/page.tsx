@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useHeaderConfig } from '@/components/HeaderContext';
 
 interface FeedbackItem {
   id: string;
@@ -57,6 +58,10 @@ export default function AdminFeedbackPage() {
   const [replyText, setReplyText] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+
+  // 隐藏全局 Header（此页面使用自定义内联 Header）
+  const { setConfig } = useHeaderConfig();
+  useEffect(() => { setConfig({ hideHeader: true }); return () => setConfig({}); }, [setConfig]);
 
   const fetchFeedback = useCallback(async () => {
     setLoading(true);

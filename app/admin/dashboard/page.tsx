@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useHeaderConfig } from '@/components/HeaderContext';
 import SkillManager from '../skills/SkillManager';
 import MusicManager from '../music/MusicManager';
 
@@ -73,6 +74,10 @@ export default function EnhancedAdminDashboard() {
   const [openCount, setOpenCount] = useState(0);
   const [taskEvents, setTaskEvents] = useState<any[]>([]);
   const [taskSummary, setTaskSummary] = useState({ unique_workers: 0, total_takes: 0, total_completes: 0 });
+
+  // 隐藏全局 Header（此页面使用自定义内联 Header）
+  const { setConfig } = useHeaderConfig();
+  useEffect(() => { setConfig({ hideHeader: true }); return () => setConfig({}); }, [setConfig]);
 
   useEffect(() => {
     fetchAdminInfo();

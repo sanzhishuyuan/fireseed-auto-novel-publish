@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 const CATEGORIES = [
   { key: 'free-resource', label: '🎁 免费资源', desc: '免费 Token、API 额度、试用机会' },
@@ -74,17 +73,6 @@ export default function SubmitOpportunityPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <Link href="/opportunities" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M13 8H3M7 4L3 8l4 4"/>
-            </svg>
-          </Link>
-          <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>发布 AI 商机</h1>
-        </div>
-      </header>
-
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* 成功提示 */}

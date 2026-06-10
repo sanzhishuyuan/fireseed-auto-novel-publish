@@ -1,48 +1,49 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SafeCover from '@/components/SafeCover';
+import type { User, Novel, StatsData } from '@/types';
 
-interface User {
-  id: string;
-  username: string;
-  nickname?: string;
-  role: string;
-}
+// 品类浏览配置
+const GENRE_CATEGORIES = [
+  { name: '科幻', emoji: '🚀', color: '#3b82f6', desc: '赛博朋克·星际冒险' },
+  { name: '悬疑', emoji: '🔮', color: '#8b5cf6', desc: '规则怪谈·推理探案' },
+  { name: '玄幻', emoji: '⚡', color: '#f59e0b', desc: '修仙热血·异世界' },
+  { name: '仙侠', emoji: '🏯', color: '#10b981', desc: '古典神话·封神传说' },
+  { name: '都市', emoji: '🏙', color: '#ec4899', desc: '重生逆袭·职场异能' },
+  { name: '青春', emoji: '🌸', color: '#f472b6', desc: '校园成长·追梦故事' },
+];
 
 export default function HomePage() {
   const [novels, setNovels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const [stats, setStats] = useState({ totalChapters: 0, totalNovels: 0, totalWords: 0, totalAuthors: 0 });
   const router = useRouter();
 
   // 获取小说列表和真实统计数据
   useEffect(() => {
     Promise.all([
-      fetch('/api/novels').then(r => r.json()),
-      fetch('/api/stats').then(r => r.json())
+      fetch('/api/novels').then(r => r.json()).catch(() => ({ novels: [] })),
+      fetch('/api/stats').then(r => r.json()).catch(() => ({ success: false }))
     ])
       .then(([novelsData, statsData]) => {
-        // 处理小说列表
         const list = Array.isArray(novelsData) ? novelsData : (novelsData?.novels || []);
         setNovels(list);
 
-        // 使用真实统计数据
         if (statsData?.success && statsData?.data) {
           setStats(statsData.data);
         } else {
-          // 降级：从小说列表估算
-          const totalChapters = list.reduce((sum: number, n: any) => sum + (n.chapterCount || 0), 0);
+          const validNovels = list.filter((n: any) => (n.chapterCount || 0) > 0);
+          const totalChapters = validNovels.reduce((sum: number, n: any) => sum + (n.chapterCount || 0), 0);
+          const uniqueAuthors = new Set(validNovels.map((n: any) => n.author).filter(Boolean));
           setStats({
             totalChapters,
-            totalNovels: list.length,
+            totalNovels: validNovels.length,
             totalWords: totalChapters * 2000,
-            totalAuthors: 0
+            totalAuthors: uniqueAuthors.size
           });
         }
       })
@@ -62,27 +63,19 @@ export default function HomePage() {
       .catch(console.error);
   }, []);
 
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-      setUser(null);
-      setMenuOpen(false);
-      router.push('/');
-      router.refresh();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setLoggingOut(false);
-    }
-  };
+  // 精选作品（有章节、按章节数排序、最多 8 部）
+  const featuredNovels = novels
+    .filter(n => (n.chapterCount || 0) > 0)
+    .sort((a, b) => (b.chapterCount || 0) - (a.chapterCount || 0))
+    .slice(0, 8);
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }} id="main-content">
-      {/* 🔔 滚动公告栏 */}
+      {/* 🔔 平台动态公告栏 */}
       <div
         className="overflow-hidden whitespace-nowrap py-2 text-xs sm:text-sm"
+        role="marquee"
+        aria-label="平台公告"
         style={{
           background: 'linear-gradient(90deg, #1a1a2e, #0f3460)',
           color: '#e2e8f0',
@@ -90,381 +83,125 @@ export default function HomePage() {
       >
         <div className="inline-block animate-marquee">
           <span className="mx-4">🔥</span>
-          <span className="mx-4 font-medium">SiliconCloud 免费大模型 API：完成实名认证领取 16 元代金券</span>
+          <span className="mx-4 font-medium">火种·百人AI作家共创计划正在招募中，用AI写小说，探索互动叙事的可能性</span>
           <span className="mx-4">→</span>
-          <a
-            href="https://cloud.siliconflow.cn/i/lQsiPTpO"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mx-4 underline underline-offset-2 hover:text-white transition-colors"
-            style={{ color: '#60a5fa' }}
-          >
-            立即领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="inline ml-0.5"><path d="M3 9l6-6M5 3h4v4"/></svg>
-          </a>
+          <Link href="/plan" className="mx-4 underline underline-offset-2 hover:text-white transition-colors" style={{ color: '#60a5fa' }}>
+            了解方案
+          </Link>
           <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4 font-medium">实名认证、创建 API，免费调用 deepseek / qwen / glm5 等全品类大模型</span>
+          <span className="mx-4">📚</span>
+          <span className="mx-4 font-medium">平台已收录 {stats.totalNovels || '—'} 部 AI 互动小说，累计 {stats.totalChapters || '—'} 章</span>
           <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">活动有效期至 2026.12.31</span>
+          <span className="mx-4">🌱</span>
+          <span className="mx-4 font-medium">SEED 积分系统已上线，点赞、创作、互动均可获得积分奖励</span>
           <span className="mx-4 text-white/50">||</span>
-          <span className="mx-4">🧠</span>
-          <span className="mx-4 font-medium">智谱 BigModel GLM-5：注册即送 2000 万 Tokens</span>
-          <span className="mx-4">→</span>
-          <a
-            href="https://www.bigmodel.cn/invite?icode=x70Xu1tg5DvILXe%2FQUZWIA%3D%3D"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mx-4 underline underline-offset-2 hover:text-white transition-colors"
-            style={{ color: '#60a5fa' }}
-          >
-            立即注册领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="inline ml-0.5"><path d="M3 9l6-6M5 3h4v4"/></svg>
-          </a>
-          <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">GLM-5 推理/代码/智能体能力开源模型 SOTA</span>
-          <span className="mx-4 text-white/50">||</span>
-          {/* 重复一次实现无缝滚动 */}
+          {/* 重复一次实现无缝滚动，aria-hidden 避免屏幕阅读器重复朗读 */}
+          <span aria-hidden="true">
           <span className="mx-4">🔥</span>
-          <span className="mx-4 font-medium">SiliconCloud 免费大模型 API：完成实名认证领取 16 元代金券</span>
+          <span className="mx-4 font-medium">火种·百人AI作家共创计划正在招募中，用AI写小说，探索互动叙事的可能性</span>
           <span className="mx-4">→</span>
-          <a
-            href="https://cloud.siliconflow.cn/i/lQsiPTpO"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mx-4 underline underline-offset-2 hover:text-white transition-colors"
-            style={{ color: '#60a5fa' }}
-          >
-            立即领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="inline ml-0.5"><path d="M3 9l6-6M5 3h4v4"/></svg>
-          </a>
+          <Link href="/plan" className="mx-4 underline underline-offset-2 hover:text-white transition-colors" style={{ color: '#60a5fa' }}>
+            了解方案
+          </Link>
           <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4 font-medium">实名认证、创建 API，免费调用 deepseek / qwen / glm5 等全品类大模型</span>
+          <span className="mx-4">📚</span>
+          <span className="mx-4 font-medium">平台已收录 {stats.totalNovels || '—'} 部 AI 互动小说，累计 {stats.totalChapters || '—'} 章</span>
           <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">活动有效期至 2026.12.31</span>
-          <span className="mx-4 text-white/50">||</span>
-          <span className="mx-4">🧠</span>
-          <span className="mx-4 font-medium">智谱 BigModel GLM-5：注册即送 2000 万 Tokens</span>
-          <span className="mx-4">→</span>
-          <a
-            href="https://www.bigmodel.cn/invite?icode=x70Xu1tg5DvILXe%2FQUZWIA%3D%3D"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mx-4 underline underline-offset-2 hover:text-white transition-colors"
-            style={{ color: '#60a5fa' }}
-          >
-            立即注册领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="inline ml-0.5"><path d="M3 9l6-6M5 3h4v4"/></svg>
-          </a>
-          <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">GLM-5 推理/代码/智能体能力开源模型 SOTA</span>
-          <span className="mx-4 text-white/50">||</span>
-          <span className="mx-4 font-medium">SiliconCloud 免费大模型 API：完成实名认证领取 16 元代金券</span>
-          <span className="mx-4">→</span>
-          <a
-            href="https://cloud.siliconflow.cn/i/lQsiPTpO"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mx-4 underline underline-offset-2 hover:text-white transition-colors"
-            style={{ color: '#60a5fa' }}
-          >
-            立即领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="inline ml-0.5"><path d="M3 9l6-6M5 3h4v4"/></svg>
-          </a>
-          <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4 font-medium">实名认证、创建 API，免费调用 deepseek / qwen / glm5 等全品类大模型</span>
-          <span className="mx-4 text-white/50">|</span>
-          <span className="mx-4">活动有效期至 2026.12.31</span>
+          <span className="mx-4">🌱</span>
+          <span className="mx-4 font-medium">SEED 积分系统已上线，点赞、创作、互动均可获得积分奖励</span>
+          </span>
         </div>
       </div>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" aria-label="FireSeed 首页">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <circle cx="14" cy="14" r="14" fill="url(#grad)" />
-              <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
-              <circle cx="14" cy="14" r="3" fill="white"/>
-              <defs>
-                <linearGradient id="grad" x1="0" y1="0" x2="28" y2="28">
-                  <stop offset="0%" stopColor="var(--accent)" />
-                  <stop offset="100%" stopColor="var(--accent-light)" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <span className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-              FireSeed
-            </span>
-          </Link>
-          
-          <nav className="flex items-center gap-1">
-            <Link href="/chat" className="btn-ghost hide-mobile">
-              社区
-            </Link>
-            <Link href="/novels" className="btn-ghost hide-mobile">
-              全部作品
-            </Link>
-            <Link href="/resources" className="btn-ghost hide-mobile">
-              可信资源
-            </Link>
-            <Link href="/opportunities" className="btn-ghost hide-mobile">
-              商机动态
-            </Link>
-            <Link href="/download" className="btn-ghost hide-mobile">
-              下载
-            </Link>
-            
-            {/* 用户菜单 */}
-            {user ? (
-              <div className="relative ml-2">
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-                  style={{ 
-                    background: menuOpen ? 'var(--bg-secondary)' : 'transparent',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}
-                  >
-                    {(user.nickname || user.username).charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-sm font-medium hide-mobile">
-                    {user.nickname || user.username}
-                  </span>
-                  <svg 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 16 16" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5"
-                    className={`transition-transform ${menuOpen ? 'rotate-180' : ''}`}
-                  >
-                    <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
 
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                    <div 
-                      className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-20"
-                      style={{ 
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        boxShadow: 'var(--shadow-lg)'
-                      }}
-                    >
-                      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {user.nickname || user.username}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          @{user.username} · {user.role === 'admin' ? '管理员' : '普通用户'}
-                        </p>
-                      </div>
-                      <div className="py-1">
-                        <Link 
-                          href="/my"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors"
-                          style={{ color: 'var(--text-primary)' }}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M8 8a3 3 0 100-6 3 3 0 000 6z"/>
-                            <path d="M13 14c0-2.8-2.2-5-5-5s-5 2.2-5 5"/>
-                          </svg>
-                          个人中心
-                        </Link>
-                        <Link 
-                          href="/my/settings"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                          style={{ color: 'var(--text-secondary)' }}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <circle cx="8" cy="8" r="2"/>
-                            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41"/>
-                          </svg>
-                          个人设置
-                        </Link>
-                        {user.role === 'admin' && (
-                          <Link 
-                            href="/admin"
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                            style={{ color: 'var(--accent)' }}
-                            onClick={() => setMenuOpen(false)}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                              <rect x="2" y="3" width="12" height="10" rx="2"/>
-                              <path d="M5 7h6M5 10h4"/>
-                            </svg>
-                            管理后台
-                          </Link>
-                        )}
-                      </div>
-                      <div style={{ borderTop: '1px solid var(--border-light)' }}>
-                        <button
-                          onClick={handleLogout}
-                          disabled={loggingOut}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm w-full text-left transition-colors"
-                          style={{ color: '#ef4444' }}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3M11 11l3-3-3-3M14 8H6"/>
-                          </svg>
-                          {loggingOut ? '退出中...' : '退出登录'}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                <Link href="/auth/login" className="btn-ghost text-sm py-2">
-                  登录
-                </Link>
-                <Link href="/auth/register" className="btn-primary text-sm py-2 px-4">
-                  注册
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
-
-      {/* 数据看板 - 基于真实数据 */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { label: '作品总数', value: stats.totalNovels.toString(), unit: '部', icon: '📚', color: '#10b981' },
-            { label: '累计章节', value: stats.totalChapters.toString(), unit: '章', icon: '📖', color: 'var(--accent)' },
-            { label: '累计字数', value: stats.totalWords >= 10000 ? (stats.totalWords / 10000).toFixed(1) : stats.totalWords.toString(), unit: stats.totalWords >= 10000 ? '万字' : '字', icon: '✍️', color: '#f59e0b' },
-            { label: '注册作者', value: stats.totalAuthors.toString(), unit: '人', icon: '✍️', color: '#8b5cf6' }
-          ].map((stat, i) => (
-            <div
-              key={i}
-              className="card p-4 text-center animate-fade-in"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <div className="text-2xl mb-1">{stat.icon}</div>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-xl sm:text-2xl font-bold" style={{ color: stat.color }}>
-                  {stat.value}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {stat.unit}
-                </span>
-              </div>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Hero 区域 */}
-      <section className="relative overflow-hidden py-8 sm:py-12">
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            background: 'radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent)'
-          }}
-        />
-        <div className="hidden sm:block absolute top-1/4 left-1/4 w-32 h-32 rounded-full opacity-10" style={{ background: 'var(--accent)', filter: 'blur(40px)' }} />
-        <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-24 h-24 rounded-full opacity-10" style={{ background: 'var(--accent-light)', filter: 'blur(40px)' }} />
+      {/* ========== Hero 区域（含数据亮点） ========== */}
+      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24">
+        {/* 背景装饰 */}
+        <div className="absolute inset-0 opacity-20"
+          style={{ background: 'radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent)' }} />
+        <div className="hidden sm:block absolute top-1/4 left-1/4 w-40 h-40 rounded-full opacity-10" style={{ background: 'var(--accent)', filter: 'blur(60px)' }} />
+        <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-32 h-32 rounded-full opacity-10" style={{ background: 'var(--accent-light)', filter: 'blur(50px)' }} />
 
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-4"
-            style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
-          >
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
-              <circle cx="6" cy="6" r="6"/>
-            </svg>
+          {/* 标签 */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-6"
+            style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="6"/></svg>
             AI 驱动 · 互动叙事
           </div>
 
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 leading-tight">
+          {/* 主标题 */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-5 leading-tight">
             每一个选择
             <br />
             <span className="text-gradient">改写故事结局</span>
           </h1>
 
-          <p className="text-sm sm:text-base mb-6 max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm sm:text-base mb-8 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             在这里，你的选择将影响故事走向。AI 生成的分支剧情，每一次阅读都是独一无二的冒险。
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/download" className="btn-primary text-sm px-6 py-2.5">
+          {/* CTA 按钮 */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
+            <Link href="/novels" className="btn-primary text-sm px-8 py-3">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M8 1v10M4 7l4 4 4-4M2 12v2h12v-2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 3h6a4 4 0 0 1 4 4v6a3 3 0 0 0-3-3H2z"/><path d="M14 3h-6a4 4 0 0 0-4 4v6a3 3 0 0 1 3-3h7z"/>
               </svg>
-              下载 AI 技能
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              开始阅读
             </Link>
-            <Link href="/auth/register" className="btn-secondary text-sm px-6 py-2.5">
+            <Link href="/auth/register" className="btn-secondary text-sm px-8 py-3">
               免费注册
             </Link>
+          </div>
+
+          {/* 数据亮点（内嵌 Hero 底部） */}
+          <div className="flex items-center justify-center gap-6 sm:gap-10 text-center">
+            {[
+              { value: stats.totalNovels || '—', label: '部作品' },
+              { value: stats.totalChapters || '—', label: '章内容' },
+              { value: stats.totalWords >= 10000 ? `${(stats.totalWords / 10000).toFixed(1)}万` : (stats.totalWords || '—'), label: '字累计' },
+              { value: stats.totalAuthors || '—', label: '位作者' },
+            ].map((item, i) => (
+              <div key={i}>
+                <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--accent)' }}>
+                  {item.value}
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {item.label}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 特色介绍 */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-        <div className="grid sm:grid-cols-3 gap-6">
-          {[
-            {
-              title: 'AI 智能叙事',
-              desc: '先进的大语言模型驱动，生成自然流畅的故事情节，支持多种题材与风格',
-              icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                  <path d="M2 17l10 5 10-5"/>
-                  <path d="M2 12l10 5 10-5"/>
-                </svg>
-              )
-            },
-            {
-              title: '多分支剧情',
-              desc: '你的每一个选择都会影响故事走向。不同的抉择，通向截然不同的结局',
-              icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>
-                  <path d="M5.64 5.64l4.24 4.24M14.12 14.12l4.24 4.24M5.64 18.36l4.24-4.24M14.12 9.88l4.24-4.24"/>
-                </svg>
-              )
-            },
-            {
-              title: '沉浸式阅读',
-              desc: '专为阅读优化的界面，支持字号、行距、主题自定义，护眼模式舒适阅读',
-              icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                </svg>
-              )
-            }
-          ].map((item, i) => (
-            <div key={i} className="card p-6 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
-                {item.icon}
-              </div>
-              <h3 className="font-semibold text-base mb-2" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
-            </div>
+      {/* ========== 品类浏览入口 ========== */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <div className="text-center mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>探索品类</h2>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>选择你感兴趣的类型，开始互动阅读之旅</p>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-4">
+          {GENRE_CATEGORIES.map((genre, i) => (
+            <Link
+              key={genre.name}
+              href={`/novels?tag=${encodeURIComponent(genre.name)}`}
+              className="card p-4 text-center group animate-fade-in hover:scale-105 transition-transform"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="text-3xl sm:text-4xl mb-2">{genre.emoji}</div>
+              <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{genre.name}</h3>
+              <p className="text-xs mt-1 hidden sm:block" style={{ color: 'var(--text-muted)' }}>{genre.desc}</p>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* 热门小说 */}
-      {!loading && novels.length > 0 && (
+      {/* ========== 精选推荐 ========== */}
+      {!loading && featuredNovels.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>作品推荐</h2>
+              <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>作品推荐</h2>
               <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>精选 AI 创作 · 持续更新</p>
             </div>
             <Link href="/novels" className="btn-ghost text-sm hide-mobile">
@@ -476,8 +213,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
-            {novels.map((novel, i) => {
-              // 类型标签映射（借鉴 kanshuclaw 的 emoji 图标系统）
+            {featuredNovels.map((novel, i) => {
               const tagEmojis: Record<string, string> = {
                 '玄幻': '⚡', '都市': '🏙', '仙侠': '🏯', '言情': '💕',
                 '科幻': '🚀', '悬疑': '🔮', '历史': '📜', '恐怖': '👻',
@@ -485,11 +221,8 @@ export default function HomePage() {
               };
               const primaryTag = novel.tags?.split(',')[0]?.trim() || '故事';
               const emoji = tagEmojis[primaryTag] || '✨';
-              
-              // 模拟生成进度（实际可从 API 获取）
-              const totalChapters = 30; // 预估总章节数
-              const currentChapters = novel.chapterCount || 0;
-              const progress = Math.min((currentChapters / totalChapters) * 100, 100);
+              const totalChapters = 30;
+              const progress = Math.min(((novel.chapterCount || 0) / totalChapters) * 100, 100);
 
               return (
                 <Link
@@ -499,14 +232,8 @@ export default function HomePage() {
                   style={{ animationDelay: `${i * 80}ms` }}
                 >
                   <div className="aspect-[3/4] relative overflow-hidden">
-                    {/* 安全的封面组件 */}
-                    <SafeCover
-                      src={novel.cover_url}
-                      alt={novel.title}
-                      tag={novel.tags}
-                    />
+                    <SafeCover src={novel.cover_url} alt={novel.title} tag={novel.tags} />
 
-                    {/* 左上角类型标签 */}
                     <div className="absolute top-3 left-3">
                       <span className="px-2 py-1 rounded-lg text-xs font-medium backdrop-blur-sm"
                         style={{ background: 'rgba(0,0,0,0.4)', color: 'white' }}>
@@ -514,26 +241,24 @@ export default function HomePage() {
                       </span>
                     </div>
 
-                    {/* 右上角状态 */}
                     <div className="absolute top-3 right-3">
                       <span className={novel.status === 'completed' ? 'badge badge-success' : 'badge badge-warning'}>
                         {novel.status === 'completed' ? '完结' : '连载'}
                       </span>
                     </div>
 
-                    {/* 悬停层 - 双按钮入口 */}
-                    <div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
-                      style={{ background: 'linear-gradient(to top, rgba(245,158,11,0.85), rgba(245,158,11,0.3))' }}
-                    >
-                      <div className="absolute bottom-4 left-3 right-3 space-y-2">
-                        <button 
-                          className="w-full py-2 rounded-lg text-sm font-medium backdrop-blur-sm transition-transform hover:scale-105 active:scale-95"
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                      style={{ background: 'linear-gradient(to top, rgba(245,158,11,0.85), rgba(245,158,11,0.3))' }}>
+                      <div className="absolute bottom-4 left-3 right-3">
+                        <span 
+                          role="button"
+                          tabIndex={-1}
+                          className="block w-full py-2 rounded-lg text-sm font-medium text-center backdrop-blur-sm transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                           style={{ background: 'rgba(255,255,255,0.95)', color: 'var(--accent)' }}
-                          onClick={(e) => { e.preventDefault(); router.push(`/novels/${novel.id}`); }}
-                        >
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/novels/${novel.id}`); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/novels/${novel.id}`); } }}>
                           继续阅读
-                        </button>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -543,10 +268,9 @@ export default function HomePage() {
                       {novel.title}
                     </h3>
                     <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-                      {novel.author || 'Spark AI'}
+                      {novel.author || 'FireSeed AI'} · {novel.chapterCount || 0} 章
                     </p>
 
-                    {/* 生成进度条 */}
                     {novel.status !== 'completed' && (
                       <div className="mb-2">
                         <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -554,32 +278,17 @@ export default function HomePage() {
                           <span>{Math.round(progress)}%</span>
                         </div>
                         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-light)' }}>
-                          <div 
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--accent), var(--accent-light))' }}
-                          />
+                          <div className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--accent), var(--accent-light))' }} />
                         </div>
                       </div>
                     )}
 
-                    <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      <span className="flex items-center gap-1">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M1 3h10M1 6h10M1 9h6"/>
-                        </svg>
-                        {novel.chapterCount || 0} 章
-                      </span>
-                    </div>
-
-                    {/* 标签展示 */}
                     {novel.tags && (
-                      <div className="flex flex-wrap gap-1 mt-3">
+                      <div className="flex flex-wrap gap-1 mt-2">
                         {novel.tags.split(',').filter(Boolean).slice(0, 3).map((tag: string) => (
-                          <span 
-                            key={tag} 
-                            className="text-xs px-2 py-0.5 rounded-full"
-                            style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
-                          >
+                          <span key={tag} className="text-xs px-2 py-0.5 rounded-full"
+                            style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
                             {tag.trim()}
                           </span>
                         ))}
@@ -593,7 +302,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* 加载中 */}
+      {/* 加载中骨架 */}
       {loading && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
@@ -610,35 +319,10 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* 空状态 */}
-      {!loading && novels.length === 0 && (
-        <section className="max-w-md mx-auto px-4 text-center py-20">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="var(--accent)" strokeWidth="1.5">
-              <path d="M14 4L4 9v11l10 5 10-5V9L14 4z"/>
-              <path d="M14 4v18M4 9l10 5 10-5"/>
-            </svg>
-          </div>
-          <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>故事正在酝酿中</h3>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-            第一部作品即将上线，敬请期待。
-          </p>
-          <Link href="/admin" className="btn-primary">
-            进入创作后台
-          </Link>
-        </section>
-      )}
-
-
-
-      {/* 百人AI作家共创计划 */}
+      {/* ========== 百人AI作家共创计划 ========== */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-        <div
-          className="rounded-2xl p-8 sm:p-12 text-center relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-          }}
-        >
+        <div className="rounded-2xl p-8 sm:p-12 text-center relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }}>
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium mb-6">
               🔥 正在招募
@@ -650,15 +334,18 @@ export default function HomePage() {
               100位AI作家，一起用AI写小说，探索互动叙事的可能性
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/plan"
+              <Link href="/plan"
                 className="inline-flex items-center gap-2 px-8 py-3 bg-white rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-105"
-                style={{ color: '#0f3460' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M8 3v10M3 8h10" strokeLinecap="round"/>
-                </svg>
+                style={{ color: '#0f3460' }}>
                 了解完整方案
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </Link>
+              <Link href="/auth/register"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-105"
+                style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>
+                立即加入
               </Link>
             </div>
           </div>
@@ -667,142 +354,55 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 会员 CTA */}
-      <section
-        className="mx-4 mb-8 rounded-2xl p-8 sm:p-12 text-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)' }}
-      >
-        <div className="relative z-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-            解锁全部剧情分支
-          </h2>
-          <p className="text-white/80 mb-6 max-w-md mx-auto">
-            升级会员，探索每一条隐藏支线，体验完整的故事宇宙
-          </p>
-          <Link href="/vip" className="inline-flex items-center gap-2 px-8 py-3 bg-white rounded-lg text-sm font-semibold" style={{ color: 'var(--accent)' }}>
-            了解会员权益
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </Link>
-        </div>
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
-        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/5" />
-      </section>
-
-      {/* 双二维码并排：网站 + QQ频道 */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12">
-          {/* 网站二维码 */}
-          <div className="text-center">
-            <div
-              className="inline-block rounded-2xl p-3 mb-3"
-              style={{ background: 'white', border: '1px solid var(--border)' }}
-            >
-              <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://fireseed.online"
-                alt="扫码访问 fireseed.online"
-                width="160"
-                height="160"
-                className="block"
-                style={{ imageRendering: 'pixelated' }}
-              />
-            </div>
-            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              扫码访问
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              浏览器或微信扫一扫，手机直接看
-            </p>
-          </div>
-
-          {/* QQ频道二维码 */}
-          <div className="text-center">
-            <div
-              className="inline-block rounded-2xl p-3 mb-3"
-              style={{ background: 'white', border: '1px solid var(--border)' }}
-            >
-              <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://pd.qq.com/s/68wwv3lv8?b=9"
-                alt="QQ频道 火种宇宙"
-                width="160"
-                height="160"
-                className="block"
-                style={{ imageRendering: 'pixelated' }}
-              />
-            </div>
-            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              QQ频道：火种宇宙
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              频道号：fireseed100
-            </p>
-            <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
-              扫码加入，与 AI 作者交流
-            </p>
-            <a
-              href="https://pd.qq.com/s/68wwv3lv8?b=9"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-2 text-xs underline underline-offset-2"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              点击直接加入 →
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* 页脚 */}
+      {/* ========== 精简页脚 ========== */}
       <footer className="pt-10 pb-8 text-center" style={{ borderTop: '1px solid var(--border-light)' }}>
-        {/* 宣传文案 */}
-        <div className="max-w-xl mx-auto px-4 mb-6" style={{ color: 'var(--text-secondary)' }}>
-          <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>
-            {`一粒火种微弱，众火方成燎原。
-FireSeed 从诞生之初，就是为AI网文创作发布而生。未来的AI小说将有专属的宇宙空间。
-
-诚招有兴趣玩玩的核心伙伴，不以工作为目的，只以共建专属创作者的免费AI写作发布平台为初心，慢慢打磨、共同成长。
-
-期待同频的你，一起守着这份热爱，深耕网文创作，完善专属我们的创作工具。`}
+        {/* 品牌与宣言 */}
+        <div className="max-w-xl mx-auto px-4 mb-6">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="grad2" x1="0" y1="0" x2="28" y2="28">
+                  <stop offset="0%" stopColor="var(--accent)"/>
+                  <stop offset="100%" stopColor="var(--accent-light)"/>
+                </linearGradient>
+              </defs>
+              <circle cx="14" cy="14" r="14" fill="url(#grad2)"/>
+              <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
+              <circle cx="14" cy="14" r="3" fill="white"/>
+            </svg>
+            <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>FireSeed</span>
+          </div>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            一粒火种微弱，众火方成燎原。为 AI 网文创作发布而生，共建专属创作者的免费平台。
           </p>
-          <a
-            href="mailto:suttangle@yeah.net"
-            className="inline-block mt-4 px-6 py-2 text-sm font-medium rounded-full transition-all duration-200 hover:scale-105"
-            style={{
-              background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-              color: '#fff',
-            }}
-          >
-            联系我们 → suttangle@yeah.net
-          </a>
         </div>
 
         {/* 页脚链接 */}
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <a href="/chat" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>💬 社区</a>
-          <a href="/feedback" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>反馈</a>
-          <a href="/skills" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>🔥 技能排行榜</a>
-          <a href="/seed/leaderboard" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>🏆 SEED富豪榜</a>
-          <a href="/novels" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>全部作品</a>
-          <a href="/vip" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>会员中心</a>
-          <a href="/admin" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>创作后台</a>
-          <a href="/api/rss" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }} target="_blank">📡 RSS</a>
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mb-4 px-4">
+          <Link href="/novels" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>全部作品</Link>
+          <Link href="/chat" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>社区</Link>
+          <Link href="/vip" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>会员中心</Link>
+          <Link href="/plan" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>共创计划</Link>
+          <Link href="/resources" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>可信资源</Link>
+          <Link href="/feedback" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>反馈</Link>
+          <Link href="/download" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>下载</Link>
+          <a href="/api/rss" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }} target="_blank">RSS</a>
         </div>
 
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
-            <circle cx="14" cy="14" r="14" fill="url(#grad2)"/>
-            <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
-            <circle cx="14" cy="14" r="3" fill="white"/>
-            <defs>
-              <linearGradient id="grad2" x1="0" y1="0" x2="28" y2="28">
-                <stop offset="0%" stopColor="var(--accent)"/>
-                <stop offset="100%" stopColor="var(--accent-light)"/>
-              </linearGradient>
-            </defs>
-          </svg>
-          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>FireSeed</span>
+        {/* 社群入口 */}
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <a href="https://pd.qq.com/s/68wwv3lv8?b=9" target="_blank" rel="noopener noreferrer"
+            className="text-xs px-4 py-1.5 rounded-full transition-colors"
+            style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+            QQ频道：火种宇宙 →
+          </a>
+          <a href="mailto:suttangle@yeah.net"
+            className="text-xs px-4 py-1.5 rounded-full transition-colors"
+            style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+            联系我们
+          </a>
         </div>
+
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
           © 2026 FireSeed.online · AI 驱动互动叙事平台
         </p>

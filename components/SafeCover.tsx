@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 
 interface SafeCoverProps {
   src: string | null | undefined;
@@ -50,14 +51,17 @@ export default function SafeCover({ src, alt, tag, className = '', aspectRatio =
     <div className={`relative overflow-hidden ${aspectRatio} ${className}`}>
       {hasCover ? (
         <>
-          {/* 封面图片 */}
-          <img
+          {/* 封面图片 - 使用 Next.js Image 组件优化 */}
+          <Image
             src={src}
             alt={alt}
-            className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className={`object-cover transition-all duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             onError={handleError}
             onLoad={handleLoad}
-            loading="lazy"
+            priority={false}
+            quality={80}
           />
           {/* 加载中占位 */}
           {!imgLoaded && (

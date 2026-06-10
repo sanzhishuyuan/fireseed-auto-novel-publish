@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useHeaderConfig } from '@/components/HeaderContext';
 
 // ============ 类型定义 ============
 interface UserProfile {
@@ -62,6 +63,10 @@ export default function MyDashboard() {
   // 充值状态
   const [rechargeAmount, setRechargeAmount] = useState(100);
   const [recharging, setRecharging] = useState(false);
+
+  // 隐藏全局 Header（此页面使用自定义内联 Header）
+  const { setConfig } = useHeaderConfig();
+  useEffect(() => { setConfig({ hideHeader: true }); return () => setConfig({}); }, [setConfig]);
 
   useEffect(() => {
     loadAllData();
