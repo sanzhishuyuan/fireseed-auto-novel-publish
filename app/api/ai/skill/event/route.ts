@@ -1,26 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
+import { requireAI } from '@/lib/ai-auth';
 
 export const dynamic = 'force-dynamic';
-
-function getAuthUserId(request: NextRequest, bodyToken?: string): string | null {
-  const authHeader = request.headers.get('Authorization');
-  const tryDecode = (t: string) => {
-    try { return (jwt.verify(t, JWT_SECRET) as { userId: string }).userId; } catch { /* 忽略 */ }
-    try {
-      const ut = db.prepare('SELECT user_id FROM user_tokens WHERE token = ? AND is_active = 1').get(t) as { user_id: string } | undefined;
-      if (ut) return ut.user_id;
-    } catch { /* 忽略 */ }
-    return null;
-  };
-  if (authHeader?.startsWith('Bearer ')) { const id = tryDecode(authHeader.slice(7)); if (id) return id; }
-  if (bodyToken) { const id = tryDecode(bodyToken); if (id) return id; }
-  return null;
-}
 
 /**
  * POST /api/ai/skill/event
@@ -49,7 +33,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { token, event_type, event_data } = body;
-    const userId = getAuthUserId(request, token);
+    const aiAuth = requireAI(request, token);
+    const userId = aiAuth.valid ? (aiAuth.userId || 'anonymous') : 'anonymous';
 
     if (!event_type) {
       return NextResponse.json({ error: 'event_type is required' }, { status: 400 });

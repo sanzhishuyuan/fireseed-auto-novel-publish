@@ -4,72 +4,21 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
 import { validateContentSize, CONTENT_MAX_BYTES } from '@/lib/api-guard';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 import { transferSeed } from '@/lib/seed';
 import { extractChoicesFromContent } from '@/lib/markdown-flow';
+import { requireAI } from '@/lib/ai-auth';
+import { apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
 interface Params { params: Promise<{ novelId: string }>; }
 
-// 验证 token 字符串（支持 JWT / user_tokens / ai_tokens 三种方式）
-function verifyTokenString(token: string): { valid: boolean; token: string; record?: Record<string, unknown>; isUserToken: boolean } {
-  // 1. JWT Token
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string; role: string };
-    return { valid: true, token, record: { user_id: decoded.userId }, isUserToken: true };
-  } catch {
-    // JWT 无效，继续
-  }
-
-  // 2. user_tokens
-  const userToken = db.prepare(
-    'SELECT id, user_id, is_active FROM user_tokens WHERE token = ?'
-  ).get(token) as { id: string; user_id: string; is_active: number } | undefined;
-  if (userToken && userToken.is_active === 1) {
-    db.prepare('UPDATE user_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
-    return { valid: true, token, record: { user_id: userToken.user_id }, isUserToken: true };
-  }
-
-  // 3. ai_tokens
-  const record = db.prepare('SELECT * FROM ai_tokens WHERE token = ? AND is_active = 1').get(token) as Record<string, unknown> | undefined;
-  if (!record) return { valid: false, token, isUserToken: false };
-  const now = new Date();
-  const resetAt = new Date(record.quota_reset_at as string);
-  if (now >= resetAt) {
-    db.prepare('UPDATE ai_tokens SET quota_used = 0, quota_reset_at = datetime("now", "+1 day") WHERE token = ?').run(token);
-    record.quota_used = 0;
-    record.quota_reset_at = new Date(resetAt.getTime() + 86400000).toISOString();
-  }
-  db.prepare('UPDATE ai_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
-  return { valid: true, token, record, isUserToken: false };
-}
-
-// 统一 Token 验证：先尝试 Header，再尝试 Body
-function verifyAITokenRecord(request: NextRequest, bodyToken?: string): { valid: boolean; token: string; record?: Record<string, unknown>; isUserToken: boolean } {
-  // 1. 优先 Header Bearer Token
-  const authHeader = request.headers.get('Authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    const result = verifyTokenString(authHeader.slice(7));
-    if (result.valid) return result;
-  }
-
-  // 2. 回退 Body token（兼容 upload-md 风格）
-  if (bodyToken) {
-    const result = verifyTokenString(bodyToken);
-    if (result.valid) return result;
-  }
-
-  return { valid: false, token: '', isUserToken: false };
-}
-
 export async function GET(request: NextRequest, { params }: Params) {
-  const auth = verifyAITokenRecord(request);
-  if (!auth.valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = requireAI(request);
+  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
   const { novelId } = await params;
   const chapters = db.prepare('SELECT * FROM chapters WHERE novel_id = ? ORDER BY order_num ASC').all(novelId);
   return NextResponse.json({ success: true, chapters });
@@ -97,14 +46,14 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
-  // 验证：Header Bearer 优先，Body token 回退
-  const auth = verifyAITokenRecord(request, bodyToken);
-  if (!auth.valid) return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
+  const auth = requireAI(request, bodyToken);
+  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
+  const isUser = auth.tokenType === 'jwt' || auth.tokenType === 'user_token';
   const { novelId } = await params;
-  const record = auth.record!;
+  const record = auth.aiTokenRecord!;
   
   // user_tokens 不检查旧配额限制
-  if (!auth.isUserToken) {
+  if (!isUser) {
     const quotaUsed = (record.quota_used as number) || 0;
     const quotaLimit = (record.quota_limit as number) || 50;
     if (quotaUsed >= quotaLimit) {
@@ -175,7 +124,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // 确定作者信息
-    const chapterAuthorId = auth.isUserToken ? (auth.record?.user_id as string) : null;
+    const chapterAuthorId = isUser ? (auth.aiTokenRecord?.user_id as string) : null;
     let chapterAuthorName = '';
     if (chapterAuthorId) {
       const authorUser = db.prepare('SELECT username FROM users WHERE id = ?').get(chapterAuthorId) as { username: string } | undefined;
@@ -200,7 +149,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       dbChapterId, novelId, title, contentStr, order || 1, branch, wordCount, choicesJson, custom_branch_enabled ? 1 : 0, chapterAuthorId, chapterAuthorName
     );
     db.prepare('UPDATE novels SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(novelId);
-    db.prepare('UPDATE ai_tokens SET quota_used = quota_used + 1 WHERE token = ?').run(auth.token);
+    // 配额已由 requireAI() 统一管理，无需重复更新
 
     // 🌱 发布章节奖励
     if (chapterAuthorId) {
@@ -214,7 +163,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // 记录激活并获取任务推送
     const autoPing = recordActivationAndGetMissions({
-      userId: auth.isUserToken ? (auth.record?.user_id as string) : null,
+      userId: isUser ? (auth.aiTokenRecord?.user_id as string) : null,
       version: 'create-chapter',
       clientType: 'api-auto'
     });

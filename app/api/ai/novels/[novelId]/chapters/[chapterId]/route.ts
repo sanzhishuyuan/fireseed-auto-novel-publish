@@ -3,82 +3,20 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
+import { requireAI } from '@/lib/ai-auth';
+import { apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
 interface Params { params: Promise<{ novelId: string; chapterId: string }>; }
-
-// 验证 token 字符串
-function verifyTokenString(token: string): { valid: boolean; token: string; userId?: string } {
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string; role: string };
-    return { valid: true, token, userId: decoded.userId };
-  } catch { /* JWT 无效 */ }
-
-  const userToken = db.prepare(
-    'SELECT id, user_id, is_active FROM user_tokens WHERE token = ?'
-  ).get(token) as { id: string; user_id: string; is_active: number } | undefined;
-  if (userToken && userToken.is_active === 1) {
-    db.prepare('UPDATE user_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
-    return { valid: true, token, userId: userToken.user_id };
-  }
-
-  const aiToken = db.prepare('SELECT * FROM ai_tokens WHERE token = ? AND is_active = 1').get(token) as Record<string, unknown> | undefined;
-  if (aiToken) {
-    db.prepare('UPDATE ai_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
-    return { valid: true, token };
-  }
-
-  return { valid: false, token };
-}
-
-// 统一 Token 验证：Header Bearer 优先，Body token 回退
-function verifyToken(request: NextRequest, bodyToken?: string): { valid: boolean; token: string; userId?: string } {
-  const authHeader = request.headers.get('Authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    const result = verifyTokenString(authHeader.slice(7));
-    if (result.valid) return result;
-  }
-  if (bodyToken) {
-    const result = verifyTokenString(bodyToken);
-    if (result.valid) return result;
-  }
-  return { valid: false, token: '' };
-}
-
-/**
- * PUT /api/ai/novels/{novelId}/chapters/{chapterId}
- * 修改已有章节
- *
- * body: {
- *   "token": "JWT_TOKEN",
- *   "title": "新的章节标题",     // 可选
- *   "content": "新的正文内容",   // 必传
- *   "order": 2,                  // 可选
- *   "branch": "main",            // 可选
- *   "choices": [],               // 可选
- *   "custom_branch_enabled": false  // 可选
- * }
- */
 export async function PUT(request: NextRequest, { params }: Params) {
   const { novelId, chapterId } = await params;
 
-  // 先读取 body 获取可能的内嵌 token
-  let bodyToken: string | undefined;
   let body: any;
-  try {
-    body = await request.json();
-    bodyToken = body?.token;
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
+  try { body = await request.json(); } catch { return apiError('INVALID_JSON', 'Invalid JSON', 400); }
 
-  const auth = verifyToken(request, bodyToken);
-  if (!auth.valid) {
-    return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
-  }
+  const auth = requireAI(request, body?.token);
+  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
 
   try {
     const { title, content, order, branch, choices, custom_branch_enabled } = body;

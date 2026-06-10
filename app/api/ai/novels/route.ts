@@ -4,67 +4,18 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 import { transferSeed } from '@/lib/seed';
+import { requireAI, tryAI } from '@/lib/ai-auth';
+import { apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
-
-// 验证 AI Token（支持三种方式）
-// 1. JWT Bearer Token（注册用户通过 /api/auth/token 获取）
-// 2. user_tokens（UUID 格式 API Token）
-// 3. ai_tokens（旧系统兼容）
-function verifyAIToken(request: NextRequest): { valid: boolean; userId?: string } {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return { valid: false };
-
-  const token = authHeader.slice(7);
-
-  // 1. 优先验证 JWT Token（注册用户直接发布）
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string; role: string };
-    return { valid: true, userId: decoded.userId };
-  } catch {
-    // JWT 无效，继续检查其他 Token 类型
-  }
-
-  // 2. 检查 user_tokens（新系统 API Token）
-  const userToken = db.prepare(
-    'SELECT user_id, is_active FROM user_tokens WHERE token = ?'
-  ).get(token) as { user_id: string; is_active: number } | undefined;
-
-  if (userToken && userToken.is_active === 1) {
-    db.prepare('UPDATE user_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = ?').run(token);
-    return { valid: true, userId: userToken.user_id };
-  }
-
-  // 3. 兼容旧 ai_tokens 表
-  const aiToken = db.prepare(
-    'SELECT id, quota_used, quota_limit FROM ai_tokens WHERE token = ? AND is_active = 1'
-  ).get(token) as { id: string; quota_used: number; quota_limit: number } | undefined;
-
-  if (!aiToken) return { valid: false };
-
-  // 检查配额
-  if (aiToken.quota_used >= aiToken.quota_limit) {
-    return { valid: false };
-  }
-
-  // 更新配额使用
-  db.prepare('UPDATE ai_tokens SET last_used = CURRENT_TIMESTAMP, quota_used = quota_used + 1 WHERE token = ?').run(token);
-
-  return { valid: true };
-}
 
 type NovelRow = { id: string; title: string; author: string; description: string; [key: string]: unknown };
 
 export async function GET(request: NextRequest) {
-  const auth = verifyAIToken(request);
-  if (!auth.valid) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = tryAI(request);
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query') || '';
   const page = parseInt(searchParams.get('page') || '1');
@@ -98,10 +49,8 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse_ = rateLimitResponse(rateLimit);
   if (rateLimitResponse_) return rateLimitResponse_;
 
-  const auth = verifyAIToken(request);
-  if (!auth.valid) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = requireAI(request);
+  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
   try {
     const body = await request.json();
     const { id: customId, title, author, description, status, tags, cover_url } = body;

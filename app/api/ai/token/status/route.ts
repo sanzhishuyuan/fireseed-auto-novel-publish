@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAI } from '@/lib/ai-auth';
+import { apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
-function verifyAIToken(request: NextRequest): { valid: boolean; token: string } {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return { valid: false, token: '' };
-  const token = authHeader.slice(7);
-  const record = db.prepare('SELECT id FROM ai_tokens WHERE token = ? AND is_active = 1').get(token);
-  if (!record) return { valid: false, token };
-  return { valid: true, token };
-}
-
 export async function GET(request: NextRequest) {
-  const auth = verifyAIToken(request);
-  if (!auth.valid) return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
+  const auth = requireAI(request);
+  if (!auth.valid) return apiError('UNAUTHORIZED', 'Unauthorized', 401);
   const tokenRecord = db.prepare('SELECT quota_used, quota_limit, quota_reset_at FROM ai_tokens WHERE token = ?').get(auth.token) as Record<string, unknown>;
   const now = new Date();
   const resetAt = new Date(tokenRecord.quota_reset_at as string);
