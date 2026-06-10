@@ -333,7 +333,7 @@ ${installLinks}`;
                 去逛逛作品
               </Link>
               <Link
-                href="/my/settings"
+                href="/my"
                 className="btn-ghost flex-1 justify-center py-2.5 text-sm"
               >
                 管理我的 Token

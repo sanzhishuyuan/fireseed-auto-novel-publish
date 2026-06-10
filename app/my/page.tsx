@@ -56,6 +56,13 @@ export default function MyDashboard() {
   const [loading, setLoading] = useState(true);
   const [loginChecked, setLoginChecked] = useState(false);
 
+  // 设置页面状态
+  const [nickname, setNickname] = useState('');
+  const [savingNickname, setSavingNickname] = useState(false);
+  const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [tokens, setTokens] = useState<{ id: string; token: string; name: string; created_at: string; last_used: string | null }[]>([]);
+  const [copiedToken, setCopiedToken] = useState('');
+
   // VIP购买状态
   const [purchasing, setPurchasing] = useState(false);
   const [purchaseResult, setPurchaseResult] = useState<{ success: boolean; msg: string } | null>(null);
@@ -104,6 +111,20 @@ export default function MyDashboard() {
       if (vipRes.ok) {
         const vd = await vipRes.json();
         if (vd.success) setVipStatus(vd.data);
+      }
+
+      // 加载 API Tokens
+      try {
+        const tokenRes = await fetch('/api/ai/token', { credentials: 'include' });
+        if (tokenRes.ok) {
+          const td = await tokenRes.json();
+          setTokens(td.tokens || []);
+        }
+      } catch {}
+
+      // 初始化昵称
+      if (authData?.data) {
+        setNickname(authData.data.nickname || authData.data.username || '');
       }
 
       // 加载推广数据
@@ -183,6 +204,48 @@ export default function MyDashboard() {
     } finally {
       setRecharging(false);
     }
+  };
+
+  // ========== 昵称保存 ==========
+  const handleSaveNickname = async () => {
+    if (!nickname.trim()) {
+      setSettingsMsg({ type: 'error', text: '昵称不能为空' });
+      return;
+    }
+    if (nickname.trim().length > 30) {
+      setSettingsMsg({ type: 'error', text: '昵称不能超过30个字符' });
+      return;
+    }
+    setSavingNickname(true);
+    setSettingsMsg(null);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: nickname.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSettingsMsg({ type: 'success', text: '昵称修改成功' });
+        if (profile) setProfile({ ...profile, nickname: nickname.trim() });
+      } else {
+        setSettingsMsg({ type: 'error', text: data.error || '修改失败' });
+      }
+    } catch {
+      setSettingsMsg({ type: 'error', text: '网络错误' });
+    } finally {
+      setSavingNickname(false);
+      setTimeout(() => setSettingsMsg(null), 3000);
+    }
+  };
+
+  // ========== Token 复制 ==========
+  const copyToken = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedToken(id);
+      setTimeout(() => setCopiedToken(''), 2000);
+    } catch {}
   };
 
   const formatDate = (d: string | null) => {
@@ -649,30 +712,146 @@ export default function MyDashboard() {
     );
   }
 
-  // ============ 6. 账户设置 ============
+  // ============ 6. 账户设置（合并原个人设置页） ============
   function renderSettings() {
     return (
       <div className="space-y-5">
         <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>账户设置</h2>
+
+        {/* 头像 + 基本信息 */}
         <div className="card p-5">
-          <div className="space-y-4">
-            <div>
-              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>用户名</div>
-              <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{profile?.username}</div>
+          <div className="flex items-center gap-4 mb-5">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
+              style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: 'white' }}
+            >
+              {(profile?.nickname || profile?.username || '?').charAt(0).toUpperCase()}
             </div>
             <div>
-              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>角色</div>
-              <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{profile?.role === 'admin' ? '管理员' : profile?.role === 'writer' ? '作者' : '读者'}</div>
-            </div>
-            <div>
-              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>注册时间</div>
-              <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{profile?.createdAt ? formatDateTime(profile.createdAt) : ''}</div>
+              <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {profile?.nickname || profile?.username}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                @{profile?.username} · {profile?.role === 'admin' || profile?.role === 'super_admin' ? '管理员' : '普通用户'}
+              </p>
             </div>
           </div>
-          <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-light)' }}>
-            <Link href="/my/settings" className="btn-secondary inline-flex px-5 py-2.5 text-sm">
-              前往详细设置 →
+
+          {/* 昵称编辑 */}
+          <div>
+            <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+              显示昵称
+            </label>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="input flex-1"
+                placeholder="输入你的昵称"
+                maxLength={30}
+              />
+              <button
+                onClick={handleSaveNickname}
+                disabled={savingNickname}
+                className="btn-primary px-6 py-2 text-sm whitespace-nowrap"
+              >
+                {savingNickname ? '保存中...' : '保存'}
+              </button>
+            </div>
+            <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+              昵称将代替用户名在网站上显示，1-30个字符
+            </p>
+          </div>
+
+          {/* 消息提示 */}
+          {settingsMsg && (
+            <div
+              className="mt-3 p-3 rounded-lg text-sm flex items-center gap-2"
+              style={{
+                background: settingsMsg.type === 'success' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                color: settingsMsg.type === 'success' ? '#10b981' : '#ef4444'
+              }}
+            >
+              {settingsMsg.text}
+            </div>
+          )}
+        </div>
+
+        {/* 账户信息 */}
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>账户信息</h3>
+          <div className="space-y-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex justify-between">
+              <span>用户名</span>
+              <span style={{ color: 'var(--text-primary)' }}>{profile?.username}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>角色</span>
+              <span style={{ color: 'var(--text-primary)' }}>
+                {profile?.role === 'admin' || profile?.role === 'super_admin' ? '管理员' : profile?.role === 'editor' ? '编辑' : '普通用户'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>注册时间</span>
+              <span style={{ color: 'var(--text-primary)' }}>
+                {profile?.createdAt ? formatDateTime(profile.createdAt) : '-'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* API Token */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>API Token</h3>
+            <Link href="/my/tokens" className="text-xs underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+              管理 Token
             </Link>
+          </div>
+
+          {tokens.length === 0 ? (
+            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              暂无 Token。注册账号时会自动生成一个 Token。
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tokens.map((t) => (
+                <div key={t.id}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                      {t.name} · 创建于 {new Date(t.created_at).toLocaleDateString('zh-CN')}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {t.last_used ? `最后使用: ${new Date(t.last_used).toLocaleDateString('zh-CN')}` : '从未使用'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="flex-1 rounded-lg px-3 py-2 font-mono text-xs break-all select-all"
+                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--accent)' }}
+                    >
+                      {t.token}
+                    </div>
+                    <button
+                      className="shrink-0 px-3 py-2 rounded-lg text-xs transition-all"
+                      style={{
+                        background: copiedToken === t.id ? 'rgba(16,185,129,0.15)' : 'var(--bg-secondary)',
+                        color: copiedToken === t.id ? '#10b981' : 'var(--text-muted)'
+                      }}
+                      onClick={() => copyToken(t.token, t.id)}
+                    >
+                      {copiedToken === t.id ? '已复制' : '复制'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-3 p-3 rounded-lg text-xs" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.1)', color: 'var(--text-muted)' }}>
+            API Token 用于 AI 创作。复制后发给 AI，AI 用它登录并发布作品到你的账号。
+            如果 Token 泄露，可在 <Link href="/my/tokens" style={{ color: 'var(--accent)' }}>Token 管理页</Link> 删除重建。
           </div>
         </div>
       </div>

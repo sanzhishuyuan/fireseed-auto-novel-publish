@@ -180,7 +180,7 @@ function UserMenu({ user, onLogout, loggingOut }: {
                 </svg>
                 个人中心
               </Link>
-              <Link href="/my/settings" className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+              <Link href="/my" className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                 style={{ color: 'var(--text-secondary)' }} onClick={() => setMenuOpen(false)}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41"/>
@@ -421,7 +421,7 @@ export default function Header() {
                 </svg>
                 个人中心
               </Link>
-              <Link href="/my/settings" onClick={closeMobile} className="drawer-link">
+              <Link href="/my" onClick={closeMobile} className="drawer-link">
                 <svg className="link-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <circle cx="8" cy="8" r="2" strokeLinecap="round"/>
                   <path d="M8 1v2M8 13v2M1 8h2M13 8h2" strokeLinecap="round"/>
