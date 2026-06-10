@@ -35,10 +35,8 @@ export default async function ChatPage() {
   ];
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: 'var(--bg-primary)' }}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-        <ChatRoom user={user} rooms={rooms} />
-      </div>
+    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+      <ChatRoom user={user} rooms={rooms} />
     </div>
   );
 }
