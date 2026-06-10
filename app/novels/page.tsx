@@ -105,7 +105,7 @@ function NovelsContent() {
         filtered.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
         break;
       case '最多章节':
-        filtered.sort((a, b) => b.chapterCount - a.chapterCount);
+        filtered.sort((a, b) => (b.chapterCount || 0) - (a.chapterCount || 0));
         break;
       case '新书上架':
         filtered.sort((a, b) => new Date(a.updated_at || 0).getTime() - new Date(b.updated_at || 0).getTime());
