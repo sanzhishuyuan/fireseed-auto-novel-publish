@@ -45,10 +45,15 @@ export default function TasksPage() {
     title: '',
     description: '',
     genre: '',
-    target_words: '',
-    budget: '',
+    target_words: '100000',
+    budget: '500',
     deadline: ''
   });
+
+  // 默认截止日期：30 天后
+  const defaultDeadline = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+  const minDeadline = new Date(Date.now() + 1 * 86400000).toISOString().split('T')[0];
+  const maxDeadline = new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0];
 
   // 加载任务列表
   const loadTasks = async () => {
@@ -113,8 +118,8 @@ export default function TasksPage() {
           title: '',
           description: '',
           genre: '',
-          target_words: '',
-          budget: '',
+          target_words: '100000',
+          budget: '500',
           deadline: ''
         });
         loadTasks(); // 刷新列表
@@ -447,12 +452,12 @@ export default function TasksPage() {
                       type="number"
                       value={formData.target_words}
                       onChange={(e) => setFormData({...formData, target_words: e.target.value})}
-                      placeholder="例如：50000"
+                      placeholder="例如：100000（10万字）"
                       className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
                       min={1000}
-                      max={500000}
+                      max={1000000}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">1000-500000字（可选）</p>
+                    <p className="text-xs text-muted-foreground mt-1">1,000 - 1,000,000 字（默认 10 万字）</p>
                   </div>
                 </div>
 
@@ -469,9 +474,9 @@ export default function TasksPage() {
                       className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
                       required
                       min={50}
-                      max={10000}
+                      max={50000}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">50-10000 SEED</p>
+                    <p className="text-xs text-muted-foreground mt-1">50 - 50,000 SEED（建议 500+）</p>
                   </div>
 
                   <div>
@@ -484,16 +489,16 @@ export default function TasksPage() {
                       onChange={(e) => setFormData({...formData, deadline: e.target.value})}
                       className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
                       required
-                      min={new Date().toISOString().split('T')[0]}
-                      max={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                      min={minDeadline}
+                      max={maxDeadline}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">未来30天内</p>
+                    <p className="text-xs text-muted-foreground mt-1">1 - 90 天（建议 30 天）</p>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    💡 提示：发布任务将立即冻结预算SEED，任务完成后支付给作者（平台抽成10%）
+                    💡 提示：发布任务将立即冻结预算 SEED，任务完成后支付给作者（平台抽成 10%）。新用户注册赠送 100 SEED。
                   </p>
                 </div>
 

@@ -3,6 +3,7 @@
  */
 
 import db from './db';
+import { getOrCreateWallet } from './seed';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface CreateTaskInput {
@@ -60,8 +61,8 @@ export function validateTaskInput(input: CreateTaskInput): { valid: boolean; err
   if (!input.budget || input.budget < 50) {
     return { valid: false, error: '任务预算至少50 SEED' };
   }
-  if (input.budget > 10000) {
-    return { valid: false, error: '任务预算不能超过10000 SEED' };
+  if (input.budget > 50000) {
+    return { valid: false, error: '任务预算不能超过50000 SEED' };
   }
 
   // 截止日期验证
@@ -74,8 +75,8 @@ export function validateTaskInput(input: CreateTaskInput): { valid: boolean; err
     return { valid: false, error: '截止日期必须在未来' };
   }
   const daysDiff = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-  if (daysDiff > 30) {
-    return { valid: false, error: '任务期限不能超过30天' };
+  if (daysDiff > 90) {
+    return { valid: false, error: '任务期限不能超过90天' };
   }
 
   // 目标字数验证（如果提供）
@@ -83,8 +84,8 @@ export function validateTaskInput(input: CreateTaskInput): { valid: boolean; err
     if (input.target_words < 1000) {
       return { valid: false, error: '目标字数至少1000字' };
     }
-    if (input.target_words > 500000) {
-      return { valid: false, error: '目标字数不能超过50万字' };
+    if (input.target_words > 1000000) {
+      return { valid: false, error: '目标字数不能超过100万字' };
     }
   }
 
@@ -102,11 +103,8 @@ export function createTask(publisherId: string, input: CreateTaskInput): { succe
       return { success: false, error: validation.error };
     }
 
-    // 检查用户余额
-    const wallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ?').get(publisherId) as { balance: number } | undefined;
-    if (!wallet) {
-      return { success: false, error: '用户钱包不存在' };
-    }
+    // 检查用户余额（自动创建钱包）
+    const wallet = getOrCreateWallet(publisherId);
     if (wallet.balance < input.budget) {
       return { success: false, error: `余额不足，当前余额: ${wallet.balance} SEED，需要: ${input.budget} SEED` };
     }
@@ -325,44 +323,43 @@ export function confirmTask(taskId: string, publisherId: string, rating?: number
     // 使用事务执行支付
     const confirmTransaction = db.transaction(() => {
       // 1. 给作者转账
-      const authorWallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ?').get(task.assignee_id) as { balance: number } | undefined;
-      if (authorWallet) {
-        db.prepare(
-          'UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
-        ).run(authorAmount, task.assignee_id);
+      // 给作者转账（自动创建钱包）
+      const authorWalletBefore = getOrCreateWallet(task.assignee_id!);
+      db.prepare(
+        'UPDATE wallets SET balance = balance + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
+      ).run(authorAmount, authorAmount, task.assignee_id);
 
-        // 记录作者收款
-        db.prepare(
-          'INSERT INTO transactions (id, user_id, type, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
-        ).run(
-          uuidv4(),
-          task.assignee_id,
-          'task_complete',
-          authorAmount,
-          authorWallet.balance + authorAmount,
-          `完成任务获得奖励`,
-        );
-      }
+      db.prepare(
+        'INSERT INTO transactions (id, user_id, target_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+      ).run(
+        uuidv4(),
+        task.assignee_id,
+        null,
+        'task_reward',
+        taskId,
+        authorAmount,
+        authorWalletBefore.balance + authorAmount,
+        '完成任务获得奖励',
+      );
 
-      // 2. 平台收入
-      const platformWallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ?').get('platform') as { balance: number } | undefined;
-      if (platformWallet) {
-        db.prepare(
-          'UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
-        ).run(platformCommission, 'platform');
+      // 2. 平台抽成
+      const platformWalletBefore = getOrCreateWallet('platform');
+      db.prepare(
+        'UPDATE wallets SET balance = balance + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
+      ).run(platformCommission, platformCommission, 'platform');
 
-        // 记录平台收入
-        db.prepare(
-          'INSERT INTO transactions (id, user_id, type, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
-        ).run(
-          uuidv4(),
-          'platform',
-          'commission',
-          platformCommission,
-          platformWallet.balance + platformCommission,
-          `任务平台抽成`,
-        );
-      }
+      db.prepare(
+        'INSERT INTO transactions (id, user_id, target_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+      ).run(
+        uuidv4(),
+        'platform',
+        null,
+        'task_reward',
+        taskId,
+        platformCommission,
+        platformWalletBefore.balance + platformCommission,
+        '任务平台抽成 10%',
+      );
 
       // 3. 更新任务状态
       db.prepare(`
@@ -409,25 +406,24 @@ export function cancelTask(taskId: string, userId: string): { success: boolean; 
 
     // 退款
     const cancelTransaction = db.transaction(() => {
-      // 1. 退还SEED给用户
-      const userWallet = db.prepare('SELECT balance FROM wallets WHERE user_id = ?').get(userId) as { balance: number } | undefined;
-      if (userWallet) {
-        db.prepare(
-          'UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
-        ).run(task.budget, userId);
+      // 1. 退还SEED给用户（自动创建钱包）
+      const userWalletBefore = getOrCreateWallet(userId);
+      db.prepare(
+        'UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
+      ).run(task.budget, userId);
 
-        // 记录退款交易
-        db.prepare(
-          'INSERT INTO transactions (id, user_id, type, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
-        ).run(
-          uuidv4(),
-          userId,
-          'task_refund',
-          task.budget,
-          userWallet.balance + task.budget,
-          `任务取消退款`,
-        );
-      }
+      db.prepare(
+        'INSERT INTO transactions (id, user_id, target_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+      ).run(
+        uuidv4(),
+        userId,
+        null,
+        'compensate',
+        taskId,
+        task.budget,
+        userWalletBefore.balance + task.budget,
+        '任务取消退款',
+      );
 
       // 2. 更新任务状态
       db.prepare(`
