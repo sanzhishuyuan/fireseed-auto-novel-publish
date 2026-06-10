@@ -230,13 +230,13 @@ export default function TasksPage() {
                     setStatusFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                  className="px-4 py-2 border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary outline-none"
                 >
-                  <option value="open">开放中</option>
-                  <option value="assigned">已接单</option>
-                  <option value="pending_review">待审核</option>
-                  <option value="completed">已完成</option>
-                  <option value="all">全部</option>
+                  <option value="open" className="bg-background text-foreground">开放中</option>
+                  <option value="assigned" className="bg-background text-foreground">已接单</option>
+                  <option value="pending_review" className="bg-background text-foreground">待审核</option>
+                  <option value="completed" className="bg-background text-foreground">已完成</option>
+                  <option value="all" className="bg-background text-foreground">全部</option>
                 </select>
               </div>
 
@@ -248,17 +248,17 @@ export default function TasksPage() {
                     setGenreFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                  className="px-4 py-2 border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary outline-none"
                 >
-                  <option value="">全部题材</option>
-                  <option value="科幻">科幻</option>
-                  <option value="奇幻">奇幻</option>
-                  <option value="悬疑">悬疑</option>
-                  <option value="言情">言情</option>
-                  <option value="武侠">武侠</option>
-                  <option value="历史">历史</option>
-                  <option value="都市">都市</option>
-                  <option value="其他">其他</option>
+                  <option value="" className="bg-background text-foreground">全部题材</option>
+                  <option value="科幻" className="bg-background text-foreground">科幻</option>
+                  <option value="奇幻" className="bg-background text-foreground">奇幻</option>
+                  <option value="悬疑" className="bg-background text-foreground">悬疑</option>
+                  <option value="言情" className="bg-background text-foreground">言情</option>
+                  <option value="武侠" className="bg-background text-foreground">武侠</option>
+                  <option value="历史" className="bg-background text-foreground">历史</option>
+                  <option value="都市" className="bg-background text-foreground">都市</option>
+                  <option value="其他" className="bg-background text-foreground">其他</option>
                 </select>
               </div>
             </div>
@@ -435,17 +435,17 @@ export default function TasksPage() {
                     <select
                       value={formData.genre}
                       onChange={(e) => setFormData({...formData, genre: e.target.value})}
-                      className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                      className="w-full px-4 py-2 border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary outline-none"
                     >
-                      <option value="">不限</option>
-                      <option value="科幻">科幻</option>
-                      <option value="奇幻">奇幻</option>
-                      <option value="悬疑">悬疑</option>
-                      <option value="言情">言情</option>
-                      <option value="武侠">武侠</option>
-                      <option value="历史">历史</option>
-                      <option value="都市">都市</option>
-                      <option value="其他">其他</option>
+                      <option value="" className="bg-background text-foreground">不限</option>
+                      <option value="科幻" className="bg-background text-foreground">科幻</option>
+                      <option value="奇幻" className="bg-background text-foreground">奇幻</option>
+                      <option value="悬疑" className="bg-background text-foreground">悬疑</option>
+                      <option value="言情" className="bg-background text-foreground">言情</option>
+                      <option value="武侠" className="bg-background text-foreground">武侠</option>
+                      <option value="历史" className="bg-background text-foreground">历史</option>
+                      <option value="都市" className="bg-background text-foreground">都市</option>
+                      <option value="其他" className="bg-background text-foreground">其他</option>
                     </select>
                   </div>
 

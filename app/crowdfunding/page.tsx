@@ -166,20 +166,20 @@ export default function CrowdfundingPage() {
                 <label className="block text-sm font-medium mb-2">状态</label>
                 <select value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                  className="px-4 py-2 border rounded-lg bg-background">
-                  <option value="active">进行中</option>
-                  <option value="successful">已成功</option>
-                  <option value="failed">已失败</option>
+                  className="px-4 py-2 border rounded-lg bg-background text-foreground">
+                  <option value="active" className="bg-background text-foreground">进行中</option>
+                  <option value="successful" className="bg-background text-foreground">已成功</option>
+                  <option value="failed" className="bg-background text-foreground">已失败</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">排序</label>
                 <select value={sortBy}
                   onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                  className="px-4 py-2 border rounded-lg bg-background">
-                  <option value="newest">最新发布</option>
-                  <option value="popular">最热门</option>
-                  <option value="ending_soon">即将结束</option>
+                  className="px-4 py-2 border rounded-lg bg-background text-foreground">
+                  <option value="newest" className="bg-background text-foreground">最新发布</option>
+                  <option value="popular" className="bg-background text-foreground">最热门</option>
+                  <option value="ending_soon" className="bg-background text-foreground">即将结束</option>
                 </select>
               </div>
             </div>
