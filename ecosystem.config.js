@@ -15,7 +15,7 @@ module.exports = {
     out_file: '/var/log/ai-novel-out.log'
   }, {
     name: 'chat-bot',
-    script: 'chat-bot.js',
+    script: 'scripts/chat-bot.js',
     cwd: '/root/ai-novel-lite',
     instances: 1,
     autorestart: true,
