@@ -6,6 +6,7 @@
  */
 
 import nodemailer from 'nodemailer';
+import db from '@/lib/db';
 
 interface MailConfig {
   host: string;
@@ -201,8 +202,6 @@ export async function sendBulkNotification(
   const config = getMailConfig();
   if (!config) return 0;
 
-  // 动态 import db 避免循环依赖
-  const { default: db } = await import('@/lib/db');
   const users = db.prepare(
     "SELECT username, email FROM users WHERE email IS NOT NULL AND email != ''"
   ).all() as { username: string; email: string }[];
