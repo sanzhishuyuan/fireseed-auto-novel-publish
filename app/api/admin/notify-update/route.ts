@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const latest = sections.find(s => s.trim().startsWith('['));
     let items = '';
     if (latest) {
-      const matches = [...latest.matchAll(/^- (.+)$/gm)];
+      const matches: RegExpExecArray[] = []; let m; while ((m = /^- (.+)$/gm.exec(latest)) !== null) { matches.push(m); }
       if (matches.length > 0) {
         items = matches.map(m => '<li>' + m[1] + '</li>').join('');
       }
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     if (preview) {
       const { default: db } = await import('@/lib/db');
-      const count = db.prepare("SELECT COUNT(*) as c FROM users WHERE email IS NOT NULL AND email != ''").get();
+      const count = db.prepare("SELECT COUNT(*) as c FROM users WHERE email IS NOT NULL AND email != ''").get() as { c: number };
       return NextResponse.json({ preview: true, version, subject: finalSubject, recipients: count.c });
     }
 
@@ -58,6 +58,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, version, subject: finalSubject, sent_count: sentCount });
   } catch (error) {
     console.error('[Admin] send update notification failed:', error);
-    return NextResponse.json({ error: (error).message }, { status: 500 });
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

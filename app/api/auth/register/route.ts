@@ -6,7 +6,7 @@ import db from '@/lib/db';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { safeParseJSON } from '@/lib/request-parser';
 import { getOrCreateWallet, transferSeed } from '@/lib/seed';
-import { sendNewUserNotification } from '@/lib/mail';
+import { sendNewUserNotification, sendWelcomeEmail } from '@/lib/mail';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
