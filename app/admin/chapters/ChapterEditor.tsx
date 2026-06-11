@@ -3,6 +3,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
+const C = {
+  bg: '#0b0b0f',
+  card: '#131318',
+  elevated: '#1a1a22',
+  hover: '#22222c',
+  text: '#f0ece4',
+  dim: '#9a9a8e',
+  muted: '#5a5a52',
+  gold: '#c9a55c',
+  goldLight: '#e4cc8a',
+  goldGlow: 'rgba(201,165,92,0.12)',
+  goldBorder: 'rgba(201,165,92,0.2)',
+  border: 'rgba(255,255,255,0.06)',
+  green: '#22c55e',
+  red: '#ef4444',
+  blue: '#3b82f6',
+} as const;
+const fontDisplay = "'Fraunces', Georgia, serif";
+const fontMono = "'DM Mono', 'Menlo', monospace";
+
 interface Novel {
   id: string;
   title: string;
@@ -212,12 +232,12 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
   return (
     <div className="space-y-6">
       {/* 选择小说 */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-        <h2 className="font-bold text-lg text-gray-800 dark:text-white mb-4">选择小说</h2>
+      <div className="codex-card p-6">
+        <h2 className="font-bold text-lg mb-4" style={{ color: C.text, fontFamily: fontDisplay }}>选择小说</h2>
         <select
           value={selectedNovel}
           onChange={(e) => setSelectedNovel(e.target.value)}
-          className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          className="codex-select w-full"
         >
           <option value="">请选择小说</option>
           {novels.map(novel => (
@@ -228,14 +248,14 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
 
       {/* 章节列表 */}
       {selectedNovel && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
+        <div className="codex-card overflow-hidden">
           {/* 标题栏 */}
-          <div className="p-4 border-b dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-bold text-gray-800 dark:text-white">章节列表</h2>
+          <div className="p-4 flex flex-wrap items-center justify-between gap-3" style={{ borderBottom: `1px solid ${C.border}` }}>
+            <h2 className="font-bold" style={{ color: C.text, fontFamily: fontDisplay }}>章节列表</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm"
+                className="codex-btn-gold text-sm"
               >
                 {showForm ? '取消' : '+ 新建章节'}
               </button>
@@ -244,35 +264,35 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
 
           {/* 新建章节表单 */}
           {showForm && (
-            <div className="p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-              <h3 className="font-bold text-gray-800 dark:text-white mb-4">新建章节</h3>
+            <div className="p-6" style={{ borderBottom: `1px solid ${C.border}`, background: C.card }}>
+              <h3 className="font-bold mb-4" style={{ color: C.text, fontFamily: fontDisplay }}>新建章节</h3>
               <div className="space-y-4">
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">章节标题</label>
+                    <label className="block text-sm mb-1" style={{ color: C.dim }}>章节标题</label>
                     <input
                       type="text"
                       value={form.title}
                       onChange={(e) => setForm({ ...form, title: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="codex-input w-full"
                       placeholder="例如：第一章 觉醒"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">排序号</label>
+                    <label className="block text-sm mb-1" style={{ color: C.dim }}>排序号</label>
                     <input
                       type="number"
                       value={form.order}
                       onChange={(e) => setForm({ ...form, order: parseInt(e.target.value) })}
-                      className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="codex-input w-full"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">分支</label>
+                    <label className="block text-sm mb-1" style={{ color: C.dim }}>分支</label>
                     <select
                       value={form.branch}
                       onChange={(e) => setForm({ ...form, branch: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="codex-select w-full"
                     >
                       <option value="main">主线</option>
                       <option value="branch">支线</option>
@@ -281,11 +301,11 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">章节内容 (Markdown)</label>
+                  <label className="block text-sm mb-1" style={{ color: C.dim }}>章节内容 (Markdown)</label>
                   <textarea
                     value={form.content}
                     onChange={(e) => setForm({ ...form, content: e.target.value })}
-                    className="w-full px-4 py-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono text-sm"
+                    className="codex-input w-full font-mono text-sm"
                     rows={10}
                     placeholder="请输入章节正文内容..."
                   />
@@ -293,23 +313,23 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
 
                 {/* 分支选择配置 */}
                 <div>
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">剧情分支选项 (可选)</label>
+                  <label className="block text-sm mb-2" style={{ color: C.dim }}>剧情分支选项 (可选)</label>
                   {form.choices.map((choice, index) => (
                     <div key={index} className="flex items-center gap-2 mb-2">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">选项{index + 1}:</span>
+                      <span className="text-sm" style={{ color: C.dim }}>选项{index + 1}:</span>
                       <input
                         type="text"
                         value={choice.text}
                         readOnly
-                        className="flex-1 px-3 py-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                        className="codex-input flex-1 text-sm px-3 py-1"
                       />
                       <input
                         type="text"
                         value={choice.branch}
                         readOnly
-                        className="w-24 px-3 py-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                        className="codex-input w-24 text-sm px-3 py-1"
                       />
-                      <button onClick={() => handleRemoveChoice(index)} className="text-red-500 hover:text-red-700">✕</button>
+                      <button onClick={() => handleRemoveChoice(index)} className="codex-btn-danger text-xs px-2 py-1">✕</button>
                     </div>
                   ))}
                   <div className="flex items-center gap-2">
@@ -317,42 +337,40 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                       type="text"
                       value={newChoice.text}
                       onChange={(e) => setNewChoice({ ...newChoice, text: e.target.value })}
-                      className="flex-1 px-3 py-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                      className="codex-input flex-1 text-sm px-3 py-1"
                       placeholder="选项文字"
                     />
                     <input
                       type="text"
                       value={newChoice.branch}
                       onChange={(e) => setNewChoice({ ...newChoice, branch: e.target.value })}
-                      className="w-24 px-3 py-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                      className="codex-input w-24 text-sm px-3 py-1"
                       placeholder="分支ID"
                     />
-                    <button onClick={handleAddChoice} className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm">添加</button>
+                    <button onClick={handleAddChoice} className="codex-btn-success text-sm px-3 py-1">添加</button>
                   </div>
                 </div>
 
-                <button onClick={handleSubmit} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">保存章节</button>
+                <button onClick={handleSubmit} className="codex-btn-gold w-full py-3 font-semibold">保存章节</button>
               </div>
             </div>
           )}
 
           {/* 排序提示条 */}
-          <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b dark:border-gray-700 text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+          <div className="codex-tip-info px-4 py-2 text-xs flex items-center gap-1.5" style={{ borderBottom: `1px solid ${C.border}` }}>
             <span>💡</span>
             <span>修改左侧数字即可调整顺序，重复序号会自动插入补位，只需改想移动的章节</span>
           </div>
 
           {/* 排序操作栏 */}
           {sortedChapters.length > 0 && (
-            <div className="px-4 py-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3" style={{ borderBottom: `1px solid ${C.border}`, background: C.card }}>
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleSaveOrder}
                   disabled={!isOrderDirty || isSavingOrder}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isOrderDirty
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-400 cursor-not-allowed'
+                  className={`codex-btn text-sm font-medium ${
+                    isOrderDirty ? 'codex-btn-success' : 'codex-btn-ghost opacity-50 cursor-not-allowed'
                   }`}
                 >
                   {isSavingOrder ? (
@@ -370,13 +388,13 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                 <button
                   onClick={handleResetOrder}
                   disabled={!isOrderDirty || isSavingOrder}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40"
+                  className="codex-btn-ghost text-sm disabled:opacity-40"
                 >
                   重置
                 </button>
               </div>
               {isOrderDirty && (
-                <span className="text-xs text-amber-600 dark:text-amber-400">
+                <span className="text-xs" style={{ color: C.gold }}>
                   有未保存的排序改动
                 </span>
               )}
@@ -385,17 +403,15 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
 
           {/* 消息提示 */}
           {orderMessage && (
-            <div className={`px-4 py-2.5 text-sm border-b dark:border-gray-700 ${
-              orderMessage.type === 'success'
-                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300'
-            }`}>
+            <div className={`px-4 py-2.5 text-sm ${
+              orderMessage.type === 'success' ? 'codex-tip-success' : 'codex-tip-danger'
+            }`} style={{ borderBottom: `1px solid ${C.border}` }}>
               {orderMessage.text}
             </div>
           )}
 
           {/* 章节列表行 */}
-          <div className="divide-y dark:divide-gray-700">
+          <div>
             {sortedChapters.map((chapter) => {
               const chapterId = getChapterId(chapter);
               const chapterTitle = getChapterTitle(chapter);
@@ -410,9 +426,11 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
               return (
                 <div
                   key={chapter.filePath || chapter.id}
-                  className={`p-3 flex items-center gap-3 transition-colors ${
-                    isOrderChanged ? 'bg-amber-50 dark:bg-amber-900/10' : ''
-                  }`}
+                  className="p-3 flex items-center gap-3 transition-colors"
+                  style={{
+                    background: isOrderChanged ? C.goldGlow : 'transparent',
+                    borderBottom: `1px solid ${C.border}`
+                  }}
                 >
                   {/* 排序号输入框 */}
                   <div className="flex-shrink-0 w-14">
@@ -422,26 +440,30 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                       max={chapters.length + 5}
                       value={currentOrder}
                       onChange={(e) => handleOrderChange(chapterId, e.target.value)}
-                      className={`w-14 px-2 py-1.5 text-center text-sm font-mono font-bold rounded-lg border transition-all
-                        ${isOrderChanged
-                          ? 'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
-                          : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
-                        }
-                        focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-600`}
+                      className="w-14 px-2 py-1.5 text-center text-sm font-mono font-bold rounded-lg border transition-all focus:outline-none focus:ring-2"
                       title="修改数字调整顺序，系统会自动插入补位"
+                      style={isOrderChanged ? {
+                        borderColor: C.gold,
+                        background: C.goldGlow,
+                        color: C.goldLight
+                      } : {
+                        borderColor: C.border,
+                        background: C.card,
+                        color: C.text
+                      }}
                     />
                   </div>
 
                   {/* 章节信息 */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-800 dark:text-white truncate text-sm">
+                    <div className="font-medium truncate text-sm" style={{ color: C.text }}>
                       {chapterTitle}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
+                    <div className="text-xs mt-0.5" style={{ color: C.muted }}>
                       {chapterBranch === 'main' ? '主线' : '支线'} · 
                       {chapterWords} 字
                       {chapterChoices > 0 && (
-                        <span className="ml-2 text-purple-600">🔀 {chapterChoices}个分支</span>
+                        <span className="ml-2 codex-badge-purple">🔀 {chapterChoices}个分支</span>
                       )}
                     </div>
                   </div>
@@ -451,7 +473,7 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                     <a
                       href={`/novels/${selectedNovel}/${chapter.filePath || chapter.id}`}
                       target="_blank"
-                      className="px-2 py-1 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded text-xs transition-colors"
+                      className="codex-btn-ghost px-2 py-1 text-xs"
                     >
                       预览
                     </a>
@@ -464,7 +486,7 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                         }
                         handleDeleteChapter(id, chapterTitle);
                       }}
-                      className="px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-xs transition-colors"
+                      className="codex-btn-danger px-2 py-1 text-xs"
                     >
                       删除
                     </button>
@@ -473,7 +495,7 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
               );
             })}
             {sortedChapters.length === 0 && (
-              <div className="p-8 text-center text-gray-500">暂无章节</div>
+              <div className="codex-empty p-8 text-center">暂无章节</div>
             )}
           </div>
         </div>

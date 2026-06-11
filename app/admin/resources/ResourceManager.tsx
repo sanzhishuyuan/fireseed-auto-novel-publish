@@ -3,6 +3,27 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
+const C = {
+  bg: '#0b0b0f',
+  card: '#131318',
+  elevated: '#1a1a22',
+  hover: '#22222c',
+  text: '#f0ece4',
+  dim: '#9a9a8e',
+  muted: '#5a5a52',
+  gold: '#c9a55c',
+  goldLight: '#e4cc8a',
+  goldGlow: 'rgba(201,165,92,0.12)',
+  goldBorder: 'rgba(201,165,92,0.2)',
+  border: 'rgba(255,255,255,0.06)',
+  green: '#22c55e',
+  red: '#ef4444',
+  blue: '#3b82f6',
+  purple: '#a855f7',
+} as const;
+const fontDisplay = "'Fraunces', Georgia, serif";
+const fontMono = "'DM Mono', 'Menlo', monospace";
+
 interface Resource {
   id: string;
   title: string;
@@ -109,13 +130,13 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="badge badge-warning">待审核</span>;
+        return <span className="codex-badge-gold">待审核</span>;
       case 'verified':
-        return <span className="badge badge-success">已通过</span>;
+        return <span className="codex-badge-green">已通过</span>;
       case 'rejected':
-        return <span className="badge" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>已拒绝</span>;
+        return <span className="codex-badge-red">已拒绝</span>;
       default:
-        return <span className="badge">{status}</span>;
+        return <span className="codex-badge">{status}</span>;
     }
   };
 
@@ -123,21 +144,21 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
     <div className="space-y-6">
       {/* 概览统计 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card p-4">
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>待审核</p>
+        <div className="codex-card p-4">
+          <p className="text-xs mb-1" style={{ color: C.dim }}>待审核</p>
           <p className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{statusCounts['pending'] || 0}</p>
         </div>
-        <div className="card p-4">
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>已通过</p>
+        <div className="codex-card p-4">
+          <p className="text-xs mb-1" style={{ color: C.dim }}>已通过</p>
           <p className="text-2xl font-bold" style={{ color: '#10b981' }}>{statusCounts['verified'] || 0}</p>
         </div>
-        <div className="card p-4">
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>已拒绝</p>
+        <div className="codex-card p-4">
+          <p className="text-xs mb-1" style={{ color: C.dim }}>已拒绝</p>
           <p className="text-2xl font-bold" style={{ color: '#ef4444' }}>{statusCounts['rejected'] || 0}</p>
         </div>
-        <div className="card p-4">
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>全部</p>
-          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{resources.length}</p>
+        <div className="codex-card p-4">
+          <p className="text-xs mb-1" style={{ color: C.dim }}>全部</p>
+          <p className="text-2xl font-bold" style={{ color: C.text }}>{resources.length}</p>
         </div>
       </div>
 
@@ -147,9 +168,8 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab.key ? 'bg-indigo-600 text-white' : 'glass'
-            }`}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all`}
+            style={activeTab === tab.key ? { background: C.gold, color: '#0b0b0f' } : { background: C.elevated, color: C.dim }}
           >
             {tab.emoji} {tab.label}
             <span className="ml-1.5 opacity-70">({statusCounts[tab.key] || 0})</span>
@@ -158,9 +178,9 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
       </div>
 
       {/* 资源列表表格 */}
-      <div className="card overflow-hidden">
+      <div className="codex-card overflow-hidden">
         {paginatedResources.length === 0 ? (
-          <div className="px-5 py-16 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+          <div className="px-5 py-16 text-center text-sm codex-empty" style={{ color: C.dim }}>
             {activeTab === 'pending'
               ? '暂无待审核的资源'
               : activeTab === 'verified'
@@ -173,44 +193,44 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-                    <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>资源</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium hide-mobile" style={{ color: 'var(--text-muted)' }}>分类</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium hide-mobile" style={{ color: 'var(--text-muted)' }}>提交者</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>状态</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium hide-mobile" style={{ color: 'var(--text-muted)' }}>有用/无用</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>操作</th>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: C.dim }}>资源</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium hide-mobile" style={{ color: C.dim }}>分类</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium hide-mobile" style={{ color: C.dim }}>提交者</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: C.dim }}>状态</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium hide-mobile" style={{ color: C.dim }}>有用/无用</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: C.dim }}>操作</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedResources.map(r => (
-                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }} className="hover:opacity-90">
+                    <tr key={r.id} style={{ borderBottom: `1px solid ${C.border}` }} className="hover:opacity-90">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span>{CATEGORY_EMOJIS[r.category] || '📦'}</span>
                           <div>
-                            <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                            <div className="font-medium text-sm" style={{ color: C.text, fontFamily: fontDisplay }}>
                               {r.title}
                             </div>
-                            <div className="text-xs truncate max-w-[200px]" style={{ color: 'var(--text-muted)' }}>
+                            <div className="text-xs truncate max-w-[200px]" style={{ color: C.dim }}>
                               {r.url}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 hide-mobile">
-                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: C.elevated, color: C.dim }}>
                           {CATEGORY_LABELS[r.category] || r.category}
                         </span>
                       </td>
-                      <td className="px-4 py-3 hide-mobile text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <td className="px-4 py-3 hide-mobile text-xs" style={{ color: C.dim }}>
                         {r.provider_name || '匿名'}
                       </td>
                       <td className="px-4 py-3">
                         {getStatusBadge(r.status)}
                       </td>
                       <td className="px-4 py-3 hide-mobile">
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        <span className="text-xs" style={{ color: C.dim }}>
                           <span style={{ color: '#10b981' }}>{r.useful_count}</span>
                           /
                           <span style={{ color: '#ef4444' }}>{r.useless_count}</span>
@@ -241,8 +261,8 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
                           <button
                             onClick={() => handleAction(r.id, r.status === 'verified' ? 'reject' : 'approve')}
                             disabled={actionLoading === r.id}
-                            className="px-3 py-1 rounded text-xs transition-all disabled:opacity-50"
-                            style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                            className="codex-btn-ghost text-xs"
+                            style={{ background: C.elevated, color: C.dim }}
                           >
                             {actionLoading === r.id ? '处理中...' : r.status === 'verified' ? '改为拒绝' : '改为通过'}
                           </button>
@@ -256,8 +276,8 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
 
             {/* 分页 */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: C.border }}>
+                <span className="text-xs" style={{ color: C.dim }}>
                   共 {filteredResources.length} 条
                 </span>
                 <div className="flex items-center gap-2">
@@ -265,7 +285,7 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page <= 1}
                     className="px-3 py-1 rounded text-xs disabled:opacity-40"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                    style={{ background: C.elevated, color: C.dim }}
                   >
                     上一页
                   </button>
@@ -286,9 +306,9 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
                         onClick={() => setPage(pageNum)}
                         className="w-7 h-7 rounded text-xs font-medium transition-all"
                         style={{
-                          background: page === pageNum ? 'var(--accent)' : 'transparent',
-                          color: page === pageNum ? 'white' : 'var(--text-secondary)',
-                          border: page === pageNum ? 'none' : '1px solid var(--border)',
+                          background: page === pageNum ? C.gold : 'transparent',
+                          color: page === pageNum ? '#0b0b0f' : C.dim,
+                          border: page === pageNum ? 'none' : `1px solid ${C.border}`,
                         }}
                       >
                         {pageNum}
@@ -299,7 +319,7 @@ export default function ResourceManager({ resources, statusCounts }: Props) {
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                     className="px-3 py-1 rounded text-xs disabled:opacity-40"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                    style={{ background: C.elevated, color: C.dim }}
                   >
                     下一页
                   </button>

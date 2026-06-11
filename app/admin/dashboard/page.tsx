@@ -7,6 +7,31 @@ import { useHeaderConfig } from '@/components/HeaderContext';
 import SkillManager from '../skills/SkillManager';
 import MusicManager from '../music/MusicManager';
 
+// ── Obsidian Codex Palette ──────────────────────────────────────────────
+const C = {
+  bg: '#0b0b0f',
+  card: '#131318',
+  elevated: '#1a1a22',
+  hover: '#22222c',
+  text: '#f0ece4',
+  dim: '#9a9a8e',
+  muted: '#5a5a52',
+  gold: '#c9a55c',
+  goldLight: '#e4cc8a',
+  goldGlow: 'rgba(201,165,92,0.12)',
+  goldBorder: 'rgba(201,165,92,0.2)',
+  border: 'rgba(255,255,255,0.06)',
+  green: '#22c55e',
+  greenGlow: 'rgba(34,197,94,0.12)',
+  red: '#ef4444',
+  blue: '#3b82f6',
+  purple: '#a855f7',
+} as const;
+
+const fontDisplay = "'Fraunces', Georgia, serif";
+const fontMono = "'DM Mono', 'Menlo', monospace";
+
+// ── Interfaces ──────────────────────────────────────────────────────────
 interface AdminStats {
   overview: {
     totalUsers: number;
@@ -47,6 +72,165 @@ interface CleanupItem {
   days_since_deleted: number;
 }
 
+// ── Helpers ─────────────────────────────────────────────────────────────
+function formatNumber(num: number): string {
+  if (num >= 10000000) return (num / 10000000).toFixed(1) + 'kw';
+  if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+  return num.toString();
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────
+function StatCard({ label, value, displayValue, sub, icon, color }: { label: string; value: number; displayValue?: string; sub: string; icon: string; color: string }) {
+  return (
+    <div
+      className="codex-card"
+      style={{ padding: 20 }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 18,
+            background: `${color}18`,
+          }}
+        >
+          {icon}
+        </div>
+      </div>
+      <div
+        style={{
+          fontFamily: fontDisplay,
+          fontSize: 28,
+          fontWeight: 700,
+          color: C.text,
+          marginBottom: 4,
+          lineHeight: 1.1,
+        }}
+      >
+        {displayValue || formatNumber(value)}
+      </div>
+      <div
+        style={{
+          fontFamily: fontMono,
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 4,
+          letterSpacing: '0.02em',
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontFamily: fontMono,
+          fontSize: 11,
+          color: C.gold,
+          letterSpacing: '0.02em',
+        }}
+      >
+        {sub}
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, displayValue }: { label: string; value: number; displayValue?: string }) {
+  return (
+    <div
+      className="codex-card"
+      style={{ padding: 12, textAlign: 'center' }}
+    >
+      <p
+        style={{
+          fontFamily: fontDisplay,
+          fontSize: 20,
+          fontWeight: 700,
+          color: C.text,
+          margin: 0,
+          lineHeight: 1.2,
+        }}
+      >
+        {displayValue || formatNumber(value)}
+      </p>
+      <p
+        style={{
+          fontFamily: fontMono,
+          fontSize: 11,
+          color: C.muted,
+          margin: '4px 0 0',
+          letterSpacing: '0.02em',
+        }}
+      >
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function TaskCard({ title, count, description, action, ready }: { title: string; count: number; description: string; action?: React.ReactNode; ready?: number }) {
+  const hasReady = ready && ready > 0;
+
+  return (
+    <div
+      className="codex-card"
+      style={{ padding: 20 }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+        <h3
+          style={{
+            fontFamily: fontDisplay,
+            fontSize: 14,
+            fontWeight: 600,
+            color: C.text,
+            margin: 0,
+          }}
+        >
+          {title}
+        </h3>
+        {hasReady && (
+          <span
+            className="codex-badge-gold"
+            style={{ fontSize: 11 }}
+          >
+            {ready} 可清理
+          </span>
+        )}
+      </div>
+      <p
+        style={{
+          fontFamily: fontDisplay,
+          fontSize: 30,
+          fontWeight: 700,
+          color: count > 0 ? C.gold : C.muted,
+          margin: '0 0 8px',
+          lineHeight: 1.1,
+        }}
+      >
+        {count}
+      </p>
+      <p
+        style={{
+          fontFamily: fontMono,
+          fontSize: 11,
+          color: C.muted,
+          margin: '0 0 12px',
+          letterSpacing: '0.02em',
+        }}
+      >
+        {description}
+      </p>
+      {action}
+    </div>
+  );
+}
+
+// ── Main Component ──────────────────────────────────────────────────────
 export default function EnhancedAdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -113,7 +297,7 @@ export default function EnhancedAdminDashboard() {
         fetch('/api/admin/skill-dashboard'),
         fetch('/api/admin/feedback'),
       ]);
-      
+
       if (!statsRes.ok) {
         if (statsRes.status === 403 || statsRes.status === 401) {
           router.push('/admin');
@@ -205,16 +389,16 @@ export default function EnhancedAdminDashboard() {
 
   const handleCleanup = async (novelId?: string) => {
     if (!confirm('确认永久删除这些小说文件？此操作不可撤销！')) return;
-    
+
     setCleaningUp(true);
     try {
-      const url = novelId 
+      const url = novelId
         ? `/api/admin/cleanup?novel_id=${novelId}`
         : '/api/admin/cleanup';
-      
+
       const res = await fetch(url, { method: 'DELETE' });
       const data = await res.json();
-      
+
       if (data.success) {
         alert(data.message);
         fetchStats();
@@ -228,117 +412,244 @@ export default function EnhancedAdminDashboard() {
     }
   };
 
+  // ── Loading state ───────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}></div>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>加载中...</p>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: C.bg,
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <div
+            className="codex-animate"
+            style={{
+              width: 32,
+              height: 32,
+              border: `2px solid ${C.gold}`,
+              borderTopColor: 'transparent',
+              borderRadius: '50%',
+              margin: '0 auto 16px',
+            }}
+          />
+          <p
+            style={{
+              fontFamily: fontMono,
+              fontSize: 13,
+              color: C.muted,
+            }}
+          >
+            加载中...
+          </p>
         </div>
       </div>
     );
   }
 
+  // ── Main render ─────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
+    <div style={{ minHeight: '100vh', background: C.bg }}>
+      {/* ── 顶部导航 ────────────────────────────────────────────────── */}
+      <header
+        className="codex-shell"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          borderBottom: `1px solid ${C.border}`,
+          backdropFilter: 'blur(12px)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1280,
+            margin: '0 auto',
+            padding: '16px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link
+              href="/"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: C.goldGlow,
+              }}
+            >
               <svg width="16" height="16" viewBox="0 0 36 36" fill="none">
-                <path d="M11 18C11 18 13.5 11 18 11C22.5 11 25 18 25 18C25 18 22.5 25 18 25C13.5 25 11 18 11 18Z" stroke="var(--accent)" strokeWidth="1.5" fill="none"/>
-                <circle cx="18" cy="18" r="4" fill="var(--accent)"/>
+                <path d="M11 18C11 18 13.5 11 18 11C22.5 11 25 18 25 18C25 18 22.5 25 18 25C13.5 25 11 18 11 18Z" stroke={C.gold} strokeWidth="1.5" fill="none"/>
+                <circle cx="18" cy="18" r="4" fill={C.gold}/>
               </svg>
             </Link>
             <div>
-              <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>管理面板</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              <h1
+                style={{
+                  fontFamily: fontDisplay,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: C.text,
+                  margin: 0,
+                }}
+              >
+                管理面板
+              </h1>
+              <p
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: 11,
+                  color: C.muted,
+                  margin: 0,
+                }}
+              >
                 {adminInfo ? `${adminInfo.nickname || adminInfo.username} · ${adminInfo.roleLabel}` : 'FireSeed 平台'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/admin/novels" className="btn-ghost text-sm">小说管理</Link>
-            <Link href="/admin/chapters" className="btn-ghost text-sm">章节管理</Link>
-            <Link href="/admin/tokens" className="btn-ghost text-sm">Token管理</Link>
-            <Link href="/admin/skills" className="btn-ghost text-sm">技能管理</Link>
-            <Link href="/admin/feedback" className="btn-ghost text-sm">反馈管理</Link>
-            <div className="flex items-center gap-1">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Link href="/admin/novels" className="codex-btn-ghost" style={{ fontSize: 13 }}>小说管理</Link>
+            <Link href="/admin/chapters" className="codex-btn-ghost" style={{ fontSize: 13 }}>章节管理</Link>
+            <Link href="/admin/tokens" className="codex-btn-ghost" style={{ fontSize: 13 }}>Token管理</Link>
+            <Link href="/admin/skills" className="codex-btn-ghost" style={{ fontSize: 13 }}>技能管理</Link>
+            <Link href="/admin/feedback" className="codex-btn-ghost" style={{ fontSize: 13 }}>反馈管理</Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button
                 onClick={fetchStats}
                 disabled={refreshing}
-                className="btn-ghost text-sm flex items-center gap-1"
+                className="codex-btn-ghost"
+                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}
                 title="手动刷新"
               >
-                <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg
+                  width={14}
+                  height={14}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className={refreshing ? 'codex-animate' : ''}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 {refreshing ? '刷新中' : '刷新'}
               </button>
               <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`btn-ghost text-sm ${autoRefresh ? 'text-green-600' : ''}`}
+                className="codex-btn-ghost"
+                style={{ fontSize: 13, color: autoRefresh ? C.green : C.dim }}
                 title={autoRefresh ? '自动刷新已开启（10分钟）' : '自动刷新已关闭'}
               >
                 {autoRefresh ? '⏱️ 自动' : '⏱️ 手动'}
               </button>
             </div>
-            <button onClick={async () => {
-              await fetch('/api/admin/logout', { method: 'POST' });
-              router.push('/admin');
-            }} className="btn-ghost text-sm">退出</button>
+            <button
+              onClick={async () => {
+                await fetch('/api/admin/logout', { method: 'POST' });
+                router.push('/admin');
+              }}
+              className="codex-btn-ghost"
+              style={{ fontSize: 13 }}
+            >
+              退出
+            </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px' }}>
         {error && (
-          <div className="mb-6 p-4 rounded-xl" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+          <div
+            className="codex-tip-danger"
+            style={{ marginBottom: 24, padding: 16, borderRadius: 12, fontSize: 14 }}
+          >
             {error}
           </div>
         )}
 
-        {/* 核心指标 */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>📊 核心指标</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard 
-              label="注册用户" 
-              value={stats?.overview.totalUsers || 0} 
+        {/* ── 核心指标 ──────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <h2
+            className="codex-section-title"
+            style={{
+              fontFamily: fontDisplay,
+              fontSize: 18,
+              fontWeight: 600,
+              color: C.text,
+              marginBottom: 16,
+            }}
+          >
+            📊 核心指标
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 16,
+            }}
+          >
+            <StatCard
+              label="注册用户"
+              value={stats?.overview.totalUsers || 0}
               sub={`今日 +${stats?.growth.newUsersToday || 0}`}
               icon="👥"
-              color="#3b82f6"
+              color={C.blue}
             />
-            <StatCard 
-              label="小说总数" 
-              value={stats?.overview.totalNovels || 0} 
+            <StatCard
+              label="小说总数"
+              value={stats?.overview.totalNovels || 0}
               sub={`${stats?.overview.totalChapters || 0} 章节`}
               icon="📚"
-              color="#10b981"
+              color={C.green}
             />
-            <StatCard 
-              label="总字数" 
-              value={stats?.overview.totalWords || 0} 
+            <StatCard
+              label="总字数"
+              value={stats?.overview.totalWords || 0}
               displayValue={formatNumber(stats?.overview.totalWords || 0)}
               sub={`今日 +${formatNumber(stats?.growth.newWordsToday || 0)}`}
               icon="✍️"
-              color="#f59e0b"
+              color={C.gold}
             />
-            <StatCard 
-              label="今日更新" 
-              value={stats?.growth.newChaptersToday || 0} 
+            <StatCard
+              label="今日更新"
+              value={stats?.growth.newChaptersToday || 0}
               sub="章节"
               icon="📝"
-              color="#8b5cf6"
+              color={C.purple}
             />
           </div>
         </div>
 
-        {/* 增长数据 */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>📈 增长趋势</h2>
-          <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* ── 增长数据 ──────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <h2
+            className="codex-section-title"
+            style={{
+              fontFamily: fontDisplay,
+              fontSize: 18,
+              fontWeight: 600,
+              color: C.text,
+              marginBottom: 16,
+            }}
+          >
+            📈 增长趋势
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(6, 1fr)',
+              gap: 16,
+            }}
+          >
             <MiniStat label="今日新增用户" value={stats?.growth.newUsersToday || 0} />
             <MiniStat label="本周新增" value={stats?.growth.newUsersThisWeek || 0} />
             <MiniStat label="本月新增" value={stats?.growth.newUsersThisMonth || 0} />
@@ -348,18 +659,36 @@ export default function EnhancedAdminDashboard() {
           </div>
         </div>
 
-        {/* 技能管理（任务编辑 + 激活监控）— 默认展开 */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>🤖 技能管理</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        {/* ── 技能管理（任务编辑 + 激活监控）— 默认展开 ──────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2
+              className="codex-section-title"
+              style={{
+                fontFamily: fontDisplay,
+                fontSize: 18,
+                fontWeight: 600,
+                color: C.text,
+                margin: 0,
+              }}
+            >
+              🤖 技能管理
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: 11,
+                  color: C.muted,
+                }}
+              >
                 转化: {skillData ? ((skillData.activationStats?.authorsWithNovels || 0) / Math.max(skillData.activationStats?.totalUsers || 1, 1) * 100).toFixed(1) : '?'}%
               </span>
-              <Link href="/admin/skills" className="btn-ghost text-xs" target="_blank">新窗口打开</Link>
-              <button 
+              <Link href="/admin/skills" className="codex-btn-ghost" style={{ fontSize: 11 }} target="_blank">新窗口打开</Link>
+              <button
                 onClick={() => setSkillExpanded(!skillExpanded)}
-                className="btn-ghost text-xs px-2"
+                className="codex-btn-ghost"
+                style={{ fontSize: 11, padding: '2px 8px' }}
               >
                 {skillExpanded ? '折叠' : '展开'}
               </button>
@@ -369,58 +698,97 @@ export default function EnhancedAdminDashboard() {
             <SkillManager missions={skillData.missions} activationStats={skillData.activationStats} activeUsers={skillData.activeUsers} />
           )}
           {skillExpanded && !skillData && (
-            <div className="card p-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-              <div className="w-6 h-6 border-2 rounded-full animate-spin mx-auto mb-3" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}></div>
-              加载技能数据...
+            <div
+              className="codex-card"
+              style={{ padding: 48, textAlign: 'center' }}
+            >
+              <div
+                className="codex-animate"
+                style={{
+                  width: 24,
+                  height: 24,
+                  border: `2px solid ${C.gold}`,
+                  borderTopColor: 'transparent',
+                  borderRadius: '50%',
+                  margin: '0 auto 12px',
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: 13,
+                  color: C.muted,
+                }}
+              >
+                加载技能数据...
+              </span>
             </div>
           )}
         </div>
 
-        {/* 待处理任务 */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>⚠️ 待处理任务</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <TaskCard 
-              title="待清理小说" 
+        {/* ── 待处理任务 ────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <h2
+            className="codex-section-title"
+            style={{
+              fontFamily: fontDisplay,
+              fontSize: 18,
+              fontWeight: 600,
+              color: C.text,
+              marginBottom: 16,
+            }}
+          >
+            ⚠️ 待处理任务
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 16,
+            }}
+          >
+            <TaskCard
+              title="待清理小说"
               count={cleanupList.length}
               ready={cleanupList.filter(n => n.ready_to_cleanup).length}
               description="已软删除超过7天，可以永久清理"
               action={
                 cleanupList.length > 0 ? (
-                  <button 
+                  <button
                     onClick={() => handleCleanup()}
                     disabled={cleaningUp}
-                    className="btn-primary text-sm"
+                    className="codex-btn-gold"
+                    style={{ fontSize: 13 }}
                   >
                     {cleaningUp ? '清理中...' : '立即清理'}
                   </button>
                 ) : null
               }
             />
-            <TaskCard 
-              title="待审核分支" 
+            <TaskCard
+              title="待审核分支"
               count={stats?.pendingTasks.pendingCustomBranches || 0}
               description="读者提交的自定义剧情分支"
               action={
                 (stats?.pendingTasks.pendingCustomBranches || 0) > 0 ? (
-                  <Link href="/admin/chapters" className="btn-primary text-sm">去审核</Link>
+                  <Link href="/admin/chapters" className="codex-btn-gold" style={{ fontSize: 13 }}>去审核</Link>
                 ) : null
               }
             />
-            <TaskCard 
-              title="API Token" 
+            <TaskCard
+              title="API Token"
               count={stats?.apiUsage.activeTokens || 0}
               description={`今日已使用 ${stats?.apiUsage.usedTokensToday || 0} 次`}
               action={
-                <Link href="/admin/tokens" className="btn-ghost text-sm">管理</Link>
+                <Link href="/admin/tokens" className="codex-btn-ghost" style={{ fontSize: 13 }}>管理</Link>
               }
             />
-            <TaskCard 
-              title="用户反馈" 
+            <TaskCard
+              title="用户反馈"
               count={openCount}
               description="用户提交的意见与问题"
               action={
-                <Link href="/admin/feedback" className="btn-primary text-sm">
+                <Link href="/admin/feedback" className="codex-btn-gold" style={{ fontSize: 13 }}>
                   {openCount > 0 ? `待处理 ${openCount} 条` : '查看'}
                 </Link>
               }
@@ -428,37 +796,54 @@ export default function EnhancedAdminDashboard() {
           </div>
         </div>
 
-        {/* 待清理清单 */}
+        {/* ── 待清理清单 ────────────────────────────────────────────── */}
         {cleanupList.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>🗑️ 待清理文件</h2>
-            <div className="card overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+          <div style={{ marginBottom: 32 }}>
+            <h2
+              className="codex-section-title"
+              style={{
+                fontFamily: fontDisplay,
+                fontSize: 18,
+                fontWeight: 600,
+                color: C.text,
+                marginBottom: 16,
+              }}
+            >
+              🗑️ 待清理文件
+            </h2>
+            <div className="codex-card" style={{ overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>小说</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作者</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>删除时间</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>已过天数</th>
-                      <th className="text-right px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>操作</th>
+                    <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <th style={{ textAlign: 'left', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>小说</th>
+                      <th style={{ textAlign: 'left', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>作者</th>
+                      <th style={{ textAlign: 'left', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>删除时间</th>
+                      <th style={{ textAlign: 'left', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>已过天数</th>
+                      <th style={{ textAlign: 'right', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>操作</th>
                     </tr>
                   </thead>
                   <tbody>
                     {cleanupList.map((item) => (
-                      <tr key={item.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-primary)' }}>{item.title}</td>
-                        <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>{item.author}</td>
-                        <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>{new Date(item.deleted_at).toLocaleDateString('zh-CN')}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <span className="badge badge-warning">{item.days_since_deleted} 天</span>
+                      <tr key={item.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td style={{ padding: '12px 16px', fontSize: 13, color: C.text }}>{item.title}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 13, color: C.muted }}>{item.author}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 13, color: C.muted, fontFamily: fontMono }}>{new Date(item.deleted_at).toLocaleDateString('zh-CN')}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 13 }}>
+                          <span className="codex-badge-gold" style={{ fontSize: 11 }}>{item.days_since_deleted} 天</span>
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <button 
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <button
                             onClick={() => handleCleanup(item.id)}
                             disabled={cleaningUp}
-                            className="text-sm hover:underline"
-                            style={{ color: '#ef4444' }}
+                            style={{
+                              fontSize: 13,
+                              color: C.red,
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontFamily: fontMono,
+                            }}
                           >
                             删除
                           </button>
@@ -472,124 +857,256 @@ export default function EnhancedAdminDashboard() {
           </div>
         )}
 
-        {/* 读者互动 */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>💬 读者互动</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="card p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: 'rgba(239,68,68,0.1)' }}>
+        {/* ── 读者互动 ──────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <h2
+            className="codex-section-title"
+            style={{
+              fontFamily: fontDisplay,
+              fontSize: 18,
+              fontWeight: 600,
+              color: C.text,
+              marginBottom: 16,
+            }}
+          >
+            💬 读者互动
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            <div
+              className="codex-card"
+              style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 24,
+                  background: 'rgba(239,68,68,0.1)',
+                }}
+              >
                 ❤️
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{stats?.interaction.favorites || 0}</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>收藏数</p>
+                <p style={{ fontFamily: fontDisplay, fontSize: 24, fontWeight: 700, color: C.text, margin: 0 }}>
+                  {stats?.interaction.favorites || 0}
+                </p>
+                <p style={{ fontFamily: fontMono, fontSize: 11, color: C.muted, margin: '2px 0 0' }}>收藏数</p>
               </div>
             </div>
-            <div className="card p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: 'rgba(59,130,246,0.1)' }}>
+            <div
+              className="codex-card"
+              style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 24,
+                  background: 'rgba(59,130,246,0.1)',
+                }}
+              >
                 💬
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{stats?.interaction.comments || 0}</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>评论数</p>
+                <p style={{ fontFamily: fontDisplay, fontSize: 24, fontWeight: 700, color: C.text, margin: 0 }}>
+                  {stats?.interaction.comments || 0}
+                </p>
+                <p style={{ fontFamily: fontMono, fontSize: 11, color: C.muted, margin: '2px 0 0' }}>评论数</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 背景音乐管理 */}
-        <div className="mb-8">
+        {/* ── 背景音乐管理 ──────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
           <MusicManager />
         </div>
 
-        {/* 快捷操作 */}
-        <div>
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>⚡ 快捷操作</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-            <Link href="/admin/novels" className="card p-4 hover:scale-[1.02] transition-transform">
-              <p className="text-lg mb-1">📚</p>
-              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>小说管理</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>新建/编辑小说</p>
-            </Link>
-            <Link href="/admin/chapters" className="card p-4 hover:scale-[1.02] transition-transform">
-              <p className="text-lg mb-1">📝</p>
-              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>章节管理</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>发布/编辑章节</p>
-            </Link>
-            <Link href="/admin/tokens" className="card p-4 hover:scale-[1.02] transition-transform">
-              <p className="text-lg mb-1">🔑</p>
-              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Token管理</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>AI授权管理</p>
-            </Link>
-            <Link href="/admin/skills" className="card p-4 hover:scale-[1.02] transition-transform">
-              <p className="text-lg mb-1">🤖</p>
-              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>技能管理</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>任务编辑 / 激活监控</p>
-            </Link>
-            <Link href="/admin/feedback" className="card p-4 hover:scale-[1.02] transition-transform">
-              <p className="text-lg mb-1">💬</p>
-              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>反馈管理</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{openCount > 0 ? `待处理 ${openCount} 条` : '用户反馈'}</p>
-            </Link>
-            <a href="/" target="_blank" className="card p-4 hover:scale-[1.02] transition-transform">
-              <p className="text-lg mb-1">🌐</p>
-              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>访问前台</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>fireseed.online</p>
+        {/* ── 快捷操作 ──────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <h2
+            className="codex-section-title"
+            style={{
+              fontFamily: fontDisplay,
+              fontSize: 18,
+              fontWeight: 600,
+              color: C.text,
+              marginBottom: 16,
+            }}
+          >
+            ⚡ 快捷操作
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
+            {[
+              { href: '/admin/novels', icon: '📚', title: '小说管理', desc: '新建/编辑小说' },
+              { href: '/admin/chapters', icon: '📝', title: '章节管理', desc: '发布/编辑章节' },
+              { href: '/admin/tokens', icon: '🔑', title: 'Token管理', desc: 'AI授权管理' },
+              { href: '/admin/skills', icon: '🤖', title: '技能管理', desc: '任务编辑 / 激活监控' },
+              { href: '/admin/feedback', icon: '💬', title: '反馈管理', desc: openCount > 0 ? `待处理 ${openCount} 条` : '用户反馈' },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="codex-card"
+                style={{
+                  padding: 16,
+                  textDecoration: 'none',
+                  transition: 'transform 0.15s ease, border-color 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)';
+                  (e.currentTarget as HTMLElement).style.borderColor = C.goldBorder;
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                  (e.currentTarget as HTMLElement).style.borderColor = '';
+                }}
+              >
+                <p style={{ fontSize: 18, margin: '0 0 4px' }}>{item.icon}</p>
+                <p style={{ fontFamily: fontDisplay, fontSize: 14, fontWeight: 500, color: C.text, margin: '0 0 2px' }}>{item.title}</p>
+                <p style={{ fontFamily: fontMono, fontSize: 11, color: C.muted, margin: 0 }}>{item.desc}</p>
+              </Link>
+            ))}
+            <a
+              href="/"
+              target="_blank"
+              className="codex-card"
+              style={{
+                padding: 16,
+                textDecoration: 'none',
+                transition: 'transform 0.15s ease, border-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)';
+                (e.currentTarget as HTMLElement).style.borderColor = C.goldBorder;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                (e.currentTarget as HTMLElement).style.borderColor = '';
+              }}
+            >
+              <p style={{ fontSize: 18, margin: '0 0 4px' }}>🌐</p>
+              <p style={{ fontFamily: fontDisplay, fontSize: 14, fontWeight: 500, color: C.text, margin: '0 0 2px' }}>访问前台</p>
+              <p style={{ fontFamily: fontMono, fontSize: 11, color: C.muted, margin: 0 }}>fireseed.online</p>
             </a>
           </div>
         </div>
 
-        {/* 🌱 SEED 充值管理（仅 super_admin 可见） */}
+        {/* ── 🌱 SEED 充值管理（仅 super_admin 可见） ──────────────── */}
         {adminInfo?.role === 'super_admin' && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>🌱 SEED 充值</h2>
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2
+                className="codex-section-title"
+                style={{
+                  fontFamily: fontDisplay,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: C.text,
+                  margin: 0,
+                }}
+              >
+                🌱 SEED 充值
+              </h2>
               <button
                 onClick={() => setSeedExpanded(!seedExpanded)}
-                className="btn-ghost text-xs px-2"
+                className="codex-btn-ghost"
+                style={{ fontSize: 11, padding: '2px 8px' }}
               >
                 {seedExpanded ? '折叠' : '展开'}
               </button>
             </div>
 
             {seedExpanded && (
-              <div className="card p-5">
-                <div className="grid sm:grid-cols-3 gap-4 mb-4">
+              <div className="codex-card" style={{ padding: 20 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: 16,
+                    marginBottom: 16,
+                  }}
+                >
                   <div>
-                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>用户ID</label>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontFamily: fontMono,
+                        fontSize: 11,
+                        color: C.muted,
+                        marginBottom: 4,
+                      }}
+                    >
+                      用户ID
+                    </label>
                     <input
                       type="text"
                       value={seedUserId}
                       onChange={(e) => setSeedUserId(e.target.value)}
-                      className="input"
+                      className="codex-input"
                       placeholder="输入用户ID或用户名..."
                     />
                   </div>
                   <div>
-                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>充值数量</label>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontFamily: fontMono,
+                        fontSize: 11,
+                        color: C.muted,
+                        marginBottom: 4,
+                      }}
+                    >
+                      充值数量
+                    </label>
                     <input
                       type="number"
                       value={seedAmount}
                       onChange={(e) => setSeedAmount(e.target.value)}
-                      className="input"
+                      className="codex-input"
                       placeholder="正整数值"
                       min="1"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>备注（可选）</label>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontFamily: fontMono,
+                        fontSize: 11,
+                        color: C.muted,
+                        marginBottom: 4,
+                      }}
+                    >
+                      备注（可选）
+                    </label>
                     <input
                       type="text"
                       value={seedReason}
                       onChange={(e) => setSeedReason(e.target.value)}
-                      className="input"
+                      className="codex-input"
                       placeholder="如：测试奖励、活动奖励"
                     />
                   </div>
                 </div>
 
                 {seedMessage && (
-                  <p className="text-xs mb-3" style={{ color: seedMessage.includes('成功') ? '#10b981' : '#ef4444' }}>
+                  <p
+                    style={{
+                      fontFamily: fontMono,
+                      fontSize: 12,
+                      marginBottom: 12,
+                      color: seedMessage.includes('成功') ? C.green : C.red,
+                    }}
+                  >
                     {seedMessage}
                   </p>
                 )}
@@ -627,7 +1144,8 @@ export default function EnhancedAdminDashboard() {
                     }
                   }}
                   disabled={seedLoading}
-                  className="btn-primary text-sm px-6 py-2"
+                  className="codex-btn-gold"
+                  style={{ fontSize: 13, padding: '8px 24px' }}
                 >
                   {seedLoading ? '充值中...' : '🌱 确认充值'}
                 </button>
@@ -636,19 +1154,31 @@ export default function EnhancedAdminDashboard() {
           </div>
         )}
 
-        {/* 用户管理（仅 super_admin 可见） */}
+        {/* ── 用户管理（仅 super_admin 可见） ──────────────────────── */}
         {adminInfo?.role === 'super_admin' && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>👥 用户管理</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>共 {usersTotal} 人</span>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2
+                className="codex-section-title"
+                style={{
+                  fontFamily: fontDisplay,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: C.text,
+                  margin: 0,
+                }}
+              >
+                👥 用户管理
+              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontFamily: fontMono, fontSize: 11, color: C.muted }}>共 {usersTotal} 人</span>
                 <button
                   onClick={() => {
                     setUsersExpanded(!usersExpanded);
                     if (!usersExpanded) fetchUsers();
                   }}
-                  className="btn-ghost text-xs px-2"
+                  className="codex-btn-ghost"
+                  style={{ fontSize: 11, padding: '2px 8px' }}
                 >
                   {usersExpanded ? '折叠' : '展开'}
                 </button>
@@ -656,75 +1186,82 @@ export default function EnhancedAdminDashboard() {
             </div>
 
             {usersExpanded && (
-              <div className="card overflow-hidden">
+              <div className="codex-card" style={{ overflow: 'hidden' }}>
                 {/* 搜索栏 */}
-                <div className="p-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <div className="flex gap-2">
+                <div style={{ padding: 16, borderBottom: `1px solid ${C.border}` }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       type="text"
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && fetchUsers(userSearch)}
-                      className="input flex-1"
+                      className="codex-input"
+                      style={{ flex: 1 }}
                       placeholder="搜索用户名..."
                     />
-                    <button onClick={() => fetchUsers(userSearch)} className="btn-primary text-sm px-4">搜索</button>
+                    <button onClick={() => fetchUsers(userSearch)} className="codex-btn-gold" style={{ fontSize: 13, padding: '0 16px' }}>搜索</button>
                   </div>
                   {userMessage && (
-                    <p className="text-xs mt-2" style={{ color: userMessage.includes('已更新') || userMessage.includes('成功') ? '#10b981' : '#ef4444' }}>
+                    <p
+                      style={{
+                        fontFamily: fontMono,
+                        fontSize: 12,
+                        marginTop: 8,
+                        color: userMessage.includes('已更新') || userMessage.includes('成功') ? C.green : C.red,
+                      }}
+                    >
                       {userMessage}
                     </p>
                   )}
                 </div>
 
                 {/* 用户表格 */}
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户名</th>
-                        <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>当前角色</th>
-                        <th className="text-center px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>作品数</th>
-                        <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>注册时间</th>
-                        <th className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>操作</th>
+                      <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <th style={{ textAlign: 'left', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>用户名</th>
+                        <th style={{ textAlign: 'left', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>当前角色</th>
+                        <th style={{ textAlign: 'center', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>作品数</th>
+                        <th style={{ textAlign: 'left', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>注册时间</th>
+                        <th style={{ textAlign: 'left', padding: '12px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>操作</th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.map((user: any) => (
-                        <tr key={user.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                          <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-primary)' }}>
+                        <tr key={user.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                          <td style={{ padding: '12px 16px', fontSize: 13, color: C.text }}>
                             {user.nickname || user.username}
                             {user.username === '__admin__' && (
-                              <span className="text-xs ml-1" style={{ color: '#64748b' }}>(系统)</span>
+                              <span style={{ fontSize: 11, marginLeft: 4, color: '#64748b' }}>(系统)</span>
                             )}
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              user.role === 'super_admin' ? 'text-purple-400 bg-purple-400/10' :
-                              user.role === 'admin' ? 'text-blue-400 bg-blue-400/10' :
-                              user.role === 'editor' ? 'text-green-400 bg-green-400/10' :
-                              user.role === 'viewer' ? 'text-yellow-400 bg-yellow-400/10' :
-                              'text-gray-400 bg-gray-400/10'
-                            }`}>
+                          <td style={{ padding: '12px 16px' }}>
+                            <span
+                              className={
+                                user.role === 'super_admin' ? 'codex-badge-purple' :
+                                user.role === 'admin' ? 'codex-badge-blue' :
+                                user.role === 'editor' ? 'codex-badge-green' :
+                                user.role === 'viewer' ? 'codex-badge-yellow' :
+                                'codex-badge-gray'
+                              }
+                              style={{ fontSize: 11 }}
+                            >
                               {user.roleLabel}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-center" style={{ color: 'var(--text-muted)' }}>{user.novelsCount}</td>
-                          <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+                          <td style={{ padding: '12px 16px', fontSize: 13, textAlign: 'center', color: C.muted, fontFamily: fontMono }}>{user.novelsCount}</td>
+                          <td style={{ padding: '12px 16px', fontSize: 13, color: C.muted, fontFamily: fontMono }}>
                             {new Date(user.registeredAt).toLocaleDateString('zh-CN')}
                           </td>
-                          <td className="px-4 py-3">
+                          <td style={{ padding: '12px 16px' }}>
                             {user.username !== '__admin__' && user.role !== 'super_admin' ? (
                               <select
                                 value={user.role}
                                 onChange={(e) => handleRoleChange(user.id, e.target.value)}
                                 disabled={changingRole === user.id}
-                                className="text-xs px-2 py-1 rounded"
-                                style={{
-                                  background: 'var(--bg-secondary)',
-                                  color: 'var(--text-primary)',
-                                  border: '1px solid var(--border-light)',
-                                }}
+                                className="codex-select"
+                                style={{ fontSize: 11, padding: '4px 8px' }}
                               >
                                 <option value="reader">注册用户</option>
                                 <option value="viewer">数据观察员</option>
@@ -732,14 +1269,14 @@ export default function EnhancedAdminDashboard() {
                                 <option value="admin">高级管理员</option>
                               </select>
                             ) : user.role === 'super_admin' ? (
-                              <span className="text-xs" style={{ color: '#a78bfa' }}>—</span>
+                              <span style={{ fontSize: 11, color: C.purple }}>—</span>
                             ) : null}
                           </td>
                         </tr>
                       ))}
                       {users.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>
+                          <td colSpan={5} style={{ textAlign: 'center', padding: '32px 16px', fontSize: 13, color: C.muted }}>
                             无匹配用户
                           </td>
                         </tr>
@@ -752,15 +1289,27 @@ export default function EnhancedAdminDashboard() {
           </div>
         )}
 
-        {/* 任务执行监控 */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>🎯 任务执行监控</h2>
-            <div className="flex items-center gap-2">
+        {/* ── 任务执行监控 ──────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2
+              className="codex-section-title"
+              style={{
+                fontFamily: fontDisplay,
+                fontSize: 18,
+                fontWeight: 600,
+                color: C.text,
+                margin: 0,
+              }}
+            >
+              🎯 任务执行监控
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 onClick={() => fetchTasksStats()}
                 disabled={refreshing}
-                className="btn-ghost text-xs"
+                className="codex-btn-ghost"
+                style={{ fontSize: 11 }}
               >
                 {refreshing ? '刷新中' : '刷新'}
               </button>
@@ -768,58 +1317,57 @@ export default function EnhancedAdminDashboard() {
           </div>
 
           {/* 摘要 */}
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="card p-3 text-center">
-              <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>{taskSummary.unique_workers}</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>执行者数</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
+            <div className="codex-card" style={{ padding: 12, textAlign: 'center' }}>
+              <p style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 700, color: C.gold, margin: 0 }}>{taskSummary.unique_workers}</p>
+              <p style={{ fontFamily: fontMono, fontSize: 11, color: C.muted, margin: '4px 0 0' }}>执行者数</p>
             </div>
-            <div className="card p-3 text-center">
-              <p className="text-xl font-bold" style={{ color: '#3b82f6' }}>{taskSummary.total_takes}</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>任务领取次数</p>
+            <div className="codex-card" style={{ padding: 12, textAlign: 'center' }}>
+              <p style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 700, color: C.blue, margin: 0 }}>{taskSummary.total_takes}</p>
+              <p style={{ fontFamily: fontMono, fontSize: 11, color: C.muted, margin: '4px 0 0' }}>任务领取次数</p>
             </div>
-            <div className="card p-3 text-center">
-              <p className="text-xl font-bold" style={{ color: '#10b981' }}>{taskSummary.total_completes}</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>任务完成次数</p>
+            <div className="codex-card" style={{ padding: 12, textAlign: 'center' }}>
+              <p style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 700, color: C.green, margin: 0 }}>{taskSummary.total_completes}</p>
+              <p style={{ fontFamily: fontMono, fontSize: 11, color: C.muted, margin: '4px 0 0' }}>任务完成次数</p>
             </div>
           </div>
 
           {/* 最近事件 */}
-          <div className="card overflow-hidden">
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>最近执行记录</p>
+          <div className="codex-card" style={{ overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}` }}>
+              <p style={{ fontFamily: fontDisplay, fontSize: 14, fontWeight: 500, color: C.text, margin: 0 }}>最近执行记录</p>
             </div>
             {taskEvents.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+              <div className="codex-empty" style={{ padding: '32px 16px', textAlign: 'center', fontSize: 13 }}>
                 暂无任务执行记录。AI 客户端领取任务后记录会出现在这里。
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>时间</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>用户</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>操作</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>任务</th>
+                    <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <th style={{ textAlign: 'left', padding: '10px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>时间</th>
+                      <th style={{ textAlign: 'left', padding: '10px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>用户</th>
+                      <th style={{ textAlign: 'left', padding: '10px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>操作</th>
+                      <th style={{ textAlign: 'left', padding: '10px 16px', fontFamily: fontMono, fontSize: 11, fontWeight: 500, color: C.muted, letterSpacing: '0.04em' }}>任务</th>
                     </tr>
                   </thead>
                   <tbody>
                     {taskEvents.slice(0, 20).map((ev: any) => (
-                      <tr key={ev.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <tr key={ev.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td style={{ padding: '10px 16px', fontFamily: fontMono, fontSize: 11, color: C.muted }}>
                           {new Date(ev.created_at).toLocaleString('zh-CN')}
                         </td>
-                        <td className="px-4 py-2.5" style={{ color: 'var(--text-primary)' }}>{ev.username || '匿名'}</td>
-                        <td className="px-4 py-2.5">
-                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                            ev.event_type === 'task_take'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-green-100 text-green-700'
-                          }`}>
+                        <td style={{ padding: '10px 16px', color: C.text, fontSize: 13 }}>{ev.username || '匿名'}</td>
+                        <td style={{ padding: '10px 16px' }}>
+                          <span
+                            className={ev.event_type === 'task_take' ? 'codex-badge-blue' : 'codex-badge-green'}
+                            style={{ fontSize: 11 }}
+                          >
                             {ev.event_type === 'task_take' ? '领取' : '完成'}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        <td style={{ padding: '10px 16px', fontSize: 11, color: C.dim, fontFamily: fontMono }}>
                           {ev.task_title || ev.task_id || '-'}
                         </td>
                       </tr>
@@ -833,53 +1381,4 @@ export default function EnhancedAdminDashboard() {
       </div>
     </div>
   );
-}
-
-function StatCard({ label, value, displayValue, sub, icon, color }: { label: string; value: number; displayValue?: string; sub: string; icon: string; color: string }) {
-  return (
-    <div className="card p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ background: `${color}18` }}>
-          {icon}
-        </div>
-      </div>
-      <div className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{displayValue || formatNumber(value)}</div>
-      <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
-      <div className="text-xs" style={{ color: 'var(--accent)' }}>{sub}</div>
-    </div>
-  );
-}
-
-function MiniStat({ label, value, displayValue }: { label: string; value: number; displayValue?: string }) {
-  return (
-    <div className="card p-3 text-center">
-      <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{displayValue || formatNumber(value)}</p>
-      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
-    </div>
-  );
-}
-
-function TaskCard({ title, count, description, action, ready }: { title: string; count: number; description: string; action?: React.ReactNode; ready?: number }) {
-  const hasReady = ready && ready > 0;
-  
-  return (
-    <div className="card p-5">
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{title}</h3>
-        {hasReady && (
-          <span className="badge badge-warning text-xs">{ready} 可清理</span>
-        )}
-      </div>
-      <p className="text-3xl font-bold mb-2" style={{ color: count > 0 ? 'var(--accent)' : 'var(--text-muted)' }}>{count}</p>
-      <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{description}</p>
-      {action}
-    </div>
-  );
-}
-
-function formatNumber(num: number): string {
-  if (num >= 10000000) return (num / 10000000).toFixed(1) + 'kw';
-  if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-  return num.toString();
 }

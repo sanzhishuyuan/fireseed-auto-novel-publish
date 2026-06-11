@@ -5,6 +5,29 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useHeaderConfig } from '@/components/HeaderContext';
 
+const C = {
+  bg: '#0b0b0f',
+  card: '#131318',
+  elevated: '#1a1a22',
+  hover: '#22222c',
+  text: '#f0ece4',
+  dim: '#9a9a8e',
+  muted: '#5a5a52',
+  gold: '#c9a55c',
+  goldLight: '#e4cc8a',
+  goldGlow: 'rgba(201,165,92,0.12)',
+  goldBorder: 'rgba(201,165,92,0.2)',
+  border: 'rgba(255,255,255,0.06)',
+  green: '#22c55e',
+  greenGlow: 'rgba(34,197,94,0.05)',
+  greenBorder: 'rgba(34,197,94,0.2)',
+  red: '#ef4444',
+  blue: '#3b82f6',
+} as const;
+
+const fontDisplay = "'Fraunces', Georgia, serif";
+const fontMono = "'DM Mono', 'Menlo', monospace";
+
 interface FeedbackItem {
   id: string;
   user_id: string | null;
@@ -59,7 +82,6 @@ export default function AdminFeedbackPage() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
-  // 隐藏全局 Header（此页面使用自定义内联 Header）
   const { setConfig } = useHeaderConfig();
   useEffect(() => { setConfig({ hideHeader: true }); return () => setConfig({}); }, [setConfig]);
 
@@ -138,27 +160,31 @@ export default function AdminFeedbackPage() {
     }
   };
 
-  const selectedItem = items.find((i) => i.id === selectedId);
-
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div style={{ minHeight: '100vh', background: C.bg }}>
       {/* 顶部导航 */}
-      <header className="glass sticky top-0 z-50" style={{ borderBottom: '1px solid var(--border-light)' }}>
+      <header className="sticky top-0 z-50" style={{
+        background: 'rgba(11,11,15,0.85)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: `1px solid ${C.border}`,
+      }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-glow)' }}>
+            <Link href="/" className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: C.goldGlow, border: `1px solid ${C.goldBorder}` }}>
               <svg width="16" height="16" viewBox="0 0 36 36" fill="none">
-                <path d="M11 18C11 18 13.5 11 18 11C22.5 11 25 18 25 18C25 18 22.5 25 18 25C13.5 25 11 18 11 18Z" stroke="var(--accent)" strokeWidth="1.5" fill="none"/>
-                <circle cx="18" cy="18" r="4" fill="var(--accent)"/>
+                <path d="M11 18C11 18 13.5 11 18 11C22.5 11 25 18 25 18C25 18 22.5 25 18 25C13.5 25 11 18 11 18Z"
+                  stroke={C.gold} strokeWidth="1.5" fill="none"/>
+                <circle cx="18" cy="18" r="4" fill={C.gold}/>
               </svg>
             </Link>
             <div>
-              <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>反馈管理</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>用户意见与问题收集</p>
+              <h1 style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: fontDisplay }}>反馈管理</h1>
+              <p style={{ fontSize: 11, color: C.muted, fontFamily: fontMono }}>USER FEEDBACK</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/admin/dashboard" className="btn-ghost text-sm">← 返回面板</Link>
+            <Link href="/admin/dashboard" className="codex-btn-ghost" style={{ fontSize: 13 }}>← 返回面板</Link>
           </div>
         </div>
       </header>
@@ -166,18 +192,25 @@ export default function AdminFeedbackPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* 状态统计 */}
         <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 mb-6">
-          <div className="card p-3 text-center cursor-pointer" onClick={() => setStatusFilter('')}
-            style={{ border: statusFilter === '' ? '1px solid var(--accent)' : '1px solid var(--border-light)' }}>
-            <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{(statusCounts['open'] || 0) + (statusCounts['in_progress'] || 0) + (statusCounts['resolved'] || 0) + (statusCounts['closed'] || 0)}</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>全部</p>
+          <div className="codex-card p-3 text-center cursor-pointer"
+            onClick={() => setStatusFilter('')}
+            style={{ border: statusFilter === '' ? `1px solid ${C.gold}` : `1px solid ${C.border}` }}>
+            <p style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: fontDisplay }}>
+              {(statusCounts['open'] || 0) + (statusCounts['in_progress'] || 0) + (statusCounts['resolved'] || 0) + (statusCounts['closed'] || 0)}
+            </p>
+            <p style={{ fontSize: 11, color: C.muted, fontFamily: fontMono }}>全部</p>
           </div>
           {STATUS_OPTIONS.slice(1).map((opt) => (
-            <div key={opt.value} className="card p-3 text-center cursor-pointer" onClick={() => setStatusFilter(opt.value)}
-              style={{ border: statusFilter === opt.value ? '1px solid var(--accent)' : '1px solid var(--border-light)' }}>
-              <p className="text-lg font-bold" style={{ color: STATUS_STYLES[opt.value]?.color || 'var(--text-primary)' }}>
+            <div key={opt.value} className="codex-card p-3 text-center cursor-pointer"
+              onClick={() => setStatusFilter(opt.value)}
+              style={{ border: statusFilter === opt.value ? `1px solid ${C.gold}` : `1px solid ${C.border}` }}>
+              <p style={{
+                fontSize: 18, fontWeight: 700, fontFamily: fontDisplay,
+                color: STATUS_STYLES[opt.value]?.color || C.text,
+              }}>
                 {statusCounts[opt.value] || 0}
               </p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{opt.label}</p>
+              <p style={{ fontSize: 11, color: C.muted, fontFamily: fontMono }}>{opt.label}</p>
             </div>
           ))}
         </div>
@@ -189,72 +222,82 @@ export default function AdminFeedbackPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchFeedback()}
-            className="input flex-1"
+            className="codex-input flex-1"
             placeholder="搜索标题或内容..."
           />
-          <button onClick={fetchFeedback} className="btn-primary text-sm px-4">搜索</button>
+          <button onClick={fetchFeedback} className="codex-btn-gold" style={{ fontSize: 13, padding: '8px 16px' }}>搜索</button>
         </div>
 
         {/* 反馈列表 */}
         <div className="space-y-3">
           {loading ? (
-            <div className="card p-12 text-center">
-              <div className="w-6 h-6 border-2 rounded-full animate-spin mx-auto mb-3" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}></div>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>加载中...</p>
+            <div className="codex-card p-12 text-center">
+              <div className="codex-animate w-6 h-6 mx-auto mb-3"></div>
+              <p style={{ fontSize: 13, color: C.muted }}>加载中...</p>
             </div>
           ) : items.length === 0 ? (
-            <div className="card p-12 text-center">
-              <p className="text-lg mb-2" style={{ color: 'var(--text-muted)' }}>📭</p>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{statusFilter ? '没有匹配的反馈' : '暂无反馈'}</p>
+            <div className="codex-card p-12 text-center">
+              <p style={{ fontSize: 24, marginBottom: 8 }}>📭</p>
+              <p style={{ fontSize: 13, color: C.muted }}>{statusFilter ? '没有匹配的反馈' : '暂无反馈'}</p>
             </div>
           ) : (
             items.map((item) => (
               <div
                 key={item.id}
-                className={`card overflow-hidden transition-all duration-200 ${
-                  selectedId === item.id ? 'ring-2' : ''
-                }`}
+                className="codex-card overflow-hidden"
                 style={{
                   cursor: 'pointer',
-                  border: selectedId === item.id ? '1px solid var(--accent)' : '1px solid var(--border-light)',
-                  '--tw-ring-color': 'var(--accent)',
-                } as React.CSSProperties}
+                  border: selectedId === item.id ? `1px solid ${C.gold}` : `1px solid ${C.border}`,
+                  boxShadow: selectedId === item.id ? `0 0 0 1px ${C.goldGlow}` : 'none',
+                }}
               >
                 {/* 反馈头 */}
                 <div className="p-4" onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}>
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
-                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
+                      <span style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        whiteSpace: 'nowrap',
+                        background: C.elevated,
+                        color: C.muted,
+                        fontFamily: fontMono,
+                      }}>
                         {TYPE_LABELS[item.type] || item.type}
                       </span>
-                      <h3 className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                      <h3 style={{ fontSize: 14, fontWeight: 500, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.title}
                       </h3>
                     </div>
                     <div className="flex items-center gap-2 ml-2">
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
-                        style={{
-                          background: STATUS_STYLES[item.status]?.bg || 'var(--bg-secondary)',
-                          color: STATUS_STYLES[item.status]?.color || 'var(--text-muted)',
-                        }}
-                      >
+                      <span style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        whiteSpace: 'nowrap',
+                        background: STATUS_STYLES[item.status]?.bg || C.elevated,
+                        color: STATUS_STYLES[item.status]?.color || C.muted,
+                        fontFamily: fontMono,
+                      }}>
                         {STATUS_LABELS[item.status] || item.status}
                       </span>
                       <svg className={`w-4 h-4 transition-transform ${selectedId === item.id ? 'rotate-180' : ''}`}
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                        style={{ color: 'var(--text-muted)' }}>
+                        style={{ color: C.muted }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <p className="text-xs truncate flex-1" style={{ color: 'var(--text-muted)' }}>
+                    <p style={{
+                      fontSize: 12, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap', flex: 1,
+                    }}>
                       {item.message?.slice(0, 100)}{item.message?.length > 100 ? '...' : ''}
                     </p>
-                    <span className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                    <span style={{ fontSize: 11, whiteSpace: 'nowrap', color: C.muted, fontFamily: fontMono }}>
                       {new Date(item.created_at).toLocaleDateString('zh-CN')}
                     </span>
                   </div>
@@ -262,12 +305,20 @@ export default function AdminFeedbackPage() {
 
                 {/* 展开详情 */}
                 {selectedId === item.id && (
-                  <div style={{ borderTop: '1px solid var(--border-light)' }}>
+                  <div style={{ borderTop: `1px solid ${C.border}` }}>
                     <div className="p-4 space-y-4">
                       {/* 完整内容 */}
                       <div>
-                        <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>反馈内容</p>
-                        <div className="p-3 rounded-lg text-sm whitespace-pre-wrap" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                        <p style={{ fontSize: 11, fontWeight: 500, marginBottom: 4, color: C.muted, fontFamily: fontMono }}>反馈内容</p>
+                        <div style={{
+                          padding: 12,
+                          borderRadius: 8,
+                          fontSize: 13,
+                          whiteSpace: 'pre-wrap',
+                          background: C.elevated,
+                          color: C.text,
+                          lineHeight: 1.7,
+                        }}>
                           {item.message}
                         </div>
                       </div>
@@ -275,16 +326,25 @@ export default function AdminFeedbackPage() {
                       {/* 联系方式 */}
                       {item.contact && (
                         <div>
-                          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>联系方式</p>
-                          <p className="text-sm" style={{ color: 'var(--accent)' }}>{item.contact}</p>
+                          <p style={{ fontSize: 11, fontWeight: 500, marginBottom: 4, color: C.muted, fontFamily: fontMono }}>联系方式</p>
+                          <p style={{ fontSize: 13, color: C.gold }}>{item.contact}</p>
                         </div>
                       )}
 
                       {/* 已回复内容 */}
                       {item.admin_reply && (
                         <div>
-                          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>已回复</p>
-                          <div className="p-3 rounded-lg text-sm whitespace-pre-wrap" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--text-primary)' }}>
+                          <p style={{ fontSize: 11, fontWeight: 500, marginBottom: 4, color: C.muted, fontFamily: fontMono }}>已回复</p>
+                          <div style={{
+                            padding: 12,
+                            borderRadius: 8,
+                            fontSize: 13,
+                            whiteSpace: 'pre-wrap',
+                            background: C.greenGlow,
+                            border: `1px solid ${C.greenBorder}`,
+                            color: C.text,
+                            lineHeight: 1.7,
+                          }}>
                             {item.admin_reply}
                           </div>
                         </div>
@@ -292,21 +352,24 @@ export default function AdminFeedbackPage() {
 
                       {/* 状态操作按钮 */}
                       <div>
-                        <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>变更状态</p>
+                        <p style={{ fontSize: 11, fontWeight: 500, marginBottom: 8, color: C.muted, fontFamily: fontMono }}>变更状态</p>
                         <div className="flex flex-wrap gap-2">
                           {STATUS_OPTIONS.slice(1).map((opt) => (
                             <button
                               key={opt.value}
                               onClick={() => handleStatusChange(item.id, opt.value)}
                               disabled={updating === item.id || item.status === opt.value}
-                              className="text-xs px-3 py-1.5 rounded-lg transition-all"
                               style={{
+                                fontSize: 12,
+                                padding: '5px 12px',
+                                borderRadius: 8,
+                                border: 'none',
                                 background: item.status === opt.value
-                                  ? (STATUS_STYLES[opt.value]?.bg || 'var(--bg-secondary)')
-                                  : 'var(--bg-secondary)',
+                                  ? (STATUS_STYLES[opt.value]?.bg || C.elevated)
+                                  : C.elevated,
                                 color: item.status === opt.value
-                                  ? (STATUS_STYLES[opt.value]?.color || 'var(--text-primary)')
-                                  : 'var(--text-muted)',
+                                  ? (STATUS_STYLES[opt.value]?.color || C.text)
+                                  : C.muted,
                                 opacity: item.status === opt.value ? 0.7 : 1,
                                 cursor: item.status === opt.value ? 'default' : 'pointer',
                               }}
@@ -319,18 +382,20 @@ export default function AdminFeedbackPage() {
 
                       {/* 回复区 */}
                       <div>
-                        <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>管理员回复</p>
+                        <p style={{ fontSize: 11, fontWeight: 500, marginBottom: 8, color: C.muted, fontFamily: fontMono }}>管理员回复</p>
                         <textarea
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
-                          className="input w-full min-h-[80px] resize-y text-sm"
+                          className="codex-input w-full"
+                          style={{ minHeight: 80, resize: 'vertical', fontSize: 13 }}
                           placeholder="输入回复内容，回复后将自动标记为已解决..."
                         />
                         <div className="flex justify-end mt-2">
                           <button
                             onClick={() => handleReply(item.id)}
                             disabled={updating === item.id || !replyText.trim()}
-                            className="btn-primary text-sm px-4 py-2"
+                            className="codex-btn-gold"
+                            style={{ fontSize: 13, padding: '8px 16px' }}
                           >
                             {updating === item.id ? '回复中...' : '回复并解决'}
                           </button>
@@ -338,7 +403,7 @@ export default function AdminFeedbackPage() {
                       </div>
 
                       {/* 时间信息 */}
-                      <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <div className="flex items-center gap-4" style={{ fontSize: 11, color: C.muted, fontFamily: fontMono }}>
                         <span>提交: {new Date(item.created_at).toLocaleString('zh-CN')}</span>
                         <span>更新: {new Date(item.updated_at).toLocaleString('zh-CN')}</span>
                       </div>

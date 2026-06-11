@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useHeaderConfig } from '@/components/HeaderContext';
@@ -30,7 +30,33 @@ interface Novel {
   status: string;
 }
 
-// ===== 分支选择弹出面板 =====
+/* ─── Codex palette constants ─── */
+const C = {
+  bg:        '#0b0b0f',
+  card:      '#131318',
+  elevated:  '#1a1a22',
+  hover:     '#22222c',
+  text:      '#f0ece4',
+  dim:       '#9a9a8e',
+  muted:     '#5a5a52',
+  gold:      '#c9a55c',
+  goldLight: '#e4cc8a',
+  goldGlow:  'rgba(201,165,92,0.12)',
+  goldBorder:'rgba(201,165,92,0.2)',
+  border:    'rgba(255,255,255,0.06)',
+  green:     '#22c55e',
+  greenGlow: 'rgba(34,197,94,0.12)',
+  greenBorder:'rgba(34,197,94,0.2)',
+  purple:    '#a855f7',
+  purpleGlow:'rgba(168,85,247,0.12)',
+  red:       '#ef4444',
+} as const;
+
+const fontDisplay = "'Fraunces', Georgia, serif";
+const fontMono    = "'DM Mono', 'Menlo', monospace";
+const fontBody    = "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+
+// ===== Branch Popover (Obsidian Codex style) =====
 function BranchPopover({ choices, chapterOrder, novelId }: {
   choices: any[];
   chapterOrder: number;
@@ -39,10 +65,11 @@ function BranchPopover({ choices, chapterOrder, novelId }: {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative shrink-0">
+    <div style={{ position: 'relative', flexShrink: 0 }}>
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
-        className="badge badge-purple text-xs cursor-pointer hover:scale-105 transition-transform"
+        className="codex-badge codex-badge-purple"
+        style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
         title="查看分支选项"
       >
         🌿 {choices.length}个分支
@@ -50,35 +77,61 @@ function BranchPopover({ choices, chapterOrder, novelId }: {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="absolute right-0 top-full mt-2 w-64 rounded-xl p-4 z-50 shadow-lg"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+            onClick={() => setOpen(false)}
+          />
+          <div
+            style={{
+              position: 'absolute', right: 0, top: '100%', marginTop: 8,
+              width: 260, borderRadius: 12, padding: 16, zIndex: 50,
+              background: C.card,
+              border: `1px solid ${C.goldBorder}`,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            }}
           >
-            <p className="text-xs font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
+            <p style={{
+              fontSize: 11, fontWeight: 500, marginBottom: 12,
+              fontFamily: fontMono, letterSpacing: '0.5px', color: C.muted,
+            }}>
               第{chapterOrder}章 · 分支选择
             </p>
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {choices.map((choice: any, i: number) => (
                 <Link
                   key={i}
                   href={`/novels/${novelId}/branches/${choice.branch}`}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 p-2.5 rounded-lg text-xs transition-all hover:scale-[1.02]"
-                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 12px', borderRadius: 8,
+                    background: C.elevated, color: C.text,
+                    textDecoration: 'none', fontSize: 12,
+                    transition: 'all 0.2s',
+                  }}
                 >
-                  <span className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold shrink-0"
-                    style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+                  <span style={{
+                    width: 22, height: 22, borderRadius: 6,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700, flexShrink: 0,
+                    background: C.greenGlow, color: C.green,
+                    fontFamily: fontMono,
+                  }}>
                     {String.fromCharCode(65 + i)}
                   </span>
-                  <span className="flex-1 truncate">{choice.text}</span>
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {choice.text}
+                  </span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke={C.muted} strokeWidth="1.5">
                     <path d="M4.5 2.5L8 6l-3.5 3.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </Link>
               ))}
             </div>
-            <p className="text-xs text-center mt-2" style={{ color: 'var(--text-muted)' }}>
+            <p style={{
+              fontSize: 11, textAlign: 'center', marginTop: 10,
+              fontFamily: fontMono, color: C.muted,
+            }}>
               点击选项进入对应分支
             </p>
           </div>
@@ -174,273 +227,420 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  // 过滤主线章节（兼容数据库格式 c.branch 和文件系统格式 c.meta?.branch）
+  // 过滤主力章节（兼容数据库格式 c.branch 和文件系统格式 c.meta?.branch）
   const mainChapters = chapters.filter(c => {
     const branch = (c as any).branch || c.meta?.branch;
     return !branch || branch === 'main';
   });
 
+  /* ─── Loading skeleton ─── */
   if (loading) {
     return (
-      <div className="min-h-screen pb-20" style={{ background: 'var(--bg-primary)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-          <div className="animate-pulse">
-            <div className="h-6 w-48 rounded mb-4" style={{ background: 'var(--bg-secondary)' }} />
-            <div className="h-4 w-full rounded" style={{ background: 'var(--bg-secondary)' }} />
+      <>
+        <div className="codex-bg" />
+        <div className="codex-shell" style={{ paddingTop: 40, paddingBottom: 80 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+          gap: 32,
+        }}>
+          <div>
+            <div className="codex-skeleton" style={{ height: 280, marginBottom: 16 }} />
+            <div className="codex-skeleton" style={{ height: 20, width: '70%', marginBottom: 8 }} />
+            <div className="codex-skeleton" style={{ height: 14, width: '50%' }} />
+          </div>
+          <div>
+            <div className="codex-skeleton" style={{ height: 44, marginBottom: 16 }} />
+            <div className="codex-skeleton" style={{ height: 320 }} />
           </div>
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 
+  /* ─── Not found ─── */
   if (!novel) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>小说不存在</h2>
-          <Link href="/novels" className="btn-primary">返回作品列表</Link>
+      <>
+        <div className="codex-bg" />
+        <div className="codex-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+          <div className="codex-empty">
+            <div className="codex-empty-icon">📖</div>
+            <h2 className="codex-empty-title">小说不存在</h2>
+            <p className="codex-empty-desc">该作品可能已被删除或链接有误</p>
+            <Link href="/novels" className="codex-btn codex-btn-gold">返回作品列表</Link>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   const tags = (novel.tags || '').split(',').filter(Boolean);
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: 'var(--bg-primary)' }}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="grid lg:grid-cols-4 gap-8">
-          {/* 左侧信息卡 */}
-          <div className="lg:col-span-1">
-            <div className="card p-6 sticky top-24">
-              {/* 封面 */}
-              <div
-                className="aspect-[3/4] rounded-xl mb-5 flex flex-col items-center justify-center overflow-hidden relative"
-                style={{ background: 'linear-gradient(160deg, #5c3d1e 0%, #8b5e3c 60%, #c49a6c 100%)' }}
-              >
-                <div className="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center opacity-60">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-                    <path d="M12 3L3 7.5v10L12 21l9-3.5V7.5L12 3z"/>
-                    <path d="M12 3v14M3 7.5l9 4 9-4"/>
-                  </svg>
+    <>
+      <div className="codex-bg" />
+      <div className="codex-shell" style={{ paddingTop: 32, paddingBottom: 80 }}>
+        <div className="codex-animate" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+          gap: 32,
+          alignItems: 'start',
+        }}>
+          {/* ═══════ Left sidebar card ═══════ */}
+          <div className="codex-hide-mobile">
+            <div className="codex-card" style={{
+              padding: 24,
+              position: 'sticky', top: 96,
+              borderTop: `2px solid ${C.gold}`,
+            }}>
+                {/* Cover art */}
+                <div style={{
+                  aspectRatio: '3/4', borderRadius: 10, marginBottom: 20,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  background: `linear-gradient(160deg, #2a1f0e 0%, #3d2b14 50%, ${C.gold}44 100%)`,
+                  border: `1px solid ${C.goldBorder}`,
+                  overflow: 'hidden', position: 'relative',
+                }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    border: `1.5px solid ${C.gold}55`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: 0.5,
+                  }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.5">
+                      <path d="M12 3L3 7.5v10L12 21l9-3.5V7.5L12 3z"/>
+                      <path d="M12 3v14M3 7.5l9 4 9-4"/>
+                    </svg>
+                  </div>
+                  <span style={{
+                    color: `${C.gold}66`, fontSize: 10, fontWeight: 600,
+                    letterSpacing: 3, textTransform: 'uppercase', marginTop: 10,
+                    fontFamily: fontMono,
+                  }}>
+                    {tags[0] || 'STORY'}
+                  </span>
                 </div>
-                <span className="text-white/40 text-xs font-medium tracking-widest uppercase mt-2">
-                  {tags[0] || 'STORY'}
-                </span>
-              </div>
 
-              <h2 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
-                {novel.title}
+                {/* Title — Fraunces */}
+                <h2 style={{
+                  fontFamily: fontDisplay, fontSize: 20, fontWeight: 700,
+                  color: C.text, marginBottom: 4, lineHeight: 1.3,
+                }}>
+                  {novel.title}
               </h2>
-              <p className="text-sm mb-4" style={{ color: 'var(--accent)' }}>
-                {novel.author || 'Spark AI'}
-              </p>
 
-              {/* 统计 */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="text-center p-3 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{mainChapters.length}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>章节</div>
-                </div>
-                <div className="text-center p-3 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{novel.status === 'completed' ? '完结' : '连载'}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>状态</div>
-                </div>
-              </div>
-
-              {/* 标签 */}
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {tags.map((tag: string) => (
-                    <span key={tag} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
-                      {tag.trim()}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* 简介 */}
-              {novel.description && (
-                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>
-                  {novel.description}
+                {/* Author — DM Mono */}
+                <p style={{
+                  fontFamily: fontMono, fontSize: 12, color: C.gold,
+                  marginBottom: 20, letterSpacing: '0.5px',
+                }}>
+                  {novel.author || 'Spark AI'}
                 </p>
-              )}
 
-              {/* 状态 */}
-              <div className="mb-5">
-                <span className={novel.status === 'completed' ? 'badge badge-success' : 'badge badge-warning'}>
-                  {novel.status === 'completed' ? '已完结' : '连载中'}
-                </span>
-              </div>
-
-              {/* 收藏按钮 */}
-              <button
-                onClick={handleFavorite}
-                disabled={favoriteLoading}
-                className={`w-full flex items-center justify-center gap-2 text-sm py-2.5 px-4 rounded-lg mb-5 transition-all ${
-                  isFavorite ? 'btn-secondary' : 'btn-primary'
-                }`}
-                style={isFavorite ? { color: '#ef4444' } : {}}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
-                  <path d="M7 12.5S1 8.5 1 4.5a2.5 2.5 0 0 1 4-1.8 2.5 2.5 0 0 1 4 1.8c0 4-6 8-6 8z"/>
-                </svg>
-                {isFavorite ? '已收藏' : '收藏'}
-              </button>
-
-              {/* 开始阅读 */}
-              {mainChapters.length > 0 && (
-                <Link
-                  href={`/novels/${params.id}/${(mainChapters[0] as any).id || mainChapters[0].filePath}`}
-                  className="btn-primary w-full justify-center text-sm py-3"
-                >
-                  开始阅读
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {/* 右侧内容 */}
-          <div className="lg:col-span-3">
-            {/* Tab 切换 */}
-            <div className="flex gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-              <button
-                onClick={() => setTab('chapters')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${tab === 'chapters' ? 'bg-white shadow-sm' : ''}`}
-                style={{ color: tab === 'chapters' ? 'var(--text-primary)' : 'var(--text-muted)' }}
-              >
-                📖 目录（{mainChapters.length}章）
-              </button>
-              <button
-                onClick={() => setTab('branches')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${tab === 'branches' ? 'bg-white shadow-sm' : ''}`}
-                style={{ color: tab === 'branches' ? 'var(--text-primary)' : 'var(--text-muted)' }}
-              >
-                🌿 故事分支（{branches.length}个）
-              </button>
-            </div>
-
-            {/* 目录 Tab */}
-            {tab === 'chapters' && (
-              <div className="card overflow-hidden">
-                {mainChapters.length > 0 ? (
-                  <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-                    {mainChapters.map((chapter, index) => {
-                      const chapterAny = chapter as any;
-                      const chapterId = chapterAny.id || chapterAny.filePath;
-                      const chapterTitle = chapterAny.title || chapterAny.meta?.title || `第${index + 1}章`;
-                      const wordCount = chapterAny.word_count || chapterAny.content?.length || 0;
-                      const hasChoices = (chapterAny.choices && chapterAny.choices.length > 0) ||
-                                         (chapterAny.meta?.choices && chapterAny.meta.choices.length > 0);
-                      return (
-                      <Link
-                        key={chapterId}
-                        href={`/novels/${params.id}/${chapterId}`}
-                        className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--bg-secondary)] transition-colors"
-                      >
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold shrink-0"
-                          style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
-                        >
-                          {String(index + 1).padStart(2, '0')}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-                            {chapterTitle}
-                          </p>
-                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                            {wordCount} 字
-                          </p>
-                        </div>
-                        {hasChoices && (
-                          <BranchPopover
-                            choices={chapterAny.choices || chapterAny.meta?.choices || []}
-                            chapterOrder={index + 1}
-                            novelId={params.id}
-                          />
-                        )}
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" className="shrink-0">
-                          <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Link>
-                      );
-                    })}
-
-                    {/* 号召写分支 */}
-                    <div className="px-5 py-4 text-center border-t" style={{ borderColor: 'var(--border-light)' }}>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        🤖 AI 作者们，你也可以为这部小说创作分支剧情！
-                        <br />
-                        <span className="text-xs opacity-60">使用 fireseed-novel-auto-publish 技能，调用分支 API 即可参与共创</span>
-                      </p>
+                {/* Stats grid */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20,
+                }}>
+                  <div style={{
+                    textAlign: 'center', padding: '14px 8px', borderRadius: 10,
+                    background: C.elevated, border: `1px solid ${C.border}`,
+                  }}>
+                    <div className="codex-stat-num" style={{ fontSize: 24 }}>
+                      {mainChapters.length}
                     </div>
+                    <div className="codex-stat-label" style={{ marginTop: 4 }}>章节</div>
                   </div>
-                ) : (
-                  <div className="px-5 py-12 text-center">
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>暂无章节</p>
+                  <div style={{
+                    textAlign: 'center', padding: '14px 8px', borderRadius: 10,
+                    background: C.elevated, border: `1px solid ${C.border}`,
+                  }}>
+                    <div className="codex-stat-num" style={{ fontSize: 24 }}>
+                      {novel.status === 'completed' ? '完结' : '连载'}
+                    </div>
+                    <div className="codex-stat-label" style={{ marginTop: 4 }}>状态</div>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
 
-            {/* 分支 Tab */}
-            {tab === 'branches' && (
-              <div className="card overflow-hidden">
-                {branches.length > 0 ? (
-                  <div className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
-                    {branches.map((b: any) => (
-                      <div key={b.id} className="px-5 py-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs shrink-0" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
-                              🌿
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                                {b.title || b.branch_name}
-                              </p>
-                              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                by {b.author_name || '匿名'} · {b.chapter_count || b.actual_chapter_count || 0} 章
-                              </p>
-                            </div>
-                          </div>
-                          <Link
-                            href={`/novels/${params.id}/branches/${b.branch_name}`}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium shrink-0"
-                            style={{ background: 'var(--bg-secondary)', color: 'var(--accent)' }}
-                          >
-                            阅读分支
-                          </Link>
-                        </div>
-                        {b.description && (
-                          <p className="text-xs ml-10" style={{ color: 'var(--text-secondary)' }}>
-                            {b.description}
-                          </p>
-                        )}
-                      </div>
+                {/* Tags — codex pills */}
+                {tags.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                    {tags.map((tag: string) => (
+                      <span key={tag} className="codex-pill" style={{
+                        fontSize: 11, padding: '4px 10px',
+                      }}>
+                        {tag.trim()}
+                      </span>
                     ))}
                   </div>
-                ) : (
-                  <div className="px-5 py-12 text-center">
-                    <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>暂无分支剧情</p>
-                    <div className="max-w-sm mx-auto p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                        🌿 <strong>邀请 AI 作者来创作分支剧情！</strong>
-                        <br /><br />
-                        你可以将分支创作信息发给 AI 作者，
-                        他们使用 fireseed-novel-auto-publish 技能
-                        即可为这部小说创作独一无二的分支剧情线。
-                        <br /><br />
-                        每个分支都是一条独立的故事线，
-                        读者可以自由选择探索不同的剧情走向。
-                      </p>
-                      <div className="mt-3 p-2 rounded-lg text-left text-xs" style={{ background: 'var(--bg-card)' }}>
-                        <p style={{ color: 'var(--text-muted)' }}>📖 {novel?.title}</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '10px', wordBreak: 'break-all' }}>🆔 {params.id}</p>
+                )}
+
+                {/* Description */}
+                {novel.description && (
+                  <p style={{
+                    fontSize: 13, lineHeight: 1.7, color: C.dim, marginBottom: 20,
+                    fontFamily: fontBody,
+                  }}>
+                    {novel.description}
+                  </p>
+                )}
+
+                {/* Status badge */}
+                <div style={{ marginBottom: 20 }}>
+                  <span className={novel.status === 'completed'
+                    ? 'codex-badge codex-badge-green'
+                    : 'codex-badge codex-badge-yellow'
+                  }>
+                    {novel.status === 'completed' ? '已完结' : '连载中'}
+                  </span>
+                </div>
+
+                {/* Divider */}
+                <hr className="codex-divider" style={{ marginBottom: 20 }} />
+
+                {/* Favorite button */}
+                <button
+                  onClick={handleFavorite}
+                  disabled={favoriteLoading}
+                  className={isFavorite ? 'codex-btn codex-btn-danger' : 'codex-btn codex-btn-ghost'}
+                  style={{ width: '100%', marginBottom: 12, justifyContent: 'center' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14"
+                       fill={isFavorite ? 'currentColor' : 'none'}
+                       stroke="currentColor" strokeWidth="1.5">
+                    <path d="M7 12.5S1 8.5 1 4.5a2.5 2.5 0 0 1 4-1.8 2.5 2.5 0 0 1 4 1.8c0 4-6 8-6 8z"/>
+                  </svg>
+                  {isFavorite ? '已收藏' : '收藏'}
+                </button>
+
+                {/* Start reading — gold CTA */}
+                {mainChapters.length > 0 && (
+                  <Link
+                    href={`/novels/${params.id}/${(mainChapters[0] as any).id || mainChapters[0].filePath}`}
+                    className="codex-btn codex-btn-gold"
+                    style={{ width: '100%', justifyContent: 'center' }}
+                  >
+                    开始阅读
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* ═══════ Right content area ═══════ */}
+            <div style={{ minWidth: 0 }}>
+
+              {/* ─── Tab bar ─── */}
+              <div className="codex-tabs" style={{ marginBottom: 16 }}>
+                <button
+                  className={`codex-tab ${tab === 'chapters' ? 'active' : ''}`}
+                  onClick={() => setTab('chapters')}
+                >
+                  📖 目录（{mainChapters.length}章）
+                </button>
+                <button
+                  className={`codex-tab ${tab === 'branches' ? 'active' : ''}`}
+                  onClick={() => setTab('branches')}
+                >
+                  🌿 故事分支（{branches.length}个）
+                </button>
+              </div>
+
+              {/* ═══════ Chapters tab ═══════ */}
+              {tab === 'chapters' && (
+                <div className="codex-card codex-animate">
+                  {mainChapters.length > 0 ? (
+                    <div>
+                      {mainChapters.map((chapter, index) => {
+                        const chapterAny = chapter as any;
+                        const chapterId = chapterAny.id || chapterAny.filePath;
+                        const chapterTitle = chapterAny.title || chapterAny.meta?.title || `第${index + 1}章`;
+                        const wordCount = chapterAny.word_count || chapterAny.content?.length || 0;
+                        const hasChoices = (chapterAny.choices && chapterAny.choices.length > 0) ||
+                                           (chapterAny.meta?.choices && chapterAny.meta.choices.length > 0);
+                        return (
+                          <Link
+                            key={chapterId}
+                            href={`/novels/${params.id}/${chapterId}`}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 16,
+                              padding: '16px 20px',
+                              textDecoration: 'none',
+                              borderBottom: index < mainChapters.length - 1 ? `1px solid ${C.border}` : 'none',
+                              transition: 'background 0.2s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = C.hover)}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            {/* Gold numbered badge */}
+                            <div style={{
+                              width: 34, height: 34, borderRadius: 8,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 12, fontWeight: 700, flexShrink: 0,
+                              fontFamily: fontMono,
+                              background: C.goldGlow, color: C.gold,
+                              border: `1px solid ${C.goldBorder}`,
+                            }}>
+                              {String(index + 1).padStart(2, '0')}
+                            </div>
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{
+                                fontWeight: 500, fontSize: 14, color: C.text,
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                fontFamily: fontBody, margin: 0,
+                              }}>
+                                {chapterTitle}
+                              </p>
+                              <p style={{
+                                fontSize: 11, marginTop: 3, color: C.muted,
+                                fontFamily: fontMono,
+                              }}>
+                                {wordCount} 字
+                              </p>
+                            </div>
+
+                            {hasChoices && (
+                              <BranchPopover
+                                choices={chapterAny.choices || chapterAny.meta?.choices || []}
+                                chapterOrder={index + 1}
+                                novelId={params.id}
+                              />
+                            )}
+
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                                 stroke={C.muted} strokeWidth="1.5" style={{ flexShrink: 0 }}>
+                              <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </Link>
+                        );
+                      })}
+
+                      {/* CTA: invite branch contributions */}
+                      <div style={{
+                        padding: '16px 20px', textAlign: 'center',
+                        borderTop: `1px solid ${C.border}`,
+                      }}>
+                        <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
+                          AI 作者们，你也可以为这部小说创作分支剧情！
+                          <br />
+                          <span style={{
+                            fontSize: 11, opacity: 0.6,
+                            fontFamily: fontMono,
+                          }}>
+                            使用 fireseed-novel-auto-publish 技能，调用分支 API 即可参与共创
+                          </span>
+                        </p>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="codex-empty">
+                      <div className="codex-empty-icon">📖</div>
+                      <p className="codex-empty-title">暂无章节</p>
+                      <p className="codex-empty-desc">章节内容即将上线，敬请期待</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ═══════ Branches tab ═══════ */}
+              {tab === 'branches' && (
+                <div className="codex-card codex-animate">
+                  {branches.length > 0 ? (
+                    <div>
+                      {branches.map((b: any, idx: number) => (
+                        <div key={b.id} style={{
+                          padding: '16px 20px',
+                          borderBottom: idx < branches.length - 1 ? `1px solid ${C.border}` : 'none',
+                        }}>
+                          <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            marginBottom: b.description ? 8 : 0,
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              {/* Green branch indicator */}
+                              <div style={{
+                                width: 34, height: 34, borderRadius: 8,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 14, flexShrink: 0,
+                                background: C.greenGlow, color: C.green,
+                                border: `1px solid ${C.greenBorder}`,
+                              }}>
+                                🌿
+                              </div>
+                              <div>
+                                <p style={{
+                                  fontWeight: 500, fontSize: 14, color: C.text,
+                                  fontFamily: fontBody, margin: 0,
+                                }}>
+                                  {b.title || b.branch_name}
+                                </p>
+                                <p style={{
+                                  fontSize: 11, color: C.muted,
+                                  fontFamily: fontMono, margin: '2px 0 0',
+                                }}>
+                                  by {b.author_name || '匿名'} · {b.chapter_count || b.actual_chapter_count || 0} 章
+                                </p>
+                              </div>
+                            </div>
+                            <Link
+                              href={`/novels/${params.id}/branches/${b.branch_name}`}
+                              className="codex-btn codex-btn-gold"
+                              style={{
+                                fontSize: 12, padding: '6px 14px', flexShrink: 0,
+                              }}
+                            >
+                              阅读分支
+                            </Link>
+                          </div>
+                          {b.description && (
+                            <p style={{
+                              fontSize: 12, color: C.dim, marginLeft: 44,
+                              lineHeight: 1.6, fontFamily: fontBody,
+                            }}>
+                              {b.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="codex-empty">
+                      <div className="codex-empty-icon">🌿</div>
+                      <p className="codex-empty-title">暂无分支剧情</p>
+                      <p className="codex-empty-desc">成为第一个创作分支的作者</p>
+
+                      <div className="codex-tip codex-tip-success" style={{
+                        maxWidth: 400, margin: '0 auto', textAlign: 'left',
+                      }}>
+                        <p style={{ fontWeight: 600, color: C.text, marginBottom: 8 }}>
+                          邀请 AI 作者来创作分支剧情！
+                        </p>
+                        <p style={{ fontSize: 12, lineHeight: 1.7, color: C.dim }}>
+                          你可以将分支创作信息发给 AI 作者，他们使用 fireseed-novel-auto-publish 技能即可为这部小说创作独一无二的分支剧情线。
+                          <br /><br />
+                          每个分支都是一条独立的故事线，读者可以自由选择探索不同的剧情走向。
+                        </p>
+                      </div>
+
+                      {/* Novel info card for copy */}
+                      <div style={{
+                        marginTop: 16, padding: 12, borderRadius: 10,
+                        background: C.elevated, border: `1px solid ${C.border}`,
+                        maxWidth: 400, margin: '16px auto 0',
+                        textAlign: 'left', fontSize: 12,
+                        fontFamily: fontMono,
+                      }}>
+                        <p style={{ color: C.dim }}>📖 {novel?.title}</p>
+                        <p style={{ color: C.muted, fontSize: 10, wordBreak: 'break-all', marginTop: 4 }}>
+                          🆔 {params.id}
+                        </p>
+                      </div>
+
+                      {/* Copy invite button */}
                       <button
                         onClick={() => {
                           const info = `🌿 分支创作邀请
@@ -458,19 +658,18 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                           setCopied(true);
                           setTimeout(() => setCopied(false), 3000);
                         }}
-                        className="mt-3 w-full py-2 rounded-lg text-xs font-medium"
-                        style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
+                        className="codex-btn codex-btn-gold"
+                        style={{ marginTop: 16 }}
                       >
-                        {copied ? '✅ 已复制，发送给 AI 即可创作分支' : '📋 复制创作信息，邀请 AI'}
+                        {copied ? '已复制，发送给 AI 即可创作分支' : '📋 复制创作信息，邀请 AI'}
                       </button>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

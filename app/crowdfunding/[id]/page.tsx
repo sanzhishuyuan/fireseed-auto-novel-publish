@@ -162,26 +162,38 @@ export default function CrowdfundingDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">加载中...</p>
+      <>
+        <div className="codex-bg" />
+        <div className="codex-shell" style={{ paddingTop: 80, paddingBottom: 80 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div className="codex-skeleton" style={{ width: 48, height: 48, borderRadius: '50%', margin: '0 auto 16px' }} />
+              <p className="codex-mono" style={{ fontSize: 13, color: '#9a9a8e' }}>加载中...</p>
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-xl font-semibold mb-2">项目不存在</h2>
-          <Link href="/crowdfunding" className="text-primary hover:underline">
-            返回众筹广场
-          </Link>
+      <>
+        <div className="codex-bg" />
+        <div className="codex-shell" style={{ paddingTop: 80, paddingBottom: 80 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
+              <h2 className="codex-display" style={{ fontSize: 20, fontWeight: 700, color: '#f0ece4', marginBottom: 12 }}>
+                项目不存在
+              </h2>
+              <Link href="/crowdfunding" style={{ color: '#c9a55c', textDecoration: 'underline', fontSize: 14 }}>
+                返回众筹广场
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -191,97 +203,86 @@ export default function CrowdfundingDetailPage() {
   const isFailed = project.status === 'failed';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <>
+      <div className="codex-bg" />
+      <div className="codex-shell" style={{ paddingTop: 48, paddingBottom: 48 }}>
         {/* 返回按钮 */}
-        <Link
-          href="/crowdfunding"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6"
-        >
+        <Link href="/crowdfunding" className="codex-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9a9a8e', textDecoration: 'none', marginBottom: 24 }}>
           ← 返回众筹广场
         </Link>
 
         {/* 项目头部 */}
-        <div className="bg-card border rounded-lg p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <h1 className="text-2xl font-bold">{project.title}</h1>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  isSuccessful ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                  isFailed ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                  'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                }`}>
-                  {isSuccessful ? '已成功' : isFailed ? '已失败' : '进行中'}
+        <div className="codex-card" style={{ padding: 28, marginBottom: 24 }}>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <h1 className="codex-display" style={{ fontSize: 28, fontWeight: 700, color: '#f0ece4' }}>
+                {project.title}
+              </h1>
+              <span className={`codex-badge ${isSuccessful ? 'codex-badge-green' : isFailed ? 'codex-badge-red' : 'codex-badge-blue'}`}>
+                {isSuccessful ? '已成功' : isFailed ? '已失败' : '进行中'}
+              </span>
+            </div>
+            
+            <div className="codex-mono" style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: '#9a9a8e' }}>
+              <span>👤 {project.author_name}</span>
+              <span>📅 {formatDate(project.deadline)}</span>
+              {project.days_left !== undefined && (
+                <span style={project.days_left <= 3 ? { color: '#ef4444', fontWeight: 600 } : {}}>
+                  ⏰ 剩余 {project.days_left} 天
                 </span>
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>👤 {project.author_name}</span>
-                <span>📅 {formatDate(project.deadline)}</span>
-                {project.days_left !== undefined && (
-                  <span className={project.days_left <= 3 ? 'text-red-600 font-medium' : ''}>
-                    ⏰ 剩余 {project.days_left} 天
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
           {/* 进度条 */}
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="font-medium">筹集进度</span>
-              <span className="text-primary font-bold">{project.progress_percentage || 0}%</span>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 10 }}>
+              <span style={{ fontWeight: 500, color: '#f0ece4' }}>筹集进度</span>
+              <span className="codex-mono" style={{ fontWeight: 700, color: '#c9a55c' }}>
+                {project.progress_percentage || 0}%
+              </span>
             </div>
-            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="codex-progress" style={{ height: 12 }}>
               <div
-                className={`h-full rounded-full transition-all ${
-                  isSuccessful ? 'bg-green-600' :
-                  isFailed ? 'bg-red-600' :
-                  'bg-gradient-to-r from-primary to-purple-600'
-                }`}
-                style={{ width: `${Math.min(project.progress_percentage || 0, 100)}%` }}
+                className={`codex-progress-bar ${isSuccessful ? 'codex-progress-bar-green' : ''}`}
+                style={{
+                  width: `${Math.min(project.progress_percentage || 0, 100)}%`,
+                  background: isFailed ? '#ef4444' : undefined
+                }}
               />
             </div>
           </div>
 
           {/* 统计信息 */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-3 bg-secondary/50 rounded-lg">
-              <div className="text-2xl font-bold text-primary">
-                {project.current_amount}
-              </div>
-              <div className="text-xs text-muted-foreground">已筹集 SEED</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <div style={{ textAlign: 'center', padding: 16, background: '#1a1a22', borderRadius: 10 }}>
+              <div className="codex-stat-num">{project.current_amount}</div>
+              <div className="codex-stat-label" style={{ marginTop: 6 }}>已筹集 SEED</div>
             </div>
-            <div className="text-center p-3 bg-secondary/50 rounded-lg">
-              <div className="text-2xl font-bold">
-                {project.target_amount}
-              </div>
-              <div className="text-xs text-muted-foreground">目标 SEED</div>
+            <div style={{ textAlign: 'center', padding: 16, background: '#1a1a22', borderRadius: 10 }}>
+              <div className="codex-stat-num">{project.target_amount}</div>
+              <div className="codex-stat-label" style={{ marginTop: 6 }}>目标 SEED</div>
             </div>
-            <div className="text-center p-3 bg-secondary/50 rounded-lg">
-              <div className="text-2xl font-bold">
-                {project.supporter_count}
-              </div>
-              <div className="text-xs text-muted-foreground">支持者</div>
+            <div style={{ textAlign: 'center', padding: 16, background: '#1a1a22', borderRadius: 10 }}>
+              <div className="codex-stat-num">{project.supporter_count}</div>
+              <div className="codex-stat-label" style={{ marginTop: 6 }}>支持者</div>
             </div>
           </div>
         </div>
 
         {/* 项目描述 */}
-        <div className="bg-card border rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">📖 项目介绍</h2>
-          <div className="prose dark:prose-invert max-w-none">
-            <p className="whitespace-pre-wrap">{project.description}</p>
+        <div className="codex-card" style={{ padding: 28, marginBottom: 24 }}>
+          <h2 className="codex-section-title">📖 项目介绍</h2>
+          <div style={{ fontSize: 14, lineHeight: 1.8, color: '#f0ece4' }}>
+            <p style={{ whiteSpace: 'pre-wrap' }}>{project.description}</p>
           </div>
         </div>
 
         {/* 回报档位 */}
         {rewards.length > 0 && isActive && (
-          <div className="bg-card border rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">🎁 回报档位</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="codex-card" style={{ padding: 28, marginBottom: 24 }}>
+            <h2 className="codex-section-title">🎁 回报档位</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
               {rewards.map((reward) => {
                 const benefits = parseBenefits(reward.benefits);
                 const isSoldOut = reward.limit_count > 0 && reward.claimed_count >= reward.limit_count;
@@ -289,35 +290,39 @@ export default function CrowdfundingDetailPage() {
                 return (
                   <div
                     key={reward.id}
-                    className={`border rounded-lg p-4 ${
-                      isSoldOut ? 'opacity-50' : 'hover:border-primary cursor-pointer'
-                    }`}
+                    className="codex-card"
+                    style={{
+                      padding: 20,
+                      opacity: isSoldOut ? 0.5 : 1,
+                      cursor: isSoldOut ? 'not-allowed' : 'pointer',
+                      border: selectedReward === reward.tier_name ? '1px solid #c9a55c' : undefined
+                    }}
                     onClick={() => !isSoldOut && setSelectedReward(reward.tier_name)}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold">{reward.tier_name}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f0ece4' }}>{reward.tier_name}</h3>
                       {isSoldOut && (
-                        <span className="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">
+                        <span className="codex-badge codex-badge-gray" style={{ fontSize: 11 }}>
                           已售罄
                         </span>
                       )}
                     </div>
                     
-                    <div className="text-2xl font-bold text-primary mb-2">
+                    <div className="codex-mono" style={{ fontSize: 24, fontWeight: 700, color: '#c9a55c', marginBottom: 12 }}>
                       {reward.min_amount} SEED
                     </div>
 
-                    <ul className="space-y-1 mb-3">
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 12px 0' }}>
                       {benefits.map((benefit, idx) => (
-                        <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <span>✓</span>
+                        <li key={idx} style={{ fontSize: 13, color: '#9a9a8e', marginBottom: 6, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <span style={{ color: '#c9a55c' }}>✓</span>
                           <span>{benefit}</span>
                         </li>
                       ))}
                     </ul>
 
                     {reward.limit_count > 0 && (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="codex-mono" style={{ fontSize: 11, color: '#5a5a52' }}>
                         限量 {reward.limit_count} 份，已领取 {reward.claimed_count} 份
                       </div>
                     )}
@@ -330,38 +335,35 @@ export default function CrowdfundingDetailPage() {
 
         {/* 操作按钮 */}
         {!currentUser ? (
-          <div className="bg-card border rounded-lg p-6 text-center">
-            <p className="mb-4">请先登录以支持此项目</p>
-            <Link
-              href="/auth/login"
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:opacity-90"
-            >
+          <div className="codex-card" style={{ padding: 28, textAlign: 'center' }}>
+            <p style={{ fontSize: 14, color: '#9a9a8e', marginBottom: 16 }}>请先登录以支持此项目</p>
+            <Link href="/auth/login" className="codex-btn codex-btn-gold" style={{ textDecoration: 'none' }}>
               登录
             </Link>
           </div>
         ) : isAuthor ? (
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">👤 我的项目</h3>
-            <p className="text-muted-foreground">
+          <div className="codex-card" style={{ padding: 28 }}>
+            <h3 className="codex-section-title">👤 我的项目</h3>
+            <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.6 }}>
               您是此项目的发起人。可以通过 API 发布更新来与支持者保持沟通。
             </p>
           </div>
         ) : isActive ? (
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">💰 支持此项目</h3>
+          <div className="codex-card" style={{ padding: 28 }}>
+            <h3 className="codex-section-title">💰 支持此项目</h3>
             
             {selectedReward && (
-              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  已选择档位：<strong>{selectedReward}</strong>
-                  （{rewards.find(r => r.tier_name === selectedReward)?.min_amount} SEED）
-                </p>
+              <div className="codex-tip codex-tip-info" style={{ marginBottom: 16 }}>
+                已选择档位：<strong style={{ color: '#f0ece4' }}>{selectedReward}</strong>
+                （{rewards.find(r => r.tier_name === selectedReward)?.min_amount} SEED）
               </div>
             )}
 
             {!selectedReward && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">自定义金额（SEED）</label>
+              <div style={{ marginBottom: 16 }}>
+                <label className="codex-mono" style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#9a9a8e', marginBottom: 8 }}>
+                  自定义金额（SEED）
+                </label>
                 <input
                   type="number"
                   value={customAmount}
@@ -370,7 +372,7 @@ export default function CrowdfundingDetailPage() {
                     setSelectedReward('');
                   }}
                   placeholder="输入支持金额（至少10 SEED）"
-                  className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                  className="codex-input"
                   min={10}
                 />
               </div>
@@ -379,25 +381,28 @@ export default function CrowdfundingDetailPage() {
             <button
               onClick={() => setShowSupportModal(true)}
               disabled={supportLoading || (!selectedReward && !customAmount)}
-              className="w-full px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="codex-btn codex-btn-gold"
+              style={{ width: '100%', opacity: (supportLoading || (!selectedReward && !customAmount)) ? 0.5 : 1 }}
             >
               {supportLoading ? '处理中...' : '确认支持'}
             </button>
 
-            <p className="text-xs text-muted-foreground mt-2 text-center">
+            <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 10, textAlign: 'center' }}>
               如果众筹失败，您的SEED将全额退还
             </p>
           </div>
         ) : (
-          <div className={`bg-card border rounded-lg p-6 text-center ${
-            isSuccessful ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
-            'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-          }`}>
-            <div className="text-4xl mb-2">{isSuccessful ? '✅' : '❌'}</div>
-            <h3 className="text-lg font-semibold mb-2">
+          <div className="codex-card" style={{
+            padding: 28,
+            textAlign: 'center',
+            background: isSuccessful ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)',
+            borderColor: isSuccessful ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.15)'
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>{isSuccessful ? '✅' : '❌'}</div>
+            <h3 className="codex-display" style={{ fontSize: 18, fontWeight: 700, color: '#f0ece4', marginBottom: 8 }}>
               {isSuccessful ? '众筹已成功！' : '众筹已失败'}
             </h3>
-            <p className="text-muted-foreground">
+            <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.6 }}>
               {isSuccessful 
                 ? '感谢所有支持者的支持，项目将继续推进'
                 : '未达到目标金额，所有支持者已获得全额退款'}
@@ -408,49 +413,49 @@ export default function CrowdfundingDetailPage() {
 
       {/* 支持确认弹窗 */}
       {showSupportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold mb-4">确认支持</h3>
+        <div className="codex-modal-overlay" onClick={() => setShowSupportModal(false)}>
+          <div className="codex-modal" onClick={e => e.stopPropagation()}>
+            <div className="codex-modal-header">
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f0ece4' }}>确认支持</h3>
+            </div>
             
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">项目名称</span>
-                <span className="font-medium">{project.title}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">支持金额</span>
-                <span className="font-bold text-primary">
-                  {selectedReward 
-                    ? `${rewards.find(r => r.tier_name === selectedReward)?.min_amount} SEED`
-                    : `${customAmount} SEED`
-                  }
-                </span>
-              </div>
-              {selectedReward && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">回报档位</span>
-                  <span>{selectedReward}</span>
+            <div className="codex-modal-body">
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span style={{ color: '#9a9a8e', fontSize: 14 }}>项目名称</span>
+                  <span style={{ fontWeight: 500, color: '#f0ece4', fontSize: 14 }}>{project.title}</span>
                 </div>
-              )}
-            </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span style={{ color: '#9a9a8e', fontSize: 14 }}>支持金额</span>
+                  <span className="codex-mono" style={{ fontWeight: 700, color: '#c9a55c', fontSize: 14 }}>
+                    {selectedReward 
+                      ? `${rewards.find(r => r.tier_name === selectedReward)?.min_amount} SEED`
+                      : `${customAmount} SEED`
+                    }
+                  </span>
+                </div>
+                {selectedReward && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#9a9a8e', fontSize: 14 }}>回报档位</span>
+                    <span style={{ color: '#f0ece4', fontSize: 14 }}>{selectedReward}</span>
+                  </div>
+                )}
+              </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-6">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              <div className="codex-tip codex-tip-warn">
                 ⚠️ 支持后无法撤销。如果众筹失败，SEED将自动退还。
-              </p>
+              </div>
             </div>
 
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowSupportModal(false)}
-                className="flex-1 px-4 py-2 border rounded-lg hover:bg-secondary"
-              >
+            <div className="codex-modal-footer">
+              <button onClick={() => setShowSupportModal(false)} className="codex-btn codex-btn-ghost" style={{ flex: 1 }}>
                 取消
               </button>
               <button
                 onClick={handleSupport}
                 disabled={supportLoading}
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                className="codex-btn codex-btn-gold"
+                style={{ flex: 1, opacity: supportLoading ? 0.5 : 1 }}
               >
                 {supportLoading ? '处理中...' : '确认支持'}
               </button>
@@ -458,6 +463,6 @@ export default function CrowdfundingDetailPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
