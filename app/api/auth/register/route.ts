@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { safeParseJSON } from '@/lib/request-parser';
 import { getOrCreateWallet, transferSeed } from '@/lib/seed';
+import { sendNewUserNotification } from '@/lib/mail';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
@@ -152,6 +153,14 @@ export async function POST(request: NextRequest) {
         VALUES (?, ?, ?, ?)
       `).run(uuidv4(), userId, 'register-auto', 'web-register');
     } catch (_) { /* 忽略 */ }
+
+    // 📧 异步发送管理员通知（SMTP 未配置时静默跳过）
+    sendNewUserNotification({
+      username,
+      email,
+      userId,
+      createdAt: new Date().toISOString(),
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,
