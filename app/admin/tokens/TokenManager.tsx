@@ -53,7 +53,7 @@ export default function TokenManager({ tokens }: Props) {
     
     if (res.ok) {
       const data = await res.json();
-      setCreatedToken(data.token);
+      setCreatedToken(data.data.token);
       router.refresh();
     }
   };

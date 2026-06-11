@@ -314,13 +314,15 @@ export default function EnhancedAdminDashboard() {
       }
 
       if (skillRes.ok) {
-        const skillData = await skillRes.json();
-        setSkillData({ missions: skillData.missions, activationStats: skillData.activationStats, activeUsers: skillData.activeUsers });
+        const skillRaw = await skillRes.json();
+        const skillPayload = skillRaw.data || skillRaw;
+        setSkillData({ missions: skillPayload.missions, activationStats: skillPayload.activationStats, activeUsers: skillPayload.activeUsers });
       }
 
       if (feedbackRes.ok) {
-        const feedbackData = await feedbackRes.json();
-        setOpenCount(feedbackData.openCount || 0);
+        const feedbackRaw = await feedbackRes.json();
+        const feedbackPayload = feedbackRaw.data || feedbackRaw;
+        setOpenCount(feedbackPayload.openCount || 0);
       }
     } catch (err) {
       setError('加载数据失败');
@@ -336,8 +338,8 @@ export default function EnhancedAdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setTaskSummary(data.summary);
-          setTaskEvents(data.recent_events || []);
+          setTaskSummary(data.data.summary);
+          setTaskEvents(data.data.recent_events || []);
         }
       }
     } catch {
@@ -355,8 +357,8 @@ export default function EnhancedAdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setUsers(data.users);
-          setUsersTotal(data.total);
+          setUsers(data.data.users);
+          setUsersTotal(data.data.total);
         }
       }
     } catch {
@@ -375,7 +377,7 @@ export default function EnhancedAdminDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        setUserMessage(data.message);
+        setUserMessage(data.data.message);
         fetchUsers(userSearch);
       } else {
         setUserMessage(data.error || '操作失败');
@@ -400,7 +402,7 @@ export default function EnhancedAdminDashboard() {
       const data = await res.json();
 
       if (data.success) {
-        alert(data.message);
+        alert(data.data.message);
         fetchStats();
       } else {
         alert(data.error || '清理失败');

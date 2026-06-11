@@ -120,7 +120,7 @@ function ScrollTable<T>({
   );
 }
 
-export default function SkillManager({ missions, activationStats, activeUsers }: Props) {
+export default function SkillManager({ missions = [], activationStats, activeUsers = [] }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<'missions' | 'activations' | 'marketplace'>('missions');
   const [showForm, setShowForm] = useState(false);

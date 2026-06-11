@@ -99,9 +99,10 @@ export default function AdminFeedbackPage() {
       }
       const data = await res.json();
       if (data.success) {
-        setItems(data.data);
-        setOpenCount(data.openCount);
-        setStatusCounts(data.statusCounts || {});
+        const payload = data.data;
+        setItems(payload.data || []);
+        setOpenCount(payload.openCount);
+        setStatusCounts(payload.statusCounts || {});
       }
     } catch {
       // ignore

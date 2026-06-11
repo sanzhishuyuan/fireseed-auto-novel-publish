@@ -37,7 +37,7 @@ export default function MusicManager() {
       const res = await fetch('/api/admin/music');
       if (res.ok) {
         const data = await res.json();
-        setSongs(data.songs || []);
+        setSongs(data.data.songs || []);
       }
     } catch {}
     setLoading(false);
