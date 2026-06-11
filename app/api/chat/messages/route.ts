@@ -144,14 +144,17 @@ async function triggerAIReply(room: string, userMessage: string, replyToId: stri
     content: m.is_ai ? m.content : `${m.username}: ${m.content}`,
   }));
 
-  const response = await fetch('https://api.deepseek.com/chat/completions', {
+  // 调用 LLM API (支持 DeepSeek / 智谱等 OpenAI 兼容接口)
+  const llmBaseUrl = process.env.LLM_BASE_URL || 'https://api.deepseek.com/chat/completions';
+  const llmModel = process.env.LLM_MODEL || 'deepseek-chat';
+  const response = await fetch(llmBaseUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model: llmModel,
       max_tokens: 300,
       temperature: 0.8,
       messages: [

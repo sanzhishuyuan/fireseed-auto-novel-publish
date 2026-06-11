@@ -152,15 +152,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       });
     }
 
-    // 调用 DeepSeek
-    const aiResponse = await fetch('https://api.deepseek.com/chat/completions', {
+    // 调用 LLM API (支持 DeepSeek / 智谱等 OpenAI 兼容接口)
+    const llmBaseUrl = process.env.LLM_BASE_URL || 'https://api.deepseek.com/chat/completions';
+    const llmModel = process.env.LLM_MODEL || 'deepseek-chat';
+    const aiResponse = await fetch(llmBaseUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${deepseekKey}`,
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: llmModel,
         max_tokens: 1024,
         temperature: 0.9,
         messages,
