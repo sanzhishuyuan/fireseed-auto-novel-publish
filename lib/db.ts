@@ -867,6 +867,140 @@ try {
 }
 
 // ===== Phase 4: 众筹系统增强表 =====
+// ... existing code above ...
+
+// ===== Phase 5: AI 跑团 (雾隐酒馆) 系统表 =====
+db.exec(`
+  -- 角色卡表 (兼容 SillyTavern V2)
+  CREATE TABLE IF NOT EXISTS rpg_characters (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    spec_version TEXT DEFAULT '2.0',
+    card_data TEXT NOT NULL,
+    avatar_url TEXT DEFAULT '',
+    system TEXT DEFAULT 'custom',
+    is_public INTEGER DEFAULT 0,
+    download_count INTEGER DEFAULT 0,
+    seed_price INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  -- 战役表
+  CREATE TABLE IF NOT EXISTS rpg_campaigns (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'solo',
+    system TEXT DEFAULT 'dnd5e',
+    gm_type TEXT DEFAULT 'ai',
+    gm_user_id TEXT,
+    world_brief TEXT DEFAULT '',
+    status TEXT DEFAULT 'recruiting',
+    max_players INTEGER DEFAULT 4,
+    is_public INTEGER DEFAULT 0,
+    lorebook_id TEXT,
+    created_by TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id)
+  );
+
+  -- 战役成员表
+  CREATE TABLE IF NOT EXISTS rpg_campaign_members (
+    campaign_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    character_id TEXT,
+    role TEXT DEFAULT 'player',
+    status TEXT DEFAULT 'active',
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (campaign_id, user_id)
+  );
+
+  -- 跑团会话表
+  CREATE TABLE IF NOT EXISTS rpg_sessions (
+    id TEXT PRIMARY KEY,
+    campaign_id TEXT NOT NULL,
+    title TEXT DEFAULT '',
+    session_number INTEGER DEFAULT 1,
+    summary TEXT DEFAULT '',
+    status TEXT DEFAULT 'active',
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ended_at DATETIME,
+    FOREIGN KEY (campaign_id) REFERENCES rpg_campaigns(id)
+  );
+
+  -- 跑团消息/叙事记录
+  CREATE TABLE IF NOT EXISTS rpg_messages (
+    id TEXT PRIMARY KEY,
+    campaign_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    user_id TEXT,
+    character_id TEXT,
+    role TEXT NOT NULL DEFAULT 'player',
+    content TEXT NOT NULL,
+    msg_type TEXT DEFAULT 'narrative',
+    dice_result TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES rpg_campaigns(id)
+  );
+
+  -- 掷骰记录表
+  CREATE TABLE IF NOT EXISTS rpg_dice_rolls (
+    id TEXT PRIMARY KEY,
+    campaign_id TEXT NOT NULL,
+    session_id TEXT,
+    user_id TEXT NOT NULL,
+    character_id TEXT,
+    expression TEXT NOT NULL,
+    result INTEGER NOT NULL,
+    details TEXT DEFAULT '',
+    note TEXT DEFAULT '',
+    is_secret INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 世界书/知识书表
+  CREATE TABLE IF NOT EXISTS rpg_lorebooks (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    user_id TEXT NOT NULL,
+    entries TEXT NOT NULL DEFAULT '[]',
+    is_public INTEGER DEFAULT 0,
+    st_compatible INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  -- 跑团存档表
+  CREATE TABLE IF NOT EXISTS rpg_archives (
+    id TEXT PRIMARY KEY,
+    campaign_id TEXT NOT NULL,
+    session_id TEXT,
+    title TEXT DEFAULT '',
+    content TEXT NOT NULL,
+    token_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES rpg_campaigns(id)
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_chars_user ON rpg_characters(user_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_chars_public ON rpg_characters(is_public, download_count)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_camps_user ON rpg_campaigns(created_by)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_camps_status ON rpg_campaigns(status, created_at)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_messages_camp ON rpg_messages(campaign_id, created_at)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_dice_camp ON rpg_dice_rolls(campaign_id, created_at)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_archives_camp ON rpg_archives(campaign_id)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
+// ===== 原有代码继续... =====
 db.exec(`
   CREATE TABLE IF NOT EXISTS crowdfunding_updates (
     id TEXT PRIMARY KEY,
