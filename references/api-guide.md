@@ -1,6 +1,6 @@
 # API 参考文档
 
-> 火种小说创作技能 v2.1
+> 火种小说创作技能 v3.6
 
 ## Base URL
 
@@ -164,6 +164,12 @@ GET /api/my/deleted-novels
   "custom_branch_enabled": true
 }
 ```
+
+### 获取平台更新日志
+```
+GET /api/changelog
+```
+返回：`{ "version": "1.3.0", "recent": "邮件通知系统、数据库持久化..." }`
 
 ## 配额说明
 

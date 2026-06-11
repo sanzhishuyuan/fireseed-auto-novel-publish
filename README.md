@@ -1,5 +1,3 @@
-
-
 <p align="center">
   <img src="https://fireseed.online/favicon.ico" alt="火种" width="64" height="64">
 </p>
@@ -11,15 +9,9 @@
 </p>
 
 <p align="center">
-  <a href="https://qm.qq.com/q/LPUZ9jSqC6">💬 QQ群：火种源</a>
-  ·
-  <a href="mailto:1726325780@qq.com">📧 联系邮箱</a>
-</p>
-
-<p align="center">
   <a href="https://fireseed.online">🌐 平台首页</a>
   ·
-  <a href="https://gitee.com/topofthesky/ai-novel-skill">📦 Gitee 源仓库</a>
+  <a href="https://gitee.com/topofthesky/fireseed-novel-auto-publish">📦 Gitee 源仓库</a>
   ·
   <a href="https://fireseed.online/admin">🔧 管理后台</a>
   ·
@@ -41,14 +33,11 @@
 ```
 fireseed-auto-novel-publish/
 ├── README.md        ← 本文件 · 仓库介绍
-├── SKILL.md         ← 技能文件（给 AI 读）· v2.1
-└── USAGE.md         ← 使用指南（给人看）
+├── SKILL.md         ← 技能文件（给 AI 读）· v3.6
+├── _meta.json       ← 技能元数据
+├── references/      ← API 参考文档
+└── resources/       ← 模板资源
 ```
-
-| 文件 | 说明 |
-|------|------|
-| **SKILL.md** | AI 技能定义文件，加载后 AI 自动学会火种平台的 API 调用和写作规范 |
-| **USAGE.md** | 面向人类的详细使用指南，包含安装步骤、常用命令和 FAQ |
 
 ---
 
@@ -58,28 +47,18 @@ fireseed-auto-novel-publish/
 
 将 `SKILL.md` 放入 AI 工作台的技能目录：
 
-- **WorkBuddy** → 放入 `.workbuddy/skills/`
+- **QoderWork** → 放入 skills 目录
 - **OpenClaw** → 通过 Skills 面板导入
 - **其他 AI 工具** → 查阅对应文档的 Skill 加载方式
 
-### 2. 注册账号
-
-前往 [fireseed.online/auth/register](https://fireseed.online/auth/register) 注册：
-
-- **用户名** — 自定义（3-20位）
-- **邮箱** — 必填，用于接收通知
-- **密码** — 至少6位
-
-注册后复制凭证给 AI，AI 即可自动完成创作发布。
-
-### 3. 开始创作
+### 2. 开始创作
 
 ```text
 你: 创作一部小说叫《火种之破局》，发布到 fireseed
-AI: 请提供你的 fireseed 用户名、邮箱和密码，或在平台注册...
+AI: 请提供你的 fireseed Token，或在平台注册...
 ```
 
-### 4. 等待 AI 完成
+### 3. 等待 AI 完成
 
 AI 会自动：注册/认证 → 创建小说 → 逐章写作 → 发布 → 返回阅读链接
 
@@ -105,7 +84,7 @@ AI 会自动：注册/认证 → 创建小说 → 逐章写作 → 发布 → �
 
 | 端点 | 方法 | 说明 |
 |------|------|------|
-| `/api/auth/register` | POST | 注册账号 |
+| `/api/auth/register` | POST | 注册账号（需邮箱） |
 | `/api/auth/token` | POST | 获取 Token（有效期 7 天） |
 | `/api/ai/novels` | POST | 创建小说 |
 | `/api/ai/novels/{id}/chapters` | POST | 发布/追加章节 |
@@ -113,8 +92,9 @@ AI 会自动：注册/认证 → 创建小说 → 逐章写作 → 发布 → �
 | `/api/ai/novels/upload-md` | POST | 一键上传 MD（新书） |
 | `/api/novels/{id}/cover` | POST | 上传封面 |
 | `/api/novels/{id}` | DELETE | 删除小说 |
+| `/api/changelog` | GET | 获取平台更新日志 |
 
-完整参考见 [SKILL.md](./SKILL.md) 第 3 节。
+完整参考见 [SKILL.md](./SKILL.md)。
 
 ---
 
@@ -122,19 +102,17 @@ AI 会自动：注册/认证 → 创建小说 → 逐章写作 → 发布 → �
 
 | 版本 | 日期 | 更新内容 |
 |------|------|----------|
-| **v3.6.0** | 2026-06 | 邮箱注册、幂等登录、编码校验、隐藏 MuMu 后台 |
-| **v2.1.0** | 2026-04 | 追加 chapters API 修改章节、互动分支支持 |
-| **v2.0.0** | 2026-03 | 全面重构，新增 triggers、工作流指引、错误码表 |
-| **v1.0.0** | 2026-02 | 初始版本，基础 API 对接 |
+| **v3.6.1** | 2026-06-11 | 平台重大更新：邮件通知系统（欢迎邮件+玩法指南）、更新通知API、数据库自动备份、AI跑团优化、可配置LLM端点 |
+| **v3.6.0** | 2026-06 | 邮箱注册、幂等登录、编码校验、联系方式更新 |
+| **v3.5.0** | 2026-05 | SEED 经济闭环、AI 商机动态、MuMuAINovel 接入 |
+| **v3.4.0** | 2026-04 | 全自动创作发布、triggers 自动触发 |
 
 ---
 
 ## 🔗 相关资源
 
-- [QQ群：火种源](https://qm.qq.com/q/LPUZ9jSqC6) — 💬 加入交流
-- [Gitee 源仓库](https://gitee.com/topofthesky/ai-novel-skill) — 技能文件主仓库
+- [Gitee 源仓库](https://gitee.com/topofthesky/fireseed-novel-auto-publish) — 技能文件主仓库
 - [GitHub 镜像](https://github.com/sanzhishuyuan/fireseed-auto-novel-publish) — 本仓库
-- [魔搭社区](https://modelscope.cn) 搜索 "fireseed-novel" — 也同步发布
 - [火种平台](https://fireseed.online) — 在线小说平台
 - [火种 Admin](https://fireseed.online/admin) — 管理后台
 
