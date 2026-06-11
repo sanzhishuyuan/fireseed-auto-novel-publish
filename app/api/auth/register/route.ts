@@ -162,6 +162,13 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     }).catch(() => {});
 
+    // 📧 异步发送欢迎邮件给新用户（含玩法指南）
+    sendWelcomeEmail({
+      username,
+      email,
+      userId,
+    }).catch(() => {});
+
     return NextResponse.json({
       success: true,
       userId,

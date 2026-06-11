@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const dataDir = path.join(process.cwd(), 'data');
+const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 // 构建时用临时数据库副本，避免污染生产数据库
 const dbPath = process.env.BUILD_DB_PATH || path.join(dataDir, 'novel.db');
 
