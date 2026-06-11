@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
       VALUES (?, ?, ?, '2.0', ?, ?, ?, ?)
     `).run(
       id, user.userId, name,
-      system || 'custom',
       cardJson,
+      system || 'custom',
       body.is_public ? 1 : 0,
       body.seed_price || 0
     );
