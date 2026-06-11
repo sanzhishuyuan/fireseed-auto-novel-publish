@@ -20,24 +20,36 @@ export async function POST(request: NextRequest) {
     // 安全解析 JSON
     const parsed = safeParseJSON(bodyText);
     if (!parsed.success) return parsed.response;
-    const { username, password, referralCode } = parsed.data;
+    const { username, email, password, referralCode } = parsed.data;
 
-    if (!username || !password) {
-      return NextResponse.json({ error: '请填写完整信息' }, { status: 400 });
+    if (!username || !email || !password) {
+      return NextResponse.json({ error: '请填写完整信息（用户名、邮箱、密码）' }, { status: 400 });
     }
 
     if (username.length < 3 || username.length > 20) {
       return NextResponse.json({ error: '用户名需3-20位' }, { status: 400 });
     }
 
+    // 邮箱格式验证
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: '邮箱格式不正确' }, { status: 400 });
+    }
+
     if (password.length < 6) {
       return NextResponse.json({ error: '密码至少6位' }, { status: 400 });
     }
 
-    // 检查用户是否存在
-    const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
-    if (existing) {
+    // 检查用户名是否存在
+    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    if (existingUser) {
       return NextResponse.json({ error: '用户名已存在' }, { status: 400 });
+    }
+
+    // 检查邮箱是否已被注册
+    const existingEmail = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existingEmail) {
+      return NextResponse.json({ error: '该邮箱已被注册' }, { status: 400 });
     }
 
     // 加密密码
@@ -45,8 +57,8 @@ export async function POST(request: NextRequest) {
     const userId = uuidv4();
 
     // 创建用户
-    db.prepare('INSERT INTO users (id, username, password, role) VALUES (?, ?, ?, ?)')
-      .run(userId, username, hashedPassword, 'reader');
+    db.prepare('INSERT INTO users (id, username, email, password, role) VALUES (?, ?, ?, ?, ?)')
+      .run(userId, username, email, hashedPassword, 'reader');
 
     // 🌱 创建 SEED 钱包并赠送 100 注册红包
     getOrCreateWallet(userId);
@@ -146,7 +158,8 @@ export async function POST(request: NextRequest) {
       userId,
       jwt_token: jwtToken,
       api_token: apiTokenRaw,
-      username
+      username,
+      email
     });
   } catch (error) {
     console.error('Register error:', error);

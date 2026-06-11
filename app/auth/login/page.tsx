@@ -57,7 +57,7 @@ export default function LoginPage() {
         router.push('/novels');
         router.refresh();
       } else {
-        setError(data.error || '登录失败，请检查用户名和密码');
+        setError(data.error || '登录失败，请检查用户名/邮箱和密码');
       }
     } catch {
       setError('网络错误，请稍后重试');
@@ -131,14 +131,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
-                用户名
+                用户名 / 邮箱
               </label>
               <input
                 type="text"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 className="input"
-                placeholder="输入用户名"
+                placeholder="用户名或邮箱"
                 required
                 autoComplete="username"
               />
