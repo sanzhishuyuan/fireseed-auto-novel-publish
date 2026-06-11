@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,7 +10,7 @@ const C = {
   text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
 };
 
-export default function NewCampaignPage() {
+function NewCampaignForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedChar = searchParams.get('character') || '';
@@ -127,5 +127,17 @@ export default function NewCampaignPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function NewCampaignPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="codex-skeleton" style={{ width: 400, height: 300, borderRadius: 8 }} />
+      </div>
+    }>
+      <NewCampaignForm />
+    </Suspense>
   );
 }
