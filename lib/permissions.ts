@@ -100,3 +100,21 @@ export function getAssignableRoles(): { value: Role; label: string }[] {
     { value: 'super_admin', label: '超级管理员' },
   ];
 }
+
+/**
+ * 所有权限点列表（含中文标签）
+ */
+export const ALL_PERMISSIONS: { value: Permission; label: string }[] = [
+  { value: 'dashboard.view', label: '查看仪表盘' },
+  { value: 'content.view', label: '查看内容' },
+  { value: 'content.create', label: '创建内容' },
+  { value: 'content.edit', label: '编辑内容' },
+  { value: 'content.delete', label: '删除内容' },
+  { value: 'token.manage', label: '管理 Token' },
+  { value: 'skill.manage', label: '管理技能' },
+  { value: 'music.manage', label: '管理音乐' },
+  { value: 'cleanup.execute', label: '执行清理' },
+  { value: 'admin.manage', label: '管理管理员' },
+  { value: 'audit.view', label: '查看审计' },
+  { value: 'system.settings', label: '系统设置' },
+];
