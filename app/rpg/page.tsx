@@ -74,6 +74,14 @@ export default function RpgLobbyPage() {
               }}>
               📖 世界书
             </Link>
+            <Link href="/rpg/market"
+              style={{
+                padding: '8px 20px', borderRadius: 6,
+                background: '#f59e0b15', border: '1px solid #f59e0b40',
+                color: '#f59e0b', textDecoration: 'none', fontSize: 14,
+              }}>
+              🏪 跑团市场
+            </Link>
           </div>
         </div>
 

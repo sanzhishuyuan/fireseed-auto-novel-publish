@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { logAdminAction } from '@/lib/audit';
 
 export const GET = withRoute({ auth: 'admin', permission: 'content.view' }, async (request, ctx: AdminContext) => {
   const novels = db.prepare('SELECT * FROM novels ORDER BY created_at DESC').all();
@@ -38,6 +39,21 @@ export const POST = withRoute({ auth: 'admin', permission: 'content.create', bod
     created_at: new Date().toISOString()
   });
   fs.writeFileSync(path.join(novelsDir, 'meta.md'), meta);
+
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'create_novel',
+      targetType: 'novel',
+      targetId: id,
+      detail: { title, author },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
 
   return apiSuccess({ id });
 });

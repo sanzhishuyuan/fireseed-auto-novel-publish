@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Song {
@@ -18,7 +18,8 @@ export default function MusicManager() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchSongs = async () => {
+  // 刷新音乐列表
+  const refreshSongs = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/music');
       if (res.ok) {
@@ -27,9 +28,9 @@ export default function MusicManager() {
       }
     } catch {}
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchSongs(); }, []);
+  useEffect(() => { refreshSongs(); }, [refreshSongs]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,7 +57,7 @@ export default function MusicManager() {
         body: formData
       });
       if (res.ok) {
-        fetchSongs();
+        refreshSongs();
       } else {
         const data = await res.json();
         setError(data.error || '上传失败');
@@ -74,7 +75,7 @@ export default function MusicManager() {
     try {
       const res = await fetch(`/api/admin/music?file=${encodeURIComponent(name)}`, { method: 'DELETE' });
       if (res.ok) {
-        fetchSongs();
+        refreshSongs();
         router.refresh();
       }
     } catch {}

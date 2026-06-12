@@ -6,11 +6,15 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { logAdminAction } from '@/lib/audit';
 
 export const POST = withRoute({ auth: 'admin', permission: 'content.create', body: true }, async (request, ctx: AdminContext) => {
   const { id: novelId } = ctx.params!;
   const { title, content, order, branch, choices } = ctx.body;
   const chapterId = `${order}-${Date.now()}`;
+
+  // 获取小说信息用于审计
+  const novel = db.prepare('SELECT title FROM novels WHERE id = ?').get(novelId) as { title: string } | undefined;
 
   // 保存到文件系统
   const chaptersDir = path.join(process.cwd(), 'content', 'novels', novelId, 'chapters');
@@ -36,5 +40,20 @@ export const POST = withRoute({ auth: 'admin', permission: 'content.create', bod
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(dbChapterId, novelId, title, content, order, branch || 'main', content?.length || 0, choicesJson);
 
-  return apiSuccess({ chapterId });
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'create_chapter',
+      targetType: 'chapter',
+      targetId: dbChapterId,
+      detail: { novelId, novelTitle: novel?.title, chapterTitle: title, order },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
+
+  return apiSuccess({ chapterId: dbChapterId });
 });

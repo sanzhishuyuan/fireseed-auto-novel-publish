@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/auth';
+import jwt from 'jsonwebtoken';
+import { verifyAdminToken, JWT_SECRET } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getAllNovelIds } from '@/lib/novels';
 import db from '@/lib/db';
@@ -16,6 +17,8 @@ interface NovelItem {
   cover_url?: string;
   status?: string;
   tags?: string;
+  chapter_count: number;   // 章节总数
+  total_words: number;     // 总字数
   orphan?: boolean; // 标记：只有文件系统记录，无数据库记录
 }
 
@@ -28,8 +31,27 @@ export default async function NovelsAdminPage() {
     redirect('/admin');
   }
 
-  // 1. 数据库小说
-  const dbNovels = db.prepare('SELECT id, title, author, description, cover_url, status, tags FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all() as { id: string; title: string; author?: string; description?: string; cover_url?: string; status?: string; tags?: string }[];
+  // 获取管理员角色信息
+  let adminRole = 'admin';
+  try {
+    const decoded = jwt.verify(adminToken || '', JWT_SECRET) as { role?: string };
+    if (decoded.role) adminRole = decoded.role;
+  } catch {}
+
+  // 1. 数据库小说（附带章节数和总字数统计）
+  const dbNovels = db.prepare(`
+    SELECT n.id, n.title, n.author, n.description, n.cover_url, n.status, n.tags,
+      COALESCE(c.chapter_count, 0) AS chapter_count,
+      COALESCE(c.total_words, 0) AS total_words
+    FROM novels n
+    LEFT JOIN (
+      SELECT novel_id, COUNT(*) AS chapter_count, COALESCE(SUM(word_count), 0) AS total_words
+      FROM chapters
+      GROUP BY novel_id
+    ) c ON n.id = c.novel_id
+    WHERE n.deleted_at IS NULL
+    ORDER BY n.updated_at DESC
+  `).all() as NovelItem[];
   const dbNovelIds = new Set(dbNovels.map(n => n.id));
 
   // 2. 文件系统小说（排除已在数据库中的）
@@ -43,6 +65,8 @@ export default async function NovelsAdminPage() {
       description: n.description || '',
       status: n.status || 'ongoing',
       tags: n.tags || '',
+      chapter_count: 0,
+      total_words: 0,
       orphan: true
     }));
 
@@ -63,7 +87,7 @@ export default async function NovelsAdminPage() {
         </div>
       </header>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <NovelEditor novels={novels} />
+        <NovelEditor novels={novels} adminRole={adminRole} />
       </div>
     </div>
   );

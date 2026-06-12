@@ -11,14 +11,17 @@ interface Novel {
   cover_url?: string;
   status?: string;
   tags?: string;
+  chapter_count: number;
+  total_words: number;
   orphan?: boolean;
 }
 
 interface Props {
   novels: Novel[];
+  adminRole: string;
 }
 
-export default function NovelEditor({ novels }: Props) {
+export default function NovelEditor({ novels, adminRole }: Props) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
@@ -42,6 +45,11 @@ export default function NovelEditor({ novels }: Props) {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
+
+  // 角色权限检查
+  const canDelete = ['admin', 'super_admin'].includes(adminRole);
+  const canEdit = ['editor', 'admin', 'super_admin'].includes(adminRole);
+  const canCreate = ['editor', 'admin', 'super_admin'].includes(adminRole);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`确认删除小说「${title}」？\n\n删除后将在保留期（7天）后自动清理，期间可在后台进行恢复。`)) return;
@@ -167,12 +175,14 @@ export default function NovelEditor({ novels }: Props) {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-lg text-gray-800 dark:text-white">小说列表</h2>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
-          >
-            {showForm ? '取消' : '+ 新建小说'}
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+            >
+              {showForm ? '取消' : '+ 新建小说'}
+            </button>
+          )}
         </div>
 
         {showForm && (
@@ -266,12 +276,22 @@ export default function NovelEditor({ novels }: Props) {
                       <span className="ml-2 px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700">仅文件系统</span>
                     )}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {novel.author || 'AI创作'} · 
-                    <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                  <div className="text-sm text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+                    <span>{novel.author || 'AI创作'}</span>
+                    <span className={`px-2 py-0.5 rounded text-xs ${
                       novel.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                     }`}>
                       {novel.status === 'completed' ? '已完结' : '连载中'}
+                    </span>
+                    <span className="text-xs text-gray-400">·</span>
+                    <span className="text-xs text-gray-400">{novel.chapter_count} 章</span>
+                    <span className="text-xs text-gray-400">·</span>
+                    <span className="text-xs text-gray-400">
+                      {novel.total_words >= 10000
+                        ? (novel.total_words / 10000).toFixed(1) + '万'
+                        : novel.total_words >= 1000
+                          ? (novel.total_words / 1000).toFixed(1) + 'k'
+                          : novel.total_words} 字
                     </span>
                   </div>
                 </div>

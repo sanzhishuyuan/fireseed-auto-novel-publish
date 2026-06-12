@@ -101,10 +101,13 @@ export async function POST(request: NextRequest) {
     const jsonParsed = safeParseJSON(bodyText);
     if (!jsonParsed.success) return jsonParsed.response;
     const body = jsonParsed.data;
-    const { token, admin_key, content, title, author, description, tags } = body;
+    const { admin_key, content, title, author, description, tags } = body;
 
-    if (!token && !admin_key) {
-      return NextResponse.json({ error: '缺少 token 或 admin_key' }, { status: 401 });
+    if (!admin_key) {
+      return NextResponse.json({
+        error: '上传通道暂未开放',
+        detail: '个人用户暂不支持直接上传小说。请将小说内容发送至 50541358@qq.com，由管理员审核后代为上传。感谢你的理解与支持！'
+      }, { status: 403 });
     }
 
     if (!content) {
@@ -115,48 +118,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '缺少作者名' }, { status: 400 });
     }
 
-    // 确定用户ID：admin_key 优先，JWT Token 回退
+    // 仅管理员可上传：验证 admin_key
     let userId: string | null = null;
 
-    // 方式一：admin_key 鉴权（管理员绕过）
-    if (admin_key) {
+    // 尝试 admin JWT token（浏览器登录的管理员）
+    if (verifyAdminToken(admin_key)) {
+      const decoded = jwt.verify(admin_key, JWT_SECRET) as { userId?: string; role?: string };
+      if (decoded.userId && decoded.role) {
+        const role = decoded.role;
+        if (role === 'admin' || role === 'super_admin' || role === 'editor' || role === 'viewer') {
+          userId = decoded.userId;
+        }
+      }
+    }
+
+    // 回退：ADMIN_PASSWORD 直接匹配（管理员后门）
+    if (!userId) {
       const adminPassword = process.env.ADMIN_PASSWORD;
       if (adminPassword && admin_key === adminPassword) {
-        // admin_key 匹配 → 查找管理员用户
         const adminUser = db.prepare(
-          "SELECT id FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1"
-        ).get() as { id: string } | undefined;
+          "SELECT id, role FROM users WHERE role IN ('admin', 'super_admin') ORDER BY created_at ASC LIMIT 1"
+        ).get() as { id: string; role: string } | undefined;
         if (adminUser) {
           userId = adminUser.id;
         }
       }
-      if (!userId) {
-        // 尝试 admin JWT token
-        if (verifyAdminToken(admin_key)) {
-          const adminUser = db.prepare(
-            "SELECT id FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1"
-          ).get() as { id: string } | undefined;
-          if (adminUser) {
-            userId = adminUser.id;
-          }
-        }
-      }
-    }
-
-    // 方式二：JWT Token 鉴权（普通用户）
-    if (!userId && token) {
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-        if (decoded && decoded.userId) {
-          userId = decoded.userId;
-        }
-      } catch {
-        return NextResponse.json({ error: '无效的 token' }, { status: 401 });
-      }
     }
 
     if (!userId) {
-      return NextResponse.json({ error: '鉴权失败，无法确定用户身份' }, { status: 403 });
+      return NextResponse.json({
+        error: '上传通道暂未开放',
+        detail: '个人用户暂不支持直接上传小说。请将小说内容发送至 50541358@qq.com，由管理员审核后代为上传。感谢你的理解与支持！'
+      }, { status: 403 });
     }
 
     // 解析 frontmatter（如果存在）

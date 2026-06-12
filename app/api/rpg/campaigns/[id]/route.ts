@@ -9,12 +9,12 @@ import db from '@/lib/db';
 import { requireUser } from '@/lib/auth';
 import { RULE_PRESETS, type CharacterCardData, type LorebookEntry } from '@/lib/rpg/types';
 import { extractAndRollDice } from '@/lib/rpg/dice';
-import { transferSeed, getBalance } from '@/lib/seed';
+import { getBalance } from '@/lib/seed';
+import { chargeGMInteraction } from '@/lib/rpg/economy';
 
 export const dynamic = 'force-dynamic';
 
-// AI GM 每次调用消耗的 SEED
-const AI_GM_COST = 2;
+// AI GM 单人/多人单次消耗（由 chargeGMInteraction 根据模式动态计算）
 
 /**
  * GET — 获取战役详情（含消息历史）
@@ -101,14 +101,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: '战役不存在' }, { status: 404 });
     }
 
-    // ===== SEED 经济检查 =====
+    // ===== SEED 经济检查（使用经济模块） =====
+    const gmCost = campaign.mode === 'solo' ? 1 : 0.5;
     const balance = getBalance(user.userId);
-    if (balance < AI_GM_COST) {
+    if (balance < gmCost) {
       return NextResponse.json({
         success: false,
-        error: `SEED 不足：当前 ${balance} 🌱，AI GM 每次调用需要 ${AI_GM_COST} 🌱。请通过发布小说、签到等方式获取 SEED。`,
+        error: `SEED 不足：当前 ${balance} 🌱，AI GM 每次响应需要 ${gmCost} 🌱。请通过发布小说、签到等方式获取 SEED。`,
         balance,
-        required: AI_GM_COST,
+        required: gmCost,
       }, { status: 402 });
     }
 
@@ -257,14 +258,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
               `).run(uuidv4(), id, campaign.session_id || '', user.userId, characterId || null, roll.expression, roll.total, roll.detail, 'AI GM 自动掷骰');
             }
 
-            // 扣除 SEED
+            // 扣除 SEED（使用经济模块）
             let seedCost = 0;
             try {
-              transferSeed(user.userId, -AI_GM_COST, 'ai_gm' as any, {
-                refId: id,
-                description: `AI GM 调用 - ${campaign.name}`,
-              });
-              seedCost = AI_GM_COST;
+              const billing = chargeGMInteraction(user.userId, id, campaign.mode);
+              seedCost = billing.cost;
             } catch (e: any) {
               console.error('SEED deduction error:', e.message);
             }
@@ -335,14 +333,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       `).run(uuidv4(), id, campaign.session_id || '', user.userId, characterId || null, roll.expression, roll.total, roll.detail, 'AI GM 自动掷骰');
     }
 
-    // 扣除 SEED
+    // 扣除 SEED（使用经济模块）
     let seedCost = 0;
     try {
-      transferSeed(user.userId, -AI_GM_COST, 'ai_gm' as any, {
-        refId: id,
-        description: `AI GM 调用 - ${campaign.name}`,
-      });
-      seedCost = AI_GM_COST;
+      const billing = chargeGMInteraction(user.userId, id, campaign.mode);
+      seedCost = billing.cost;
     } catch (e: any) {
       console.error('SEED deduction error:', e.message);
     }

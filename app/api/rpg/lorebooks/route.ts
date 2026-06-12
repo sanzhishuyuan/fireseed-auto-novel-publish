@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
     }
 
     const lorebooks = db.prepare(`
-      SELECT id, name, description, is_public, created_at, updated_at,
+      SELECT id, name, description, is_public, seed_price, download_count, copy_count,
+             avg_rating, rating_count, license_type, created_at, updated_at,
         JSON_ARRAY_LENGTH(entries) as entry_count
       FROM rpg_lorebooks
       WHERE user_id = ?

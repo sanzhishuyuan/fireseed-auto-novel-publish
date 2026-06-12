@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { JWT_SECRET } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { recordActivationAndGetMissions } from '@/lib/skill-helper';
 import { transferSeed } from '@/lib/seed';
@@ -50,6 +52,31 @@ export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRe
   if (rateLimitResponse_) return rateLimitResponse_;
 
   try {
+    // 🔒 上传权限检查：AI Token（系统用）可直接创建，用户类 Token 需管理员权限
+    if (ctx.ai.tokenType === 'jwt' || ctx.ai.tokenType === 'user_token') {
+      let userRole: string | undefined;
+
+      if (ctx.ai.tokenType === 'jwt' && ctx.ai.token) {
+        // 从 JWT payload 获取角色
+        try {
+          const decoded = jwt.verify(ctx.ai.token, JWT_SECRET) as { role: string };
+          userRole = decoded.role;
+        } catch { /* ignore */ }
+      } else if (ctx.ai.userId) {
+        // 从 user_token 查询用户角色
+        const user = db.prepare('SELECT role FROM users WHERE id = ?').get(ctx.ai.userId) as { role: string } | undefined;
+        userRole = user?.role;
+      }
+
+      const allowedRoles = ['admin', 'super_admin', 'editor'];
+      if (!userRole || !allowedRoles.includes(userRole)) {
+        return NextResponse.json({
+          error: '上传通道暂未开放',
+          detail: '个人用户暂不支持直接上传小说。请将小说内容发送至 50541358@qq.com，由管理员审核后代为上传。感谢你的理解与支持！'
+        }, { status: 403 });
+      }
+    }
+    // ai_token 类型直接放行（AI 系统自动创作）
     const { id: customId, title, author, description, status, tags, cover_url } = ctx.body;
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
 

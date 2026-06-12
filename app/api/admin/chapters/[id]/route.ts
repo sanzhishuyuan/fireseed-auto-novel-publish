@@ -4,6 +4,7 @@ import { apiSuccess, apiError } from '@/lib/api-response';
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
+import { logAdminAction } from '@/lib/audit';
 
 export const PUT = withRoute({ auth: 'admin', permission: 'content.edit', body: true }, async (request, ctx: AdminContext) => {
   const { id } = ctx.params!;
@@ -45,6 +46,21 @@ export const PUT = withRoute({ auth: 'admin', permission: 'content.edit', body: 
     }
   }
 
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'edit_chapter',
+      targetType: 'chapter',
+      targetId: id,
+      detail: { novelId: chapter.novel_id, oldTitle: chapter.title, newTitle, changes: Object.keys(ctx.body).join(',') },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
+
   return apiSuccess({ message: `章节「${newTitle}」已更新` });
 });
 
@@ -68,6 +84,21 @@ export const DELETE = withRoute({ auth: 'admin', permission: 'content.delete' },
   }
 
   db.prepare('DELETE FROM chapters WHERE id = ?').run(id);
+
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'delete_chapter',
+      targetType: 'chapter',
+      targetId: id,
+      detail: { novelId: chapter.novel_id, title: chapter.title, order_num: chapter.order_num },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
 
   return apiSuccess({ message: `章节「${chapter.title}」已删除` });
 });

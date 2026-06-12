@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-const COVERS_DIR = path.join(process.cwd(), 'covers');
+const COVERS_DIR = path.resolve(process.cwd(), 'covers');
 
 const MIME_MAP: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -18,12 +18,13 @@ export async function GET(
 ) {
   const filename = params.slug.join(path.sep);
 
-  // 安全检查：防止路径遍历
-  if (filename.includes('..') || filename.includes('~')) {
+  // 路径遍历防护：确保解析后的路径在 COVERS_DIR 内
+  const resolvedPath = path.resolve(COVERS_DIR, filename);
+  if (!resolvedPath.startsWith(COVERS_DIR + path.sep) && resolvedPath !== COVERS_DIR) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 
-  const filePath = path.join(COVERS_DIR, filename);
+  const filePath = resolvedPath;
 
   try {
     if (!fs.existsSync(filePath)) {

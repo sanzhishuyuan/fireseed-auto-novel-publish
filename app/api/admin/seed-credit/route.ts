@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { requireAdmin, ADMIN_PASSWORD } from '@/lib/auth';
 import { transferSeed } from '@/lib/seed';
 import { safeParseJSON } from '@/lib/request-parser';
+import { logAdminAction } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +47,33 @@ export async function POST(request: NextRequest) {
     const balance = transferSeed(user.id, Number(amount), 'seed_in', {
       description: reason ? `管理员充值: ${reason}` : `管理员充值 ${amount} 🌱`,
     });
+
+    // 审计日志：记录充值操作
+    try {
+      let adminId = 'system';
+      let adminUsername = 'system';
+      const adminCookie = request.cookies.get('admin_token')?.value;
+      if (adminCookie) {
+        try {
+          const jwt = await import('jsonwebtoken');
+          const { JWT_SECRET } = await import('@/lib/auth');
+          const decoded = jwt.default.verify(adminCookie, JWT_SECRET) as any;
+          if (decoded?.userId) { adminId = decoded.userId; adminUsername = decoded.username || 'admin'; }
+        } catch {}
+      }
+
+      logAdminAction({
+        adminId,
+        adminUsername,
+        action: 'system_setting',
+        targetType: 'user',
+        targetId: user.id,
+        detail: { type: 'seed_credit', amount, reason: reason || '', targetUser: user.username },
+        ipAddress: request.headers.get('x-forwarded-for') || '',
+      });
+    } catch (e) {
+      console.warn('审计日志写入失败:', e);
+    }
 
     return NextResponse.json({
       success: true,

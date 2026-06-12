@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { withRoute, type AdminContext } from '@/lib/with-route';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import db from '@/lib/db';
+import { logAdminAction } from '@/lib/audit';
 
 export const PATCH = withRoute({ auth: 'admin', permission: 'skill.manage', body: true }, async (request, ctx: AdminContext) => {
   const updates = ctx.body;
@@ -30,11 +31,41 @@ export const PATCH = withRoute({ auth: 'admin', permission: 'skill.manage', body
   setValues.push(id);
   db.prepare(`UPDATE skill_missions SET ${setClauses.join(', ')} WHERE id = ?`).run(...setValues);
 
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'edit_skill_mission',
+      targetType: 'skill_mission',
+      targetId: id,
+      detail: { updatedFields: allowedFields.filter(f => updates[f] !== undefined) },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
+
   return apiSuccess({ message: '任务已更新' });
 });
 
 export const DELETE = withRoute({ auth: 'admin', permission: 'skill.manage' }, async (request, ctx: AdminContext) => {
   const { id } = ctx.params!;
   db.prepare('DELETE FROM skill_missions WHERE id = ?').run(id);
+
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'delete_skill_mission',
+      targetType: 'skill_mission',
+      targetId: id,
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
+
   return apiSuccess({ message: '任务已删除' });
 });

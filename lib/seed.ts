@@ -38,7 +38,16 @@ export type TransactionType =
   | 'task_reward'    // 完成任务奖励
   | 'burn'           // SEED 销毁
   | 'compensate'     // 失效退款
-  | 'auto_feedback'; // AI 自动反馈
+  | 'auto_feedback' // AI 自动反馈
+  // RPG 经济新增
+  | 'rpg_purchase'       // 购买专业 RPG 资产
+  | 'rpg_commission_pub' // 发布创作任务（冻结预算）
+  | 'rpg_commission_pay' // 创作任务完成付款
+  | 'rpg_commission_refund' // 创作任务退款
+  | 'rpg_gm_interact'    // AI GM 交互消耗
+  | 'rpg_royalty'        // 创作者资产销售收入
+  | 'rpg_community_bonus' // 社区贡献积分兑换
+  | 'rpg_fund_reward';   // 创作者基金奖励
 
 /**
  * 获取用户钱包，不存在则自动创建

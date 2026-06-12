@@ -920,4 +920,94 @@ try {
   db.exec(`ALTER TABLE crowdfunding_projects ADD COLUMN success_stories TEXT DEFAULT '';`);
 } catch (e) {}
 
+// ===== RPG × SEED 经济系统：市场/资产库/评价/任务 表 =====
+db.exec(`
+  -- 市场挂牌表
+  CREATE TABLE IF NOT EXISTS rpg_market_listings (
+    id TEXT PRIMARY KEY,
+    asset_type TEXT NOT NULL,
+    asset_id TEXT NOT NULL,
+    seller_id TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    license_mode TEXT NOT NULL DEFAULT 'full_copy',
+    status TEXT DEFAULT 'active',
+    platform_fee INTEGER DEFAULT 0,
+    creator_share INTEGER DEFAULT 0,
+    buyer_id TEXT,
+    sold_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 用户资产库
+  CREATE TABLE IF NOT EXISTS rpg_asset_library (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    asset_type TEXT NOT NULL,
+    asset_id TEXT NOT NULL,
+    license_mode TEXT NOT NULL DEFAULT 'full_copy',
+    source TEXT NOT NULL DEFAULT 'self_created',
+    source_listing_id TEXT,
+    acquired_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 创作者评价表
+  CREATE TABLE IF NOT EXISTS rpg_creator_ratings (
+    id TEXT PRIMARY KEY,
+    listing_id TEXT NOT NULL,
+    rater_id TEXT NOT NULL,
+    ratee_id TEXT NOT NULL,
+    rating INTEGER NOT NULL,
+    review TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 创作任务表
+  CREATE TABLE IF NOT EXISTS rpg_commission_tasks (
+    id TEXT PRIMARY KEY,
+    asset_type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    requester_id TEXT NOT NULL,
+    budget INTEGER NOT NULL,
+    deadline DATETIME,
+    status TEXT DEFAULT 'open',
+    assignee_id TEXT,
+    submitted_at DATETIME,
+    completed_at DATETIME,
+    delivery_asset_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+// 索引
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_market_type_status ON rpg_market_listings(asset_type, status)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_market_seller ON rpg_market_listings(seller_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_library_user ON rpg_asset_library(user_id, asset_type)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ratings_ratee ON rpg_creator_ratings(ratee_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_commission_status ON rpg_commission_tasks(status)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_commission_requester ON rpg_commission_tasks(requester_id)`);
+} catch (e) { /* 索引已存在，忽略 */ }
+
+// ===== RPG 经济迁移：为已有 RPG 表新增字段 =====
+try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN seed_price INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN download_count INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN copy_count INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN avg_rating REAL DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN rating_count INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN license_type TEXT DEFAULT 'personal';`); } catch (e) {}
+
+try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN avg_rating REAL DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN rating_count INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN copy_count INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN license_type TEXT DEFAULT 'personal';`); } catch (e) {}
+
+// ===== 用户信誉等级字段 =====
+try { db.exec(`ALTER TABLE users ADD COLUMN creator_score INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN creator_level INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN total_public_contributions INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN total_sales_volume INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN total_rating_sum INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN total_rating_count INTEGER DEFAULT 0;`); } catch (e) {}
+
 export default db;

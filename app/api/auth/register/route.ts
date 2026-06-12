@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { safeParseJSON } from '@/lib/request-parser';
 import { getOrCreateWallet, transferSeed } from '@/lib/seed';
+import { sendNewUserNotification, sendWelcomeEmail } from '@/lib/mail';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
@@ -125,6 +126,10 @@ export async function POST(request: NextRequest) {
       { expiresIn: '30d' }
     );
 
+    // === 设置 auth_token cookie，使注册后立即处于登录状态 ===
+    // 注意：需要在 NextResponse.json 之前设置，因为 cookies().set 在 RSC 中才可用
+    // 这里直接构建 response 并设置 cookie
+
     // === 自动创建永久的 API Token（给 AI 用）===
     const apiTokenRaw = 'fs_' + uuidv4().replace(/-/g, '') + '_' + Date.now().toString(36);
     const tokenId = uuidv4();
@@ -141,13 +146,37 @@ export async function POST(request: NextRequest) {
       `).run(uuidv4(), userId, 'register-auto', 'web-register');
     } catch (_) { /* 忽略 */ }
 
-    return NextResponse.json({
+    // 异步发送管理员通知（SMTP 未配置时静默跳过）
+    sendNewUserNotification({
+      username,
+      userId,
+      createdAt: new Date().toISOString(),
+    }).catch(() => {});
+
+    // 异步发送欢迎邮件给新用户（SMTP 未配置时静默跳过）
+    sendWelcomeEmail({
+      username,
+      userId,
+    }).catch(() => {});
+
+    const response = NextResponse.json({
       success: true,
       userId,
       jwt_token: jwtToken,
       api_token: apiTokenRaw,
       username
     });
+
+    // 设置 auth_token cookie，使注册后立即处于登录状态
+    response.cookies.set('auth_token', jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 天
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     console.error('Register error:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });

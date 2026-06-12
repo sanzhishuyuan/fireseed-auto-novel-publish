@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     const characters = db.prepare(`
       SELECT id, name, system, avatar_url, spec_version, is_public, download_count,
-             seed_price, created_at, updated_at
+             seed_price, avg_rating, rating_count, copy_count, license_type, created_at, updated_at
       FROM rpg_characters WHERE user_id = ?
       ORDER BY updated_at DESC
     `).all(user.userId);
