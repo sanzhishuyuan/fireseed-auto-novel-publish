@@ -54,7 +54,7 @@ export interface LorebookEntry {
   constant?: boolean;
 }
 
-// ===== 战役 =====
+// ===== 异时空 =====
 
 export type CampaignMode = 'solo' | 'coop' | 'human_gm' | 'hybrid';
 export type CampaignStatus = 'recruiting' | 'active' | 'paused' | 'completed';
@@ -75,6 +75,29 @@ export interface Campaign {
   created_by: string;
   created_at: string;
   updated_at: string;
+}
+
+// ===== 资产关联（副本-人物卡-世界书交叉引用） =====
+
+export type AssetSourceType = 'module' | 'lorebook' | 'character';
+export type AssetLinkedType = 'character' | 'lorebook' | 'module';
+
+export interface AssetLink {
+  id: string;
+  source_type: AssetSourceType;
+  source_id: string;
+  linked_type: AssetLinkedType;
+  linked_id: string;
+  role: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface AssetLinkWithDetail extends AssetLink {
+  linked_name: string;
+  linked_avatar?: string;
+  linked_description?: string;
+  linked_author?: string;
 }
 
 // ===== 会话消息 =====

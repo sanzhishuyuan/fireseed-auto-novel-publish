@@ -47,7 +47,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await request.json();
-    const { name, description, personality, scenario, first_mes, system, trpg, is_public, seed_price } = body;
+    const { name, description, personality, scenario, first_mes, system, trpg, is_public, seed_price, char_type } = body;
+
+    if (char_type && !['universal', 'dedicated'].includes(char_type)) {
+      return NextResponse.json({ success: false, error: 'char_type 必须为 universal 或 dedicated' }, { status: 400 });
+    }
 
     const existingData = db.prepare('SELECT card_data FROM rpg_characters WHERE id = ?').get(id) as any;
     const cardData = JSON.parse(existingData.card_data || '{}');
@@ -62,7 +66,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     db.prepare(`
       UPDATE rpg_characters SET
         name = ?, card_data = ?, system = ?, is_public = ?,
-        seed_price = ?, updated_at = CURRENT_TIMESTAMP
+        seed_price = ?, char_type = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
       name || cardData.name,
@@ -70,6 +74,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       system || 'custom',
       is_public !== undefined ? (is_public ? 1 : 0) : 0,
       seed_price || 0,
+      char_type || 'dedicated',
       id
     );
 

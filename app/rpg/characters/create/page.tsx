@@ -35,6 +35,7 @@ export default function CreateCharacterPage() {
   const [personality, setPersonality] = useState('');
   const [attributes, setAttributes] = useState<Record<string, number>>({});
   const [backstory, setBackstory] = useState('');
+  const [charType, setCharType] = useState<'universal' | 'dedicated'>('dedicated');
 
   // 初始化属性
   const initAttrs = (sys: string) => {
@@ -97,6 +98,7 @@ export default function CreateCharacterPage() {
           description: description.trim(),
           personality: personality.trim(),
           trpg,
+          char_type: charType,
         }),
       });
       const data = await res.json();
@@ -201,6 +203,32 @@ export default function CreateCharacterPage() {
                 className="codex-input" placeholder="你的角色性格是怎样的？勇敢？谨慎？幽默？冷漠？"
                 rows={3}
                 style={{ width: '100%', padding: '10px 14px', borderRadius: 6, background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, resize: 'vertical' }} />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 13, color: C.textSec, marginBottom: 6 }}>角色类型</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={() => setCharType('dedicated')}
+                  style={{
+                    flex: 1, padding: '10px 14px', borderRadius: 6, cursor: 'pointer', textAlign: 'center',
+                    background: charType === 'dedicated' ? C.goldDim + '30' : C.card,
+                    border: charType === 'dedicated' ? `1px solid ${C.gold}` : `1px solid ${C.border}`,
+                    color: charType === 'dedicated' ? C.gold : C.textSec,
+                  }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>专用角色</div>
+                  <div style={{ fontSize: 11, marginTop: 2, opacity: 0.8 }}>仅限本人创建的异时空使用</div>
+                </button>
+                <button type="button" onClick={() => setCharType('universal')}
+                  style={{
+                    flex: 1, padding: '10px 14px', borderRadius: 6, cursor: 'pointer', textAlign: 'center',
+                    background: charType === 'universal' ? C.goldDim + '30' : C.card,
+                    border: charType === 'universal' ? `1px solid ${C.gold}` : `1px solid ${C.border}`,
+                    color: charType === 'universal' ? C.gold : C.textSec,
+                  }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>通用角色</div>
+                  <div style={{ fontSize: 11, marginTop: 2, opacity: 0.8 }}>可在市场公开，被他人副本引用</div>
+                </button>
+              </div>
             </div>
 
             <button onClick={() => setStep('attributes')}

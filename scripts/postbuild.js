@@ -46,4 +46,21 @@ if (fs.existsSync(publicSrc)) {
   console.log('[postbuild] ✓ Copied public/ → standalone');
 }
 
+// 3. 复制 data/ → .next/standalone/data/（数据库文件，确保 standalone 使用最新数据）
+const dataSrc = path.join(root, 'data');
+const dataDest = path.join(standalone, 'data');
+try {
+  if (fs.existsSync(dataSrc)) {
+    // 逐个文件复制（不覆盖 WAL/SHM 以避免冲突）
+    const dbFiles = fs.readdirSync(dataSrc).filter(f => f.endsWith('.db') || f === 'changelog.json');
+    fs.mkdirSync(dataDest, { recursive: true });
+    for (const file of dbFiles) {
+      fs.copyFileSync(path.join(dataSrc, file), path.join(dataDest, file));
+    }
+    console.log('[postbuild] ✓ Copied data/ → standalone');
+  }
+} catch (e) {
+  console.error('[postbuild] ⚠ Failed to copy data/:', e.message);
+}
+
 console.log('[postbuild] Done.');

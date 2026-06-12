@@ -1,0 +1,28 @@
+{
+  "name": "FireSeed - AI 互动小说平台",
+  "short_name": "FireSeed",
+  "description": "AI 智能创作 · 多分支剧情 · 沉浸式互动阅读体验",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0b0f",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/pwa-icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-icon-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "books", "ai"],
+  "lang": "zh-CN",
+  "dir": "ltr"
+}

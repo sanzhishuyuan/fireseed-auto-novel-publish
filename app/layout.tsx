@@ -7,12 +7,24 @@ import ThemeToggle from '@/components/ThemeToggle';
 import MusicPlayer from '@/components/MusicPlayer';
 import GlobalLikeBar from '@/components/GlobalLikeBar';
 import WalletBadge from '@/components/WalletBadge';
+import PWARegister from '@/components/PWARegister';
 
 export const metadata: Metadata = {
   title: 'FireSeed - AI 互动小说平台',
   description: 'AI 智能创作 · 多分支剧情 · 沉浸式互动阅读体验',
   icons: {
     icon: '/favicon.svg',
+    apple: '/pwa-icon-192.svg',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'FireSeed',
+    statusBarStyle: 'black-translucent',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'theme-color': '#7c3aed',
   },
 };
 
@@ -89,6 +101,7 @@ export default function RootLayout({
             跳转到主要内容
           </a>
           {children}
+          <PWARegister />
           </HeaderProvider>
           {/* 全局底部点赞栏 — 自动在小说页面显示 */}
           <GlobalLikeBar />

@@ -28,7 +28,7 @@ interface Novel {
   title: string;
 }
 
-export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: Novel[]; defaultNovel?: string }) {
+export default function ChapterEditor({ novels, defaultNovel = '', adminRole }: { novels: Novel[]; defaultNovel?: string; adminRole?: string }) {
   const router = useRouter();
   const [selectedNovel, setSelectedNovel] = useState(defaultNovel);
   const [chapters, setChapters] = useState<any[]>([]);
@@ -40,6 +40,12 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
     branch: 'main',
     choices: [] as { text: string; branch: string }[]
   });
+
+  // 角色权限判断
+  const canDelete = ['admin', 'super_admin'].includes(adminRole || 'admin');
+  const canEdit = ['editor', 'admin', 'super_admin'].includes(adminRole || 'admin');
+  const canCreate = ['editor', 'admin', 'super_admin'].includes(adminRole || 'admin');
+
   const [newChoice, setNewChoice] = useState({ text: '', branch: '' });
 
   // ---- 排序相关状态 ----
@@ -253,12 +259,14 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
           <div className="p-4 flex flex-wrap items-center justify-between gap-3" style={{ borderBottom: `1px solid ${C.border}` }}>
             <h2 className="font-bold" style={{ color: C.text, fontFamily: fontDisplay }}>章节列表</h2>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowForm(!showForm)}
-                className="codex-btn-gold text-sm"
-              >
-                {showForm ? '取消' : '+ 新建章节'}
-              </button>
+              {canCreate && (
+                <button
+                  onClick={() => setShowForm(!showForm)}
+                  className="codex-btn-gold text-sm"
+                >
+                  {showForm ? '取消' : '+ 新建章节'}
+                </button>
+              )}
             </div>
           </div>
 
@@ -477,19 +485,21 @@ export default function ChapterEditor({ novels, defaultNovel = '' }: { novels: N
                     >
                       预览
                     </a>
-                    <button
-                      onClick={() => {
-                        const id = chapter.id || chapter.filePath;
-                        if (!id) {
-                          alert('无法删除：缺少章节标识');
-                          return;
-                        }
-                        handleDeleteChapter(id, chapterTitle);
-                      }}
-                      className="codex-btn-danger px-2 py-1 text-xs"
-                    >
-                      删除
-                    </button>
+                    {canDelete && (
+                      <button
+                        onClick={() => {
+                          const id = chapter.id || chapter.filePath;
+                          if (!id) {
+                            alert('无法删除：缺少章节标识');
+                            return;
+                          }
+                          handleDeleteChapter(id, chapterTitle);
+                        }}
+                        className="codex-btn-danger px-2 py-1 text-xs"
+                      >
+                        删除
+                      </button>
+                    )}
                   </div>
                 </div>
               );

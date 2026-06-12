@@ -24,7 +24,10 @@ export default function CharacterDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editCharType, setEditCharType] = useState<'universal' | 'dedicated'>('dedicated');
   const [saving, setSaving] = useState(false);
+  const [inboundLinks, setInboundLinks] = useState<any[]>([]);
+  const [loadingLinks, setLoadingLinks] = useState(false);
 
   useEffect(() => {
     fetch(`/api/rpg/characters/${params.id}`)
@@ -34,9 +37,17 @@ export default function CharacterDetailPage() {
           setCharacter(d.data);
           setEditName(d.data.card_data?.name || d.data.name);
           setEditDesc(d.data.card_data?.description || '');
+          setEditCharType(d.data.char_type || 'dedicated');
         }
       })
       .finally(() => setLoading(false));
+
+    // 加载反向引用（此角色被哪些副本/世界书引用）
+    setLoadingLinks(true);
+    fetch(`/api/rpg/asset-links?sourceType=character&sourceId=${params.id}`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setInboundLinks(d.data || []); })
+      .finally(() => setLoadingLinks(false));
   }, [params.id]);
 
   const handleSave = async () => {
@@ -45,11 +56,11 @@ export default function CharacterDetailPage() {
       const res = await fetch(`/api/rpg/characters/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName, description: editDesc }),
+        body: JSON.stringify({ name: editName, description: editDesc, char_type: editCharType }),
       });
       const d = await res.json();
       if (d.success) {
-        setCharacter({ ...character, name: editName, card_data: { ...character.card_data, name: editName, description: editDesc } });
+        setCharacter({ ...character, name: editName, char_type: editCharType, card_data: { ...character.card_data, name: editName, description: editDesc } });
         setEditing(false);
       }
     } finally {
@@ -102,6 +113,14 @@ export default function CharacterDetailPage() {
                 <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)}
                   className="codex-input" rows={3}
                   style={{ background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, padding: '8px 12px', borderRadius: 6, width: '100%', marginBottom: 8, resize: 'vertical' }} />
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <label style={{ fontSize: 13, color: C.textSec }}>角色类型:</label>
+                  <select value={editCharType} onChange={e => setEditCharType(e.target.value as any)}
+                    style={{ background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, padding: '4px 8px', borderRadius: 4, fontSize: 13 }}>
+                    <option value="dedicated">专用角色</option>
+                    <option value="universal">通用角色</option>
+                  </select>
+                </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={handleSave} disabled={saving}
                     className="codex-btn-gold" style={{ padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13 }}>
@@ -118,10 +137,20 @@ export default function CharacterDetailPage() {
                 <h1 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 28, color: C.gold, margin: 0 }}>
                   {character.name}
                 </h1>
-                <p style={{ color: C.textSec, fontSize: 14, margin: '4px 0' }}>
-                  {SYS_LABEL[character.system] || character.system}
-                  {trpg?.level ? ` · Lv.${trpg.level}` : ''}
-                </p>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                  <span style={{ color: C.textSec, fontSize: 14 }}>
+                    {SYS_LABEL[character.system] || character.system}
+                    {trpg?.level ? ` · Lv.${trpg.level}` : ''}
+                  </span>
+                  <span style={{
+                    fontSize: 11, padding: '2px 8px', borderRadius: 4,
+                    background: character.char_type === 'universal' ? '#c9a55c20' : C.border,
+                    color: character.char_type === 'universal' ? C.gold : C.textDim,
+                    border: `1px solid ${character.char_type === 'universal' ? C.goldDim : C.border}`,
+                  }}>
+                    {character.char_type === 'universal' ? '通用角色' : '专用角色'}
+                  </span>
+                </div>
                 {card.description && <p style={{ color: C.textSec, fontSize: 14, marginTop: 8 }}>{card.description}</p>}
                 <button onClick={() => setEditing(true)}
                   className="codex-btn-ghost" style={{ marginTop: 8, padding: '4px 12px', borderRadius: 4, border: `1px solid ${C.border}`, cursor: 'pointer', background: 'transparent', color: C.textDim, fontSize: 12 }}>
@@ -182,6 +211,30 @@ export default function CharacterDetailPage() {
           <div style={{ background: C.card, borderRadius: 8, border: `1px solid ${C.border}`, padding: 16, marginBottom: 16 }}>
             <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 16, color: C.gold, margin: '0 0 8px' }}>背景故事</h3>
             <p style={{ color: C.textSec, fontSize: 14, margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{trpg.backstory}</p>
+          </div>
+        )}
+
+        {/* 关联的异时空/副本 */}
+        {inboundLinks.length > 0 && (
+          <div style={{ background: C.card, borderRadius: 8, border: `1px solid ${C.border}`, padding: 16, marginBottom: 16 }}>
+            <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 16, color: C.gold, margin: '0 0 12px' }}>
+              关联的异时空 {loadingLinks && <span style={{ fontSize: 12, color: C.textDim }}>(加载中...)</span>}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {inboundLinks.map((link: any) => (
+                <div key={link.id} style={{
+                  padding: '10px 14px', borderRadius: 6, background: C.bg,
+                  border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 12,
+                }}>
+                  <span style={{ fontSize: 11, color: C.textDim, background: C.border, padding: '2px 6px', borderRadius: 4 }}>
+                    {link.source_type === 'module' ? '副本' : link.source_type === 'lorebook' ? '世界书' : '人物卡'}
+                  </span>
+                  <span style={{ flex: 1, color: C.text, fontSize: 14 }}>{link.linked_name || '未知'}</span>
+                  {link.linked_author && <span style={{ fontSize: 12, color: C.textDim }}>by {link.linked_author}</span>}
+                  {link.role && <span style={{ fontSize: 12, color: C.goldDim }}>角色: {link.role}</span>}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

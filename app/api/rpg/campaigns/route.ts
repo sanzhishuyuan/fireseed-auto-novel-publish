@@ -1,5 +1,5 @@
 /**
- * GET/POST /api/rpg/campaigns — 战役列表/创建
+ * GET/POST /api/rpg/campaigns — 异时空列表/创建
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,7 +9,7 @@ import { requireUser } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/rpg/campaigns — 获取用户的战役列表
+ * GET /api/rpg/campaigns — 获取用户的异时空列表
  */
 export async function GET(request: NextRequest) {
   try {
@@ -31,12 +31,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: campaigns });
   } catch (error) {
     console.error('Get campaigns error:', error);
-    return NextResponse.json({ success: false, error: '获取战役列表失败' }, { status: 500 });
+    return NextResponse.json({ success: false, error: '获取异时空列表失败' }, { status: 500 });
   }
 }
 
 /**
- * POST /api/rpg/campaigns — 创建战役
+ * POST /api/rpg/campaigns — 创建异时空
  */
 export async function POST(request: NextRequest) {
   try {
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const { name, mode, system, world_brief, character_id } = body;
 
     if (!name || typeof name !== 'string') {
-      return NextResponse.json({ success: false, error: '战役名称不能为空' }, { status: 400 });
+      return NextResponse.json({ success: false, error: '异时空名称不能为空' }, { status: 400 });
     }
 
     const id = uuidv4();
@@ -85,6 +85,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Create campaign error:', error);
-    return NextResponse.json({ success: false, error: '创建战役失败' }, { status: 500 });
+    return NextResponse.json({ success: false, error: '创建异时空失败' }, { status: 500 });
   }
 }

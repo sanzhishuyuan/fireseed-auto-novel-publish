@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/auth';
+import { verifyAdminToken, JWT_SECRET } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getAllNovelIds } from '@/lib/novels';
 import db from '@/lib/db';
+import jwt from 'jsonwebtoken';
 import HideHeader from '@/components/HideHeader';
 import NovelEditor from './NovelEditor';
 
@@ -49,6 +50,13 @@ export default async function NovelsAdminPage() {
   // 3. 合并：数据库小说在前，孤立小说在后
   const novels: NovelItem[] = [...dbNovels, ...orphanNovels];
 
+  // 提取管理员角色
+  let adminRole = 'admin';
+  try {
+    const decoded = jwt.verify(adminToken || '', JWT_SECRET) as { role?: string };
+    if (decoded.role) adminRole = decoded.role;
+  } catch {}
+
   return (
     <div className="min-h-screen" style={{ background: '#0b0b0f' }}>
       <HideHeader />
@@ -63,7 +71,7 @@ export default async function NovelsAdminPage() {
         </div>
       </header>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <NovelEditor novels={novels} />
+        <NovelEditor novels={novels} adminRole={adminRole} />
       </div>
     </div>
   );

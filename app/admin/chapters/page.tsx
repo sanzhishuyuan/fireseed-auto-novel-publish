@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
-import { verifyAdminToken } from '@/lib/auth';
+import { verifyAdminToken, JWT_SECRET } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import db from '@/lib/db';
+import jwt from 'jsonwebtoken';
 import HideHeader from '@/components/HideHeader';
 import ChapterEditor from './ChapterEditor';
 
@@ -22,6 +23,13 @@ export default async function ChaptersPage({
 
   const defaultNovel = searchParams?.novel || '';
 
+  // 提取管理员角色
+  let adminRole = 'admin';
+  try {
+    const decoded = jwt.verify(adminToken || '', JWT_SECRET) as { role?: string };
+    if (decoded.role) adminRole = decoded.role;
+  } catch {}
+
   // 数据库优先（兼容 API 上传的小说）
   const novels = db.prepare('SELECT id, title FROM novels WHERE deleted_at IS NULL ORDER BY updated_at DESC').all() as { id: string; title: string }[];
 
@@ -39,7 +47,7 @@ export default async function ChaptersPage({
         </div>
       </header>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <ChapterEditor novels={novels} defaultNovel={defaultNovel} />
+        <ChapterEditor novels={novels} defaultNovel={defaultNovel} adminRole={adminRole} />
       </div>
     </div>
   );

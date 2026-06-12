@@ -1,5 +1,5 @@
 /**
- * GET /api/rpg/campaigns/[id] — 战役详情
+ * GET /api/rpg/campaigns/[id] — 异时空详情
  * POST /api/rpg/campaigns/[id]/action — 玩家行动 → AI GM
  * POST /api/rpg/campaigns/[id]/save — 存档
  */
@@ -13,7 +13,7 @@ import { extractAndRollDice } from '@/lib/rpg/dice';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET — 获取战役详情（含消息历史）
+ * GET — 获取异时空详情（含消息历史）
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     `).get(id) as any;
 
     if (!campaign) {
-      return NextResponse.json({ success: false, error: '战役不存在' }, { status: 404 });
+      return NextResponse.json({ success: false, error: '异时空不存在' }, { status: 404 });
     }
 
     // 获取活跃会话
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
   } catch (error) {
     console.error('Get campaign error:', error);
-    return NextResponse.json({ success: false, error: '获取战役失败' }, { status: 500 });
+    return NextResponse.json({ success: false, error: '获取异时空失败' }, { status: 500 });
   }
 }
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = await request.json();
     const { action, characterId } = body;
 
-    // 验证战役和成员
+    // 验证异时空和成员
     const campaign = db.prepare(`
       SELECT c.*, s.id as session_id
       FROM rpg_campaigns c
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     `).get(id) as any;
 
     if (!campaign) {
-      return NextResponse.json({ success: false, error: '战役不存在' }, { status: 404 });
+      return NextResponse.json({ success: false, error: '异时空不存在' }, { status: 404 });
     }
 
     // 保存玩家消息

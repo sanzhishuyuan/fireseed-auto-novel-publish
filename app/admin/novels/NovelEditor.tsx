@@ -36,9 +36,10 @@ interface Novel {
 
 interface Props {
   novels: Novel[];
+  adminRole: string;
 }
 
-export default function NovelEditor({ novels }: Props) {
+export default function NovelEditor({ novels, adminRole }: Props) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
@@ -48,6 +49,11 @@ export default function NovelEditor({ novels }: Props) {
     status: 'ongoing',
     tags: ''
   });
+
+  // 角色权限判断
+  const canDelete = ['admin', 'super_admin'].includes(adminRole);
+  const canEdit = ['editor', 'admin', 'super_admin'].includes(adminRole);
+  const canCreate = ['editor', 'admin', 'super_admin'].includes(adminRole);
 
   // 编辑状态
   const [editingNovel, setEditingNovel] = useState<Novel | null>(null);
@@ -187,12 +193,14 @@ export default function NovelEditor({ novels }: Props) {
       <div className="codex-card p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-lg" style={{ color: C.text, fontFamily: fontDisplay }}>小说列表</h2>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="codex-btn-gold"
-          >
-            {showForm ? '取消' : '+ 新建小说'}
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="codex-btn-gold"
+            >
+              {showForm ? '取消' : '+ 新建小说'}
+            </button>
+          )}
         </div>
 
         {showForm && (
@@ -297,12 +305,14 @@ export default function NovelEditor({ novels }: Props) {
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => openEdit(novel)}
-                  className="codex-btn-ghost text-sm"
-                >
-                  编辑
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => openEdit(novel)}
+                    className="codex-btn-ghost text-sm"
+                  >
+                    编辑
+                  </button>
+                )}
                 <a
                   href={`/admin/chapters?novel=${novel.id}`}
                   className="codex-btn-ghost text-sm"
@@ -316,12 +326,14 @@ export default function NovelEditor({ novels }: Props) {
                 >
                   预览
                 </a>
-                <button
-                  onClick={() => handleDelete(novel.id, novel.title)}
-                  className="codex-btn-danger text-sm"
-                >
-                  删除
-                </button>
+                {canDelete && (
+                  <button
+                    onClick={() => handleDelete(novel.id, novel.title)}
+                    className="codex-btn-danger text-sm"
+                  >
+                    删除
+                  </button>
+                )}
               </div>
             </div>
           ))}

@@ -9,7 +9,8 @@ import { requireUser } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/rpg/characters — 获取当前用户角色列表
+ * GET /api/rpg/characters — 获取角色列表
+ * 支持 ?search=xxx 搜索公开的通用角色（用于资产关联）
  */
 export async function GET(request: NextRequest) {
   try {
@@ -18,12 +19,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: '请先登录' }, { status: 401 });
     }
 
-    const characters = db.prepare(`
-      SELECT id, name, system, avatar_url, spec_version, is_public, download_count,
-             seed_price, created_at, updated_at
-      FROM rpg_characters WHERE user_id = ?
-      ORDER BY updated_at DESC
-    `).all(user.userId);
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search');
+
+    let characters;
+    if (search) {
+      // 搜索公开的通用角色（用于资产关联）
+      characters = db.prepare(`
+        SELECT id, name, system, avatar_url, spec_version, is_public, download_count,
+               seed_price, char_type, created_at, updated_at
+        FROM rpg_characters
+        WHERE (is_public = 1 OR user_id = ?)
+          AND char_type = 'universal'
+          AND name LIKE ?
+        ORDER BY download_count DESC
+        LIMIT 20
+      `).all(user.userId, `%${search}%`);
+    } else {
+      characters = db.prepare(`
+        SELECT id, name, system, avatar_url, spec_version, is_public, download_count,
+               seed_price, char_type, created_at, updated_at
+        FROM rpg_characters WHERE user_id = ?
+        ORDER BY updated_at DESC
+      `).all(user.userId);
+    }
 
     return NextResponse.json({ success: true, data: characters });
   } catch (error) {
@@ -43,10 +62,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, system, description, personality, scenario, first_mes, trpg } = body;
+    const { name, system, description, personality, scenario, first_mes, trpg, char_type } = body;
 
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ success: false, error: '角色名不能为空' }, { status: 400 });
+    }
+
+    if (char_type && !['universal', 'dedicated'].includes(char_type)) {
+      return NextResponse.json({ success: false, error: 'char_type 必须为 universal 或 dedicated' }, { status: 400 });
     }
 
     const id = uuidv4();
@@ -70,14 +93,15 @@ export async function POST(request: NextRequest) {
     const cardJson = JSON.stringify(cardData);
 
     db.prepare(`
-      INSERT INTO rpg_characters (id, user_id, name, spec_version, card_data, system, is_public, seed_price)
-      VALUES (?, ?, ?, '2.0', ?, ?, ?, ?)
+      INSERT INTO rpg_characters (id, user_id, name, spec_version, card_data, system, is_public, seed_price, char_type)
+      VALUES (?, ?, ?, '2.0', ?, ?, ?, ?, ?)
     `).run(
       id, user.userId, name,
       cardJson,
       system || 'custom',
       body.is_public ? 1 : 0,
-      body.seed_price || 0
+      body.seed_price || 0,
+      char_type || 'dedicated'
     );
 
     return NextResponse.json({

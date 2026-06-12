@@ -30,7 +30,7 @@ function NewCampaignForm() {
   }, []);
 
   const handleCreate = async () => {
-    if (!name.trim()) { setError('请输入战役名称'); return; }
+    if (!name.trim()) { setError('请输入异时空名称'); return; }
     setLoading(true);
     setError('');
 
@@ -70,13 +70,13 @@ function NewCampaignForm() {
           开始新的冒险
         </h1>
         <p style={{ color: C.textSec, fontSize: 14, marginBottom: 24 }}>
-          设定你的战役世界，AI GM 将为你编织故事
+          设定你的异时空世界，AI GM 将为你编织故事
         </p>
 
         {error && <div className="codex-tip warn" style={{ marginBottom: 16, padding: '8px 12px', borderRadius: 6 }}>{error}</div>}
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 13, color: C.textSec, marginBottom: 6 }}>战役名称 *</label>
+          <label style={{ display: 'block', fontSize: 13, color: C.textSec, marginBottom: 6 }}>异时空名称 *</label>
           <input value={name} onChange={e => setName(e.target.value)}
             className="codex-input" placeholder="例如：失落的矿坑、暗影中的低语..."
             style={{ width: '100%', padding: '10px 14px', borderRadius: 6, background: C.card, border: `1px solid ${C.border}`, color: C.text }} />

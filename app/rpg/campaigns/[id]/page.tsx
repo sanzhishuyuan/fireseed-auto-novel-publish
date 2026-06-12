@@ -32,6 +32,12 @@ export default function CampaignPage() {
   const [diceResult, setDiceResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [showSidebar, setShowSidebar] = useState(true);
+  const [assetLinks, setAssetLinks] = useState<any[]>([]);
+  const [showLinkPanel, setShowLinkPanel] = useState(false);
+  const [linkType, setLinkType] = useState<'character' | 'lorebook'>('character');
+  const [linkSearch, setLinkSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
 
   const loadCampaign = async () => {
     try {
@@ -49,6 +55,67 @@ export default function CampaignPage() {
   };
 
   useEffect(() => { loadCampaign(); }, [params.id]);
+
+  // 加载资产关联
+  const loadAssetLinks = async () => {
+    try {
+      const res = await fetch(`/api/rpg/asset-links?sourceType=module&sourceId=${params.id}`);
+      const d = await res.json();
+      if (d.success) setAssetLinks(d.data || []);
+    } catch {}
+  };
+
+  useEffect(() => { if (params.id) loadAssetLinks(); }, [params.id]);
+
+  // 搜索可关联的资产
+  const handleLinkSearch = async () => {
+    if (!linkSearch.trim()) return;
+    setSearching(true);
+    try {
+      if (linkType === 'character') {
+        const res = await fetch(`/api/rpg/characters?search=${encodeURIComponent(linkSearch.trim())}`);
+        const d = await res.json();
+        setSearchResults(d.success ? (d.data || []) : []);
+      } else {
+        // 搜索世界书（公开的）
+        const res = await fetch(`/api/rpg/lorebooks?search=${encodeURIComponent(linkSearch.trim())}`);
+        const d = await res.json();
+        setSearchResults(d.success ? (d.data || []) : []);
+      }
+    } catch {} finally {
+      setSearching(false);
+    }
+  };
+
+  // 创建关联
+  const handleCreateLink = async (linkedId: string) => {
+    try {
+      const res = await fetch('/api/rpg/asset-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceType: 'module',
+          sourceId: params.id,
+          linkedType: linkType,
+          linkedId,
+          role: '',
+        }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        loadAssetLinks();
+        setSearchResults(prev => prev.filter((r: any) => r.id !== linkedId));
+      }
+    } catch {}
+  };
+
+  // 删除关联
+  const handleDeleteLink = async (linkId: string) => {
+    try {
+      await fetch(`/api/rpg/asset-links/${linkId}`, { method: 'DELETE' });
+      setAssetLinks(prev => prev.filter(l => l.id !== linkId));
+    } catch {}
+  };
 
   useEffect(() => {
     chatEnd.current?.scrollIntoView({ behavior: 'smooth' });
@@ -157,7 +224,7 @@ export default function CampaignPage() {
   if (!campaign) {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-        <p>战役不存在</p>
+        <p>异时空不存在</p>
         <Link href="/rpg" style={{ color: C.gold }}>回到酒馆</Link>
       </div>
     );
@@ -378,10 +445,10 @@ export default function CampaignPage() {
               ))}
             </div>
 
-            {/* 战役信息 */}
+            {/* 异时空信息 */}
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 13, color: C.gold, margin: '0 0 8px', letterSpacing: '0.5px' }}>
-                战役信息
+                异时空信息
               </h3>
               <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.8 }}>
                 <div>系统: {SYS_LABEL[campaign.system] || campaign.system}</div>
@@ -408,6 +475,106 @@ export default function CampaignPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* 关联资产 */}
+            <div style={{ marginTop: 16 }}>
+              <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 13, color: C.gold, margin: '0 0 8px', letterSpacing: '0.5px' }}>
+                关联资产
+                <button onClick={() => setShowLinkPanel(!showLinkPanel)}
+                  style={{ marginLeft: 8, fontSize: 11, color: C.goldDim, background: 'none', border: 'none', cursor: 'pointer' }}>
+                  {showLinkPanel ? '收起' : '+ 添加'}
+                </button>
+              </h3>
+              {assetLinks.length === 0 ? (
+                <p style={{ fontSize: 12, color: C.textDim }}>暂无关联资产</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {assetLinks.map((link: any) => (
+                    <div key={link.id} style={{
+                      padding: '6px 8px', borderRadius: 4, background: C.card,
+                      border: `1px solid ${C.border}`, fontSize: 12,
+                      display: 'flex', alignItems: 'center', gap: 6,
+                    }}>
+                      <span style={{
+                        fontSize: 10, padding: '1px 4px', borderRadius: 3,
+                        background: link.linked_type === 'character' ? '#c9a55c20' : '#1e3a5f30',
+                        color: link.linked_type === 'character' ? C.gold : '#6b9fff',
+                      }}>
+                        {link.linked_type === 'character' ? '人物' : '世界书'}
+                      </span>
+                      <span style={{ flex: 1, color: C.text }}>{link.linked_name || '未知'}</span>
+                      <button onClick={() => handleDeleteLink(link.id)}
+                        style={{ background: 'none', border: 'none', color: C.textDim, cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1 }}>
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 添加关联面板 */}
+              {showLinkPanel && (
+                <div style={{
+                  marginTop: 8, padding: 8, borderRadius: 6,
+                  background: C.bg, border: `1px solid ${C.border}`,
+                }}>
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                    <button onClick={() => { setLinkType('character'); setSearchResults([]); }}
+                      style={{
+                        flex: 1, padding: '4px 8px', borderRadius: 4, fontSize: 11,
+                        background: linkType === 'character' ? C.goldDim + '30' : 'transparent',
+                        border: `1px solid ${linkType === 'character' ? C.goldDim : C.border}`,
+                        color: linkType === 'character' ? C.gold : C.textDim, cursor: 'pointer',
+                      }}>
+                      人物卡
+                    </button>
+                    <button onClick={() => { setLinkType('lorebook'); setSearchResults([]); }}
+                      style={{
+                        flex: 1, padding: '4px 8px', borderRadius: 4, fontSize: 11,
+                        background: linkType === 'lorebook' ? C.goldDim + '30' : 'transparent',
+                        border: `1px solid ${linkType === 'lorebook' ? C.goldDim : C.border}`,
+                        color: linkType === 'lorebook' ? C.gold : C.textDim, cursor: 'pointer',
+                      }}>
+                      世界书
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <input value={linkSearch} onChange={e => setLinkSearch(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleLinkSearch()}
+                      placeholder="搜索名称..."
+                      style={{
+                        flex: 1, padding: '4px 8px', borderRadius: 4, fontSize: 12,
+                        background: C.inputBg, border: `1px solid ${C.border}`, color: C.text,
+                        outline: 'none',
+                      }} />
+                    <button onClick={handleLinkSearch} disabled={searching}
+                      className="codex-btn-gold" style={{
+                        padding: '4px 10px', borderRadius: 4, border: 'none',
+                        cursor: 'pointer', fontSize: 11,
+                      }}>
+                      搜索
+                    </button>
+                  </div>
+                  {searchResults.length > 0 && (
+                    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 160, overflowY: 'auto' }}>
+                      {searchResults.map((r: any) => (
+                        <div key={r.id} style={{
+                          padding: '4px 8px', borderRadius: 4, background: C.card,
+                          border: `1px solid ${C.border}`, fontSize: 11,
+                          display: 'flex', alignItems: 'center', gap: 6,
+                        }}>
+                          <span style={{ flex: 1, color: C.text }}>{r.name}</span>
+                          <button onClick={() => handleCreateLink(r.id)}
+                            style={{ padding: '2px 8px', borderRadius: 3, background: C.goldDim + '30', border: `1px solid ${C.goldDim}`, color: C.gold, cursor: 'pointer', fontSize: 11 }}>
+                            + 关联
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

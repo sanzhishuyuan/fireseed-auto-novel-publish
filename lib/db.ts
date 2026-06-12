@@ -888,7 +888,7 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 
-  -- 战役表
+  -- 异时空表
   CREATE TABLE IF NOT EXISTS rpg_campaigns (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -907,7 +907,7 @@ db.exec(`
     FOREIGN KEY (created_by) REFERENCES users(id)
   );
 
-  -- 战役成员表
+  -- 异时空成员表
   CREATE TABLE IF NOT EXISTS rpg_campaign_members (
     campaign_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
@@ -996,6 +996,35 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_messages_camp ON rpg_messages(campaign_id, created_at)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_dice_camp ON rpg_dice_rolls(campaign_id, created_at)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_archives_camp ON rpg_archives(campaign_id)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
+// ===== 人物卡类型扩展（通用/专用） =====
+try {
+  db.exec(`ALTER TABLE rpg_characters ADD COLUMN char_type TEXT NOT NULL DEFAULT 'dedicated'`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+// ===== 资产关联表（副本-人物卡-世界书交叉引用） =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS rpg_asset_links (
+    id TEXT PRIMARY KEY,
+    source_type TEXT NOT NULL CHECK(source_type IN ('module','lorebook','character')),
+    source_id TEXT NOT NULL,
+    linked_type TEXT NOT NULL CHECK(linked_type IN ('character','lorebook','module')),
+    linked_id TEXT NOT NULL,
+    role TEXT DEFAULT '',
+    created_by TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_asset_links_source ON rpg_asset_links(source_type, source_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_asset_links_linked ON rpg_asset_links(linked_type, linked_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rpg_asset_links_creator ON rpg_asset_links(created_by)`);
 } catch (e) {
   // 索引已存在，忽略
 }
