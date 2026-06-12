@@ -82,6 +82,22 @@ export default function RpgLobbyPage() {
               }}>
               🏪 跑团市场
             </Link>
+            <Link href="/rpg/creator"
+              style={{
+                padding: '8px 20px', borderRadius: 6,
+                background: '#22c55e15', border: '1px solid #22c55e40',
+                color: '#22c55e', textDecoration: 'none', fontSize: 14,
+              }}>
+              ⚜ 创作者中心
+            </Link>
+            <Link href="/rpg/fund"
+              style={{
+                padding: '8px 20px', borderRadius: 6,
+                background: '#a78bfa15', border: '1px solid #a78bfa40',
+                color: '#a78bfa', textDecoration: 'none', fontSize: 14,
+              }}>
+              🏦 创作者基金
+            </Link>
           </div>
         </div>
 
