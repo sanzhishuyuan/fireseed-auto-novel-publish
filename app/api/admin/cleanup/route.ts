@@ -4,6 +4,7 @@ import { apiSuccess, apiError } from '@/lib/api-response';
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
+import { logAdminAction } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,6 +114,21 @@ export const DELETE = withRoute({ auth: 'admin', permission: 'cleanup.execute' }
       db.prepare('DELETE FROM novels WHERE id = ?').run(novel.id);
       deletedRecords.push(novel.id);
     }
+  }
+
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'cleanup_novel',
+      targetType: 'novel',
+      targetId: deletedRecords.length === 1 ? deletedRecords[0] : undefined,
+      detail: { deletedCount: deletedRecords.length, deletedIds: deletedRecords },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
   }
 
   return apiSuccess({

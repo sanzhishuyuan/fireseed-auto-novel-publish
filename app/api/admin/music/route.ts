@@ -3,6 +3,7 @@ import { withRoute, type AdminContext } from '@/lib/with-route';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import fs from 'fs';
 import path from 'path';
+import { logAdminAction } from '@/lib/audit';
 
 const MUSIC_DIR = '/var/data/ai-novel/music';
 
@@ -58,6 +59,21 @@ export const POST = withRoute({ auth: 'admin' }, async (request, ctx: AdminConte
   const buffer = Buffer.from(await file.arrayBuffer());
   fs.writeFileSync(filePath, buffer);
 
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'upload_music',
+      targetType: 'music',
+      targetId: safeName,
+      detail: { originalName: file.name, size: buffer.length },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
+
   return apiSuccess({
     song: {
       name: safeName,
@@ -84,6 +100,21 @@ export const DELETE = withRoute({ auth: 'admin' }, async (request, ctx: AdminCon
   }
 
   fs.unlinkSync(filePath);
+
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'delete_music',
+      targetType: 'music',
+      targetId: safeName,
+      detail: { fileName: safeName },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
 
   return apiSuccess({ message: '已删除' });
 });

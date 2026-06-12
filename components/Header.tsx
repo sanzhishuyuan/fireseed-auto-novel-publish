@@ -8,30 +8,33 @@ import type { User } from '@/types';
 
 // ============ Constants ============
 const NAV_LINKS = [
-  { href: '/rpg', label: 'AI跑团' },
   { href: '/novels', label: '全部作品' },
+  { href: '/rpg', label: 'AI 跑团' },
   { href: '/tasks', label: '任务市场' },
   { href: '/crowdfunding', label: '众筹广场' },
   { href: '/chat', label: '社区' },
   { href: '/resources', label: '可信资源' },
   { href: '/opportunities', label: '商机动态' },
+  { href: '/upload', label: '上传小说' },
   { href: '/download', label: '火种基地' },
 ];
 
 const DRAWER_NAV_LINKS = [
   { href: '/', label: '首页', icon: 'M2 8l6-6 6 6M4 7v6a1 1 0 001 1h6a1 1 0 001-1V7' },
-  { href: '/rpg', label: 'AI跑团', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
   { href: '/novels', label: '全部作品', icon: 'M2 3h6a4 4 0 0 1 4 4v6a3 3 0 0 0-3-3H2zM14 3h-6a4 4 0 0 0-4 4v6a3 3 0 0 1 3-3h7z' },
+  { href: '/rpg', label: 'AI 跑团', icon: 'M8 1l7 5v8l-7 5-7-5V6z' },
   { href: '/tasks', label: '任务市场', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
   { href: '/crowdfunding', label: '众筹广场', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   { href: '/chat', label: '社区', icon: 'M2 4h12v8H4l-2 2zM6 8h.01M9 8h.01M12 8h.01' },
   { href: '/resources', label: '可信资源', icon: 'M2 2h12v12H2zM6 6h4M6 9h2' },
   { href: '/opportunities', label: '商机动态', icon: 'M2 12l5-5 3 3 5-7' },
+  { href: '/upload', label: '上传小说', icon: 'M12 3v10m0 0l-4-4m4 4l4-4M4 15v1a2 2 0 002 2h8a2 2 0 002-2v-1' },
   { href: '/download', label: '火种基地', icon: 'M12 3v10m0 0l-4-4m4 4l4-4M4 15v1a2 2 0 002 2h8a2 2 0 002-2v-1' },
 ];
 
 /** Route-based default title map */
 const ROUTE_TITLES: Record<string, string> = {
+  '/rpg': 'AI 跑团',
   '/chat': '火种社区',
   '/vip': '会员中心',
   '/plan': '共创计划',
@@ -42,7 +45,6 @@ const ROUTE_TITLES: Record<string, string> = {
   '/referral': '推广中心',
   '/crowdfunding': '众筹',
   '/skills': '技能中心',
-  '/rpg': 'AI跑团',
   '/seed/stats': 'SEED 统计',
   '/seed/leaderboard': '排行榜',
 };

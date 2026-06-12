@@ -3,26 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const C = {
-  bg: '#0b0b0f',
-  card: '#131318',
-  elevated: '#1a1a22',
-  hover: '#22222c',
-  text: '#f0ece4',
-  dim: '#9a9a8e',
-  muted: '#5a5a52',
-  gold: '#c9a55c',
-  goldLight: '#e4cc8a',
-  goldGlow: 'rgba(201,165,92,0.12)',
-  goldBorder: 'rgba(201,165,92,0.2)',
-  border: 'rgba(255,255,255,0.06)',
-  green: '#22c55e',
-  red: '#ef4444',
-  blue: '#3b82f6',
-} as const;
-const fontDisplay = "'Fraunces', Georgia, serif";
-const fontMono = "'DM Mono', 'Menlo', monospace";
-
 interface Novel {
   id: string;
   title: string;
@@ -31,6 +11,8 @@ interface Novel {
   cover_url?: string;
   status?: string;
   tags?: string;
+  chapter_count: number;
+  total_words: number;
   orphan?: boolean;
 }
 
@@ -50,11 +32,6 @@ export default function NovelEditor({ novels, adminRole }: Props) {
     tags: ''
   });
 
-  // 角色权限判断
-  const canDelete = ['admin', 'super_admin'].includes(adminRole);
-  const canEdit = ['editor', 'admin', 'super_admin'].includes(adminRole);
-  const canCreate = ['editor', 'admin', 'super_admin'].includes(adminRole);
-
   // 编辑状态
   const [editingNovel, setEditingNovel] = useState<Novel | null>(null);
   const [editForm, setEditForm] = useState({
@@ -68,6 +45,11 @@ export default function NovelEditor({ novels, adminRole }: Props) {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
+
+  // 角色权限检查
+  const canDelete = ['admin', 'super_admin'].includes(adminRole);
+  const canEdit = ['editor', 'admin', 'super_admin'].includes(adminRole);
+  const canCreate = ['editor', 'admin', 'super_admin'].includes(adminRole);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`确认删除小说「${title}」？\n\n删除后将在保留期（7天）后自动清理，期间可在后台进行恢复。`)) return;
@@ -190,13 +172,13 @@ export default function NovelEditor({ novels, adminRole }: Props) {
   return (
     <div className="space-y-6">
       {/* 新建小说 */}
-      <div className="codex-card p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold text-lg" style={{ color: C.text, fontFamily: fontDisplay }}>小说列表</h2>
+          <h2 className="font-bold text-lg text-gray-800 dark:text-white">小说列表</h2>
           {canCreate && (
             <button
               onClick={() => setShowForm(!showForm)}
-              className="codex-btn-gold"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
             >
               {showForm ? '取消' : '+ 新建小说'}
             </button>
@@ -204,65 +186,65 @@ export default function NovelEditor({ novels, adminRole }: Props) {
         </div>
 
         {showForm && (
-          <div className="codex-card mb-6 p-4">
-            <h3 className="font-bold mb-4" style={{ color: C.text, fontFamily: fontDisplay }}>创建新小说</h3>
+          <div className="mb-6 p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+            <h3 className="font-bold text-gray-800 dark:text-white mb-4">创建新小说</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm mb-1" style={{ color: C.dim }}>书名 *</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">书名 *</label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="codex-input w-full"
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="例如：火种觉醒"
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1" style={{ color: C.dim }}>作者</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">作者</label>
                 <input
                   type="text"
                   value={form.author}
                   onChange={(e) => setForm({ ...form, author: e.target.value })}
-                  className="codex-input w-full"
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="作者名称"
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1" style={{ color: C.dim }}>简介</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">简介</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="codex-input w-full"
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   rows={3}
                   placeholder="小说简介..."
                 />
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm mb-1" style={{ color: C.dim }}>状态</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">状态</label>
                   <select
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="codex-select w-full"
+                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   >
                     <option value="ongoing">连载中</option>
                     <option value="completed">已完结</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm mb-1" style={{ color: C.dim }}>标签</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">标签</label>
                   <input
                     type="text"
                     value={form.tags}
                     onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                    className="codex-input w-full"
+                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     placeholder="科幻,穿越,热血 (逗号分隔)"
                   />
                 </div>
               </div>
               <button
                 onClick={handleSubmit}
-                className="codex-btn-gold w-full py-3 font-semibold"
+                className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
               >
                 创建小说
               </button>
@@ -273,7 +255,7 @@ export default function NovelEditor({ novels, adminRole }: Props) {
         {/* 小说列表 */}
         <div className="space-y-4">
           {novels.map((novel) => (
-            <div key={novel.id} className="flex items-center justify-between p-4" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '0.75rem' }}>
+            <div key={novel.id} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
               <div className="flex items-center gap-3 min-w-0">
                 {novel.cover_url ? (
                   <img
@@ -283,62 +265,68 @@ export default function NovelEditor({ novels, adminRole }: Props) {
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                 ) : (
-                  <div className="w-10 h-14 rounded flex-shrink-0 flex items-center justify-center text-xs" style={{ background: C.card, color: C.muted }}>
+                  <div className="w-10 h-14 bg-gray-100 dark:bg-gray-700 rounded flex-shrink-0 flex items-center justify-center text-xs text-gray-400">
                     无封面
                   </div>
                 )}
                 <div className="min-w-0">
-                  <div className="font-bold truncate" style={{ color: C.text }}>
+                  <div className="font-bold text-gray-800 dark:text-white truncate">
                     {novel.title}
                     {novel.orphan && (
-                      <span className="ml-2 codex-badge-yellow">仅文件系统</span>
+                      <span className="ml-2 px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700">仅文件系统</span>
                     )}
                   </div>
-                  <div className="text-sm mt-1" style={{ color: C.muted }}>
-                    {novel.author || 'AI创作'} · 
-                    <span className={`ml-2 ${
-                      novel.status === 'completed' ? 'codex-badge-green' : 'codex-badge-yellow'
+                  <div className="text-sm text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+                    <span>{novel.author || 'AI创作'}</span>
+                    <span className={`px-2 py-0.5 rounded text-xs ${
+                      novel.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                     }`}>
                       {novel.status === 'completed' ? '已完结' : '连载中'}
+                    </span>
+                    <span className="text-xs text-gray-400">·</span>
+                    <span className="text-xs text-gray-400">{novel.chapter_count} 章</span>
+                    <span className="text-xs text-gray-400">·</span>
+                    <span className="text-xs text-gray-400">
+                      {novel.total_words >= 10000
+                        ? (novel.total_words / 10000).toFixed(1) + '万'
+                        : novel.total_words >= 1000
+                          ? (novel.total_words / 1000).toFixed(1) + 'k'
+                          : novel.total_words} 字
                     </span>
                   </div>
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                {canEdit && (
-                  <button
-                    onClick={() => openEdit(novel)}
-                    className="codex-btn-ghost text-sm"
-                  >
-                    编辑
-                  </button>
-                )}
+                <button
+                  onClick={() => openEdit(novel)}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200"
+                >
+                  编辑
+                </button>
                 <a
                   href={`/admin/chapters?novel=${novel.id}`}
-                  className="codex-btn-ghost text-sm"
+                  className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm"
                 >
                   章节管理
                 </a>
                 <a
                   href={`/novels/${novel.id}`}
                   target="_blank"
-                  className="codex-btn-ghost text-sm"
+                  className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm"
                 >
                   预览
                 </a>
-                {canDelete && (
-                  <button
-                    onClick={() => handleDelete(novel.id, novel.title)}
-                    className="codex-btn-danger text-sm"
-                  >
-                    删除
-                  </button>
-                )}
+                <button
+                  onClick={() => handleDelete(novel.id, novel.title)}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200"
+                >
+                  删除
+                </button>
               </div>
             </div>
           ))}
           {novels.length === 0 && (
-            <div className="codex-empty text-center py-8">
+            <div className="text-center py-8 text-gray-500">
               暂无小说，点击上方按钮创建
             </div>
           )}
@@ -347,38 +335,36 @@ export default function NovelEditor({ novels, adminRole }: Props) {
 
       {/* 编辑对话框 */}
       {editingNovel && (
-        <div className="codex-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !editLoading && setEditingNovel(null)}>
-          <div className="codex-modal w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="codex-modal-header sticky top-0 px-6 py-4 flex justify-between items-center">
-              <h3 className="font-bold" style={{ color: C.text, fontFamily: fontDisplay }}>编辑小说信息</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !editLoading && setEditingNovel(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+              <h3 className="font-bold text-gray-800 dark:text-white">编辑小说信息</h3>
               <button
                 onClick={() => setEditingNovel(null)}
-                className="codex-btn-ghost text-xl leading-none"
-                style={{ color: C.muted }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
               >
                 ✕
               </button>
             </div>
 
-            <div className="codex-modal-body p-6 space-y-5">
+            <div className="p-6 space-y-5">
               {/* 封面预览与上传 */}
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: C.dim }}>封面图片</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">封面图片</label>
                 <div className="flex items-start gap-4">
                   {editForm.coverPreview ? (
                     <img
                       src={editForm.coverPreview}
                       alt="封面预览"
-                      className="w-24 h-32 object-cover rounded-lg flex-shrink-0"
-                      style={{ border: `1px solid ${C.border}` }}
+                      className="w-24 h-32 object-cover rounded-lg border dark:border-gray-600 flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-24 h-32 rounded-lg flex items-center justify-center text-xs flex-shrink-0" style={{ background: C.card, border: `1px solid ${C.border}`, color: C.muted }}>
+                    <div className="w-24 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg border dark:border-gray-600 flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
                       无封面
                     </div>
                   )}
                   <div className="flex-1">
-                    <label className="cursor-pointer inline-block codex-btn-gold text-sm">
+                    <label className="cursor-pointer inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
                       选择图片
                       <input
                         type="file"
@@ -387,9 +373,9 @@ export default function NovelEditor({ novels, adminRole }: Props) {
                         onChange={handleCoverFile}
                       />
                     </label>
-                    <p className="text-xs mt-1" style={{ color: C.muted }}>支持 JPG/PNG/WebP，最大 5MB</p>
+                    <p className="text-xs text-gray-400 mt-1">支持 JPG/PNG/WebP，最大 5MB</p>
                     {editForm.cover_image && (
-                      <p className="text-xs mt-1" style={{ color: C.green }}>✅ 已选择新图片，保存时将上传</p>
+                      <p className="text-xs text-green-600 mt-1">✅ 已选择新图片，保存时将上传</p>
                     )}
                   </div>
                 </div>
@@ -397,33 +383,33 @@ export default function NovelEditor({ novels, adminRole }: Props) {
 
               {/* 标题 */}
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: C.dim }}>书名 *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">书名 *</label>
                 <input
                   type="text"
                   value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="codex-input w-full"
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
 
               {/* 作者 */}
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: C.dim }}>作者</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">作者</label>
                 <input
                   type="text"
                   value={editForm.author}
                   onChange={(e) => setEditForm({ ...editForm, author: e.target.value })}
-                  className="codex-input w-full"
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
 
               {/* 简介 */}
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: C.dim }}>简介</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">简介</label>
                 <textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="codex-input w-full"
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   rows={3}
                 />
               </div>
@@ -431,11 +417,11 @@ export default function NovelEditor({ novels, adminRole }: Props) {
               {/* 状态 + 标签 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: C.dim }}>状态</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">状态</label>
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="codex-select w-full"
+                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   >
                     <option value="ongoing">连载中</option>
                     <option value="completed">已完结</option>
@@ -443,12 +429,12 @@ export default function NovelEditor({ novels, adminRole }: Props) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: C.dim }}>标签</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标签</label>
                   <input
                     type="text"
                     value={editForm.tags}
                     onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
-                    className="codex-input w-full"
+                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     placeholder="科幻,穿越 (逗号分隔)"
                   />
                 </div>
@@ -456,24 +442,24 @@ export default function NovelEditor({ novels, adminRole }: Props) {
 
               {/* 错误提示 */}
               {editError && (
-                <div className="codex-tip-danger p-3 rounded-lg text-sm">
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
                   {editError}
                 </div>
               )}
 
               {/* 按钮组 */}
-              <div className="codex-modal-footer flex gap-3 pt-2">
+              <div className="flex gap-3 pt-2">
                 <button
                   onClick={handleEditSave}
                   disabled={editLoading}
-                  className="codex-btn-gold flex-1 py-3 font-semibold disabled:opacity-50"
+                  className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {editLoading ? '保存中...' : '保存修改'}
                 </button>
                 <button
                   onClick={() => setEditingNovel(null)}
                   disabled={editLoading}
-                  className="codex-btn-ghost px-6 py-3 disabled:opacity-50"
+                  className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                 >
                   取消
                 </button>

@@ -1,30 +1,19 @@
 module.exports = {
   apps: [{
-    name: 'ai-novel',
-    script: 'node_modules/.bin/next',
-    args: 'start -p 3000',
-    cwd: '/root/ai-novel-lite',
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G',
+    name: "ai-novel",
+    cwd: "/root/ai-novel-lite",
+    script: ".next/standalone/server.js",
     env: {
-      NODE_ENV: 'production'
-    },
-    error_file: '/var/log/ai-novel-error.log',
-    out_file: '/var/log/ai-novel-out.log'
-  }, {
-    name: 'chat-bot',
-    script: 'scripts/chat-bot.js',
-    cwd: '/root/ai-novel-lite',
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '200M',
-    env: {
-      NODE_ENV: 'production'
-    },
-    error_file: '/var/log/chat-bot-error.log',
-    out_file: '/var/log/chat-bot-out.log'
+      NODE_ENV: "production",
+      DATA_DIR: "/root/ai-novel-lite",
+      DEEPSEEK_API_KEY: "d16abc69b23a6d4d2fc85d50984fd453.X60YYcqWhG8k6LXI",
+      LLM_BASE_URL: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+      LLM_MODEL: "glm-4-long",
+      SMTP_HOST: "smtp.qq.com",
+      SMTP_PORT: "465",
+      SMTP_USER: "50541358@qq.com",
+      SMTP_PASS: "eyycpasuftkmcabj",
+      ADMIN_EMAIL: "50541358@qq.com",
+    }
   }]
 };

@@ -5,6 +5,7 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { logAdminAction } from '@/lib/audit';
 
 const COVERS_DIR = '/var/data/ai-novel/covers';
 
@@ -90,6 +91,21 @@ export const PUT = withRoute({ auth: 'admin', permission: 'content.edit', body: 
 
   db.prepare(sql).run(...values);
 
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'edit_novel',
+      targetType: 'novel',
+      targetId: id,
+      detail: { updatedFields: Object.keys(ctx.body).filter(k => k !== 'cover_image') },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
+
   return apiSuccess({ cover_url: newCoverUrl });
 });
 
@@ -119,6 +135,21 @@ export const DELETE = withRoute({ auth: 'admin', permission: 'content.delete' },
       WHERE id = ?
     `).run(now, id);
 
+    // 审计日志
+    try {
+      logAdminAction({
+        adminId: ctx.admin.id,
+        adminUsername: ctx.admin.username,
+        action: 'delete_novel',
+        targetType: 'novel',
+        targetId: id,
+        detail: { title: novel.title, retentionDays, method: 'soft_delete' },
+        ipAddress: request.headers.get('x-forwarded-for') || undefined,
+      });
+    } catch (e) {
+      console.warn('审计日志写入失败:', e);
+    }
+
     return apiSuccess({
       message: `小说「${novel.title}」已标记为删除，将在 ${retentionDays} 天后自动清理`
     });
@@ -133,6 +164,21 @@ export const DELETE = withRoute({ auth: 'admin', permission: 'content.delete' },
   }
 
   fs.rmSync(novelDir, { recursive: true });
+
+  // 审计日志
+  try {
+    logAdminAction({
+      adminId: ctx.admin.id,
+      adminUsername: ctx.admin.username,
+      action: 'delete_novel',
+      targetType: 'novel',
+      targetId: id,
+      detail: { method: 'filesystem_orphan' },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+    });
+  } catch (e) {
+    console.warn('审计日志写入失败:', e);
+  }
 
   return apiSuccess({ message: `文件系统小说「${id}」已永久删除` });
 });

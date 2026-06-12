@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { sanitizeId } from './path-security';
 
 // 小说元信息接口
 export interface NovelMeta {
@@ -62,7 +63,9 @@ export function getAllNovelIds(): Novel[] {
 
 // 读取小说元信息
 export function getNovelMeta(novelId: string): NovelMeta | null {
-  const metaPath = path.join(getNovelsDir(), novelId, 'meta.md');
+  const safeId = sanitizeId(novelId);
+  if (!safeId) return null;
+  const metaPath = path.join(getNovelsDir(), safeId, 'meta.md');
   if (!fs.existsSync(metaPath)) {
     return null;
   }
@@ -72,7 +75,9 @@ export function getNovelMeta(novelId: string): NovelMeta | null {
 
 // 获取小说的所有章节
 export function getNovelChapters(novelId: string): Chapter[] {
-  const chaptersDir = path.join(getNovelsDir(), novelId, 'chapters');
+  const safeId = sanitizeId(novelId);
+  if (!safeId) return [];
+  const chaptersDir = path.join(getNovelsDir(), safeId, 'chapters');
   if (!fs.existsSync(chaptersDir)) {
     return [];
   }
@@ -100,7 +105,10 @@ export function getNovelChapters(novelId: string): Chapter[] {
 
 // 获取单个章节
 export function getChapter(novelId: string, chapterId: string): Chapter | null {
-  const chapterPath = path.join(getNovelsDir(), novelId, 'chapters', `${chapterId}.md`);
+  const safeNovelId = sanitizeId(novelId);
+  const safeChapterId = sanitizeId(chapterId);
+  if (!safeNovelId || !safeChapterId) return null;
+  const chapterPath = path.join(getNovelsDir(), safeNovelId, 'chapters', `${safeChapterId}.md`);
   if (!fs.existsSync(chapterPath)) {
     return null;
   }
@@ -117,12 +125,15 @@ export function getChapter(novelId: string, chapterId: string): Chapter | null {
 
 // 获取支线章节
 export function getBranchChapter(novelId: string, branch: string): Chapter | null {
-  const branchesDir = path.join(getNovelsDir(), novelId, 'branches');
+  const safeNovelId = sanitizeId(novelId);
+  const safeBranch = sanitizeId(branch);
+  if (!safeNovelId || !safeBranch) return null;
+  const branchesDir = path.join(getNovelsDir(), safeNovelId, 'branches');
   if (!fs.existsSync(branchesDir)) {
     return null;
   }
   
-  const branchPath = path.join(branchesDir, `${branch}.md`);
+  const branchPath = path.join(branchesDir, `${safeBranch}.md`);
   if (!fs.existsSync(branchPath)) {
     return null;
   }
@@ -139,13 +150,18 @@ export function getBranchChapter(novelId: string, branch: string): Chapter | nul
 
 // 保存章节到文件
 export function saveChapter(novelId: string, chapterId: string, meta: ChapterMeta, content: string): void {
+  const safeNovelId = sanitizeId(novelId);
+  const safeChapterId = sanitizeId(chapterId);
+  if (!safeNovelId || !safeChapterId) {
+    throw new Error('无效的小说ID或章节ID');
+  }
   try {
-    const chaptersDir = path.join(getNovelsDir(), novelId, 'chapters');
+    const chaptersDir = path.join(getNovelsDir(), safeNovelId, 'chapters');
     if (!fs.existsSync(chaptersDir)) {
       fs.mkdirSync(chaptersDir, { recursive: true });
     }
     
-    const filePath = path.join(chaptersDir, `${chapterId}.md`);
+    const filePath = path.join(chaptersDir, `${safeChapterId}.md`);
     const fileContent = matter.stringify(content, meta);
     fs.writeFileSync(filePath, fileContent, 'utf-8');
   } catch (error) {
@@ -156,13 +172,18 @@ export function saveChapter(novelId: string, chapterId: string, meta: ChapterMet
 
 // 保存支线章节
 export function saveBranchChapter(novelId: string, branch: string, meta: ChapterMeta, content: string): void {
+  const safeNovelId = sanitizeId(novelId);
+  const safeBranch = sanitizeId(branch);
+  if (!safeNovelId || !safeBranch) {
+    throw new Error('无效的小说ID或分支名');
+  }
   try {
-    const branchesDir = path.join(getNovelsDir(), novelId, 'branches');
+    const branchesDir = path.join(getNovelsDir(), safeNovelId, 'branches');
     if (!fs.existsSync(branchesDir)) {
       fs.mkdirSync(branchesDir, { recursive: true });
     }
     
-    const filePath = path.join(branchesDir, `${branch}.md`);
+    const filePath = path.join(branchesDir, `${safeBranch}.md`);
     const fileContent = matter.stringify(content, meta);
     fs.writeFileSync(filePath, fileContent, 'utf-8');
   } catch (error) {

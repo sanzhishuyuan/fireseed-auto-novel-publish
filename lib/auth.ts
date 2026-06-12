@@ -58,9 +58,10 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
 }
 
 /**
- * 从请求中提取 userId，支持两种方式：
+ * 从请求中提取 userId，支持三种方式：
  *   1. Authorization: Bearer <token>（AI 客户端 / API 调用）
  *   2. auth_token cookie（浏览器登录用户）
+ *   3. admin_token cookie（管理员回退）
  */
 export function getUserIdFromRequest(request: NextRequest): string | null {
   // 方式 1: Authorization header
@@ -78,6 +79,15 @@ export function getUserIdFromRequest(request: NextRequest): string | null {
   if (cookieToken) {
     try {
       const decoded = jwt.verify(cookieToken, JWT_SECRET) as any;
+      if (decoded.userId) return decoded.userId;
+    } catch { /* ignore invalid token */ }
+  }
+
+  // 方式 3: admin_token cookie（管理员访问用户端功能时回退）
+  const adminToken = request.cookies.get('admin_token')?.value;
+  if (adminToken) {
+    try {
+      const decoded = jwt.verify(adminToken, JWT_SECRET) as any;
       if (decoded.userId) return decoded.userId;
     } catch { /* ignore invalid token */ }
   }
@@ -207,6 +217,7 @@ export function requireAdmin(
 /**
  * 统一用户认证检查
  * 支持 Cookie（浏览器）和 Bearer Token（API）两种方式
+ * 也支持 admin_token（管理员后台访问 RPG 等用户端功能时自动回退）
  * 
  * @example
  *   const user = requireUser(request);
@@ -214,18 +225,31 @@ export function requireAdmin(
  *   // user.id, user.username, user.role 可用
  */
 export function requireUser(request: NextRequest): Response | TokenPayload {
+  // 方式 1: 普通用户认证（auth_token cookie 或 Bearer token）
   const userId = getUserIdFromRequest(request);
-  if (!userId) {
-    return NextResponse.json({ success: false, error: '请先登录' }, { status: 401 });
+  if (userId) {
+    const token = request.headers.get('Authorization')?.startsWith('Bearer ')
+      ? request.headers.get('Authorization')!.slice(7)
+      : request.cookies.get('auth_token')?.value;
+    const payload = token ? verifyToken(token) : null;
+    return {
+      userId,
+      username: payload?.username || '',
+      role: payload?.role || 'reader',
+      nickname: payload?.nickname,
+    };
   }
-  const token = request.headers.get('Authorization')?.startsWith('Bearer ')
-    ? request.headers.get('Authorization')!.slice(7)
-    : request.cookies.get('auth_token')?.value;
-  const payload = token ? verifyToken(token) : null;
-  return {
-    userId,
-    username: payload?.username || '',
-    role: payload?.role || 'reader',
-    nickname: payload?.nickname,
-  };
+
+  // 方式 2: 管理员认证回退（admin_token cookie）
+  const admin = getAdminUser(request);
+  if (admin) {
+    return {
+      userId: admin.id,
+      username: admin.username,
+      role: admin.role,
+      nickname: admin.nickname,
+    };
+  }
+
+  return NextResponse.json({ success: false, error: '请先登录' }, { status: 401 });
 }

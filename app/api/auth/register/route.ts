@@ -6,7 +6,7 @@ import db from '@/lib/db';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { safeParseJSON } from '@/lib/request-parser';
 import { getOrCreateWallet, transferSeed } from '@/lib/seed';
-import { sendNewUserNotification } from '@/lib/mail';
+import { sendNewUserNotification, sendWelcomeEmail } from '@/lib/mail';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
 
@@ -21,36 +21,24 @@ export async function POST(request: NextRequest) {
     // 安全解析 JSON
     const parsed = safeParseJSON(bodyText);
     if (!parsed.success) return parsed.response;
-    const { username, email, password, referralCode } = parsed.data;
+    const { username, password, referralCode } = parsed.data;
 
-    if (!username || !email || !password) {
-      return NextResponse.json({ error: '请填写完整信息（用户名、邮箱、密码）' }, { status: 400 });
+    if (!username || !password) {
+      return NextResponse.json({ error: '请填写完整信息' }, { status: 400 });
     }
 
     if (username.length < 3 || username.length > 20) {
       return NextResponse.json({ error: '用户名需3-20位' }, { status: 400 });
     }
 
-    // 邮箱格式验证
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: '邮箱格式不正确' }, { status: 400 });
-    }
-
     if (password.length < 6) {
       return NextResponse.json({ error: '密码至少6位' }, { status: 400 });
     }
 
-    // 检查用户名是否存在
-    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
-    if (existingUser) {
+    // 检查用户是否存在
+    const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    if (existing) {
       return NextResponse.json({ error: '用户名已存在' }, { status: 400 });
-    }
-
-    // 检查邮箱是否已被注册
-    const existingEmail = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (existingEmail) {
-      return NextResponse.json({ error: '该邮箱已被注册' }, { status: 400 });
     }
 
     // 加密密码
@@ -58,8 +46,8 @@ export async function POST(request: NextRequest) {
     const userId = uuidv4();
 
     // 创建用户
-    db.prepare('INSERT INTO users (id, username, email, password, role) VALUES (?, ?, ?, ?, ?)')
-      .run(userId, username, email, hashedPassword, 'reader');
+    db.prepare('INSERT INTO users (id, username, password, role) VALUES (?, ?, ?, ?)')
+      .run(userId, username, hashedPassword, 'reader');
 
     // 🌱 创建 SEED 钱包并赠送 100 注册红包
     getOrCreateWallet(userId);
@@ -138,6 +126,10 @@ export async function POST(request: NextRequest) {
       { expiresIn: '30d' }
     );
 
+    // === 设置 auth_token cookie，使注册后立即处于登录状态 ===
+    // 注意：需要在 NextResponse.json 之前设置，因为 cookies().set 在 RSC 中才可用
+    // 这里直接构建 response 并设置 cookie
+
     // === 自动创建永久的 API Token（给 AI 用）===
     const apiTokenRaw = 'fs_' + uuidv4().replace(/-/g, '') + '_' + Date.now().toString(36);
     const tokenId = uuidv4();
@@ -154,22 +146,37 @@ export async function POST(request: NextRequest) {
       `).run(uuidv4(), userId, 'register-auto', 'web-register');
     } catch (_) { /* 忽略 */ }
 
-    // 📧 异步发送管理员通知（SMTP 未配置时静默跳过）
+    // 异步发送管理员通知（SMTP 未配置时静默跳过）
     sendNewUserNotification({
       username,
-      email,
       userId,
       createdAt: new Date().toISOString(),
     }).catch(() => {});
 
-    return NextResponse.json({
+    // 异步发送欢迎邮件给新用户（SMTP 未配置时静默跳过）
+    sendWelcomeEmail({
+      username,
+      userId,
+    }).catch(() => {});
+
+    const response = NextResponse.json({
       success: true,
       userId,
       jwt_token: jwtToken,
       api_token: apiTokenRaw,
-      username,
-      email
+      username
     });
+
+    // 设置 auth_token cookie，使注册后立即处于登录状态
+    response.cookies.set('auth_token', jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 天
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     console.error('Register error:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
