@@ -118,3 +118,21 @@ export const ALL_PERMISSIONS: { value: Permission; label: string }[] = [
   { value: 'audit.view', label: '查看审计' },
   { value: 'system.settings', label: '系统设置' },
 ];
+
+/** 自定义角色缓存 Map */
+const customRoleCache = new Map<string, any>();
+
+/**
+ * 清除指定自定义角色的缓存
+ */
+export function clearCustomRoleCache(id: string): void {
+  customRoleCache.delete(id);
+}
+
+/**
+ * 获取自定义角色（带缓存）
+ */
+export function getCachedCustomRole(id: string): any {
+  if (customRoleCache.has(id)) return customRoleCache.get(id);
+  return null;
+}
