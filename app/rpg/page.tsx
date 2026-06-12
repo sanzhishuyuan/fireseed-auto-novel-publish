@@ -7,6 +7,7 @@ const C = {
   bg: '#0b0b0f', card: '#131318', border: '#1e1e24',
   gold: '#c9a55c', goldDim: '#a6823a',
   text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
+  purple: '#a78bfa',
 };
 
 const SYS_LABEL: Record<string, string> = {
@@ -49,7 +50,7 @@ export default function RpgLobbyPage() {
           <p style={{ color: C.textSec, fontSize: 15, maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
             在迷雾笼罩的酒馆中，冒险正在等待。创建你的角色，踏上 AI 驱动的史诗冒险。
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
             <Link href="/rpg/characters/create"
               style={{
                 padding: '8px 20px', borderRadius: 6,
@@ -80,7 +81,7 @@ export default function RpgLobbyPage() {
                 background: '#f59e0b15', border: '1px solid #f59e0b40',
                 color: '#f59e0b', textDecoration: 'none', fontSize: 14,
               }}>
-              🏪 跑团市场
+              🏪 异界世场
             </Link>
             <Link href="/rpg/creator"
               style={{
@@ -152,7 +153,7 @@ export default function RpgLobbyPage() {
             <div style={{ textAlign: 'center', padding: '60px 20px', color: C.textDim }}>
               <p style={{ fontSize: 36, marginBottom: 12 }}>⚔️</p>
               <p style={{ fontSize: 15, marginBottom: 8, color: C.textSec }}>还没有冒险</p>
-              <p style={{ fontSize: 13 }}>创建你的第一个战役，开始 AI 驱动的冒险之旅</p>
+              <p style={{ fontSize: 13 }}>创建你的第一个副本，开始 AI 驱动的冒险之旅</p>
               <Link href="/rpg/campaigns/new"
                 style={{
                   display: 'inline-block', marginTop: 16, padding: '10px 24px', borderRadius: 6,
@@ -164,48 +165,59 @@ export default function RpgLobbyPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 12 }}>
-              {campaigns.map((c: any) => (
-                <Link key={c.id} href={`/rpg/campaigns/${c.id}`}
-                  style={{
-                    padding: 16, borderRadius: 8, background: C.card,
-                    border: `1px solid ${C.border}`, textDecoration: 'none',
-                    display: 'block', transition: 'border-color 0.2s',
-                  }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <h3 style={{
-                        fontFamily: "'Fraunces', Georgia, serif", fontSize: 16,
-                        color: C.gold, margin: '0 0 4px',
-                      }}>
-                        {c.name}
-                      </h3>
-                      <div style={{ display: 'flex', gap: 8, fontSize: 12, color: C.textSec }}>
-                        <span>{SYS_LABEL[c.system] || c.system}</span>
-                        <span>·</span>
-                        <span>{MODE_LABEL[c.mode] || c.mode}</span>
-                        <span>·</span>
-                        <span>👥 {c.player_count || 1}</span>
+              {campaigns.map((c: any) => {
+                const isPurchased = !!c._purchased;
+                return (
+                  <Link key={c.id} href={`/rpg/campaigns/${c.id}`}
+                    style={{
+                      padding: 16, borderRadius: 8, background: C.card,
+                      border: `1px solid ${isPurchased ? C.purple + '30' : C.border}`, textDecoration: 'none',
+                      display: 'block', transition: 'border-color 0.2s',
+                    }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <h3 style={{
+                          fontFamily: "'Fraunces', Georgia, serif", fontSize: 16,
+                          color: C.gold, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8,
+                        }}>
+                          {c.name}
+                          {isPurchased && (
+                            <span style={{
+                              padding: '1px 8px', borderRadius: 4, fontSize: 11,
+                              background: C.purple + '20', color: C.purple, fontFamily: 'sans-serif',
+                            }}>
+                              已购买
+                            </span>
+                          )}
+                        </h3>
+                        <div style={{ display: 'flex', gap: 8, fontSize: 12, color: C.textSec }}>
+                          <span>{SYS_LABEL[c.system] || c.system}</span>
+                          <span>·</span>
+                          <span>{MODE_LABEL[c.mode] || c.mode}</span>
+                          <span>·</span>
+                          <span>👥 {c.player_count || 1}</span>
+                        </div>
                       </div>
+                      <span style={{
+                        padding: '2px 10px', borderRadius: 4, fontSize: 11,
+                        background: (STATUS_COLORS[c.status] || C.textDim) + '20',
+                        color: STATUS_COLORS[c.status] || C.textDim,
+                      }}>
+                        {c.status}
+                      </span>
                     </div>
-                    <span style={{
-                      padding: '2px 10px', borderRadius: 4, fontSize: 11,
-                      background: (STATUS_COLORS[c.status] || C.textDim) + '20',
-                      color: STATUS_COLORS[c.status] || C.textDim,
-                    }}>
-                      {c.status}
-                    </span>
-                  </div>
-                  {c.world_brief && (
-                    <p style={{
-                      fontSize: 13, color: C.textDim, marginTop: 8, margin: '8px 0 0',
-                      overflow: 'hidden', textOverflow: 'ellipsis',
-                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                    }}>
-                      {c.world_brief}
-                    </p>
-                  )}
-                </Link>
-              ))}
+                    {c.world_brief && (
+                      <p style={{
+                        fontSize: 13, color: C.textDim, marginTop: 8, margin: '8px 0 0',
+                        overflow: 'hidden', textOverflow: 'ellipsis',
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                      }}>
+                        {c.world_brief}
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           )
         ) : (
@@ -225,28 +237,41 @@ export default function RpgLobbyPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
-              {characters.map((ch: any) => (
-                <Link key={ch.id} href={`/rpg/characters/${ch.id}`}
-                  style={{
-                    padding: 14, borderRadius: 8, background: C.card,
-                    border: `1px solid ${C.border}`, textDecoration: 'none',
-                    transition: 'border-color 0.2s',
-                  }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: '50%',
-                      background: C.gold + '15', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 18, flexShrink: 0,
+              {characters.map((ch: any) => {
+                const isPurchased = !!ch._purchased;
+                return (
+                  <Link key={ch.id} href={`/rpg/characters/${ch.id}`}
+                    style={{
+                      padding: 14, borderRadius: 8, background: C.card,
+                      border: `1px solid ${isPurchased ? C.purple + '30' : C.border}`, textDecoration: 'none',
+                      transition: 'border-color 0.2s',
                     }}>
-                      🎭
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: '50%',
+                        background: C.gold + '15', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 18, flexShrink: 0,
+                      }}>
+                        🎭
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, color: C.text, fontWeight: 500 }}>
+                          {ch.name}
+                          {isPurchased && (
+                            <span style={{
+                              marginLeft: 6, padding: '0px 6px', borderRadius: 3, fontSize: 10,
+                              background: C.purple + '20', color: C.purple,
+                            }}>
+                              购买
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 12, color: C.textDim }}>{SYS_LABEL[ch.system] || ch.system}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 14, color: C.text, fontWeight: 500 }}>{ch.name}</div>
-                      <div style={{ fontSize: 12, color: C.textDim }}>{SYS_LABEL[ch.system] || ch.system}</div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )
         )}

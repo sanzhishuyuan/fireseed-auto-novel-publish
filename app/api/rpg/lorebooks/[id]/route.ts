@@ -1,6 +1,6 @@
 /**
  * GET /api/rpg/lorebooks/[id] — 获取世界书详情（含解析后的条目）
- * PUT /api/rpg/lorebooks/[id] — 更新世界书（名称/描述/条目）
+ * PUT /api/rpg/lorebooks/[id] — 更新世界书（名称/描述/条目/规则系统）
  * DELETE /api/rpg/lorebooks/[id] — 删除世界书
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 /**
  * PUT — 更新世界书
- * Body: { name?, description?, entries?, is_public? }
+ * Body: { name?, description?, system?, entries?, is_public? }
  * 或条目操作: { action: 'add_entry'|'update_entry'|'remove_entry'|'toggle_entry', entry?: LorebookEntry, entryId?: string }
  */
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -114,14 +114,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // 整体更新
     const name = body.name !== undefined ? body.name : row.name;
     const description = body.description !== undefined ? body.description : row.description;
+    const system = body.system !== undefined ? body.system : (row.system || 'custom');
     const isPublic = body.is_public !== undefined ? (body.is_public ? 1 : 0) : row.is_public;
     const finalEntries = body.entries || entries;
 
     db.prepare(`
       UPDATE rpg_lorebooks
-      SET name = ?, description = ?, entries = ?, is_public = ?, updated_at = CURRENT_TIMESTAMP
+      SET name = ?, description = ?, system = ?, entries = ?, is_public = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(name, description, JSON.stringify(finalEntries), isPublic, id);
+    `).run(name, description, system, JSON.stringify(finalEntries), isPublic, id);
 
     return NextResponse.json({
       success: true,

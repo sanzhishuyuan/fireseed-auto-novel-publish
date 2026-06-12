@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/rpg/characters — 获取角色列表
  * 支持 ?search=xxx 搜索公开的通用角色（用于资产关联）
+ * 支持 ?tab=owned|purchased|all 过滤自有/已购买角色（默认 all）
  */
 export async function GET(request: NextRequest) {
   try {
@@ -21,13 +22,15 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
+    const tab = searchParams.get('tab') || 'all';
 
     let characters;
     if (search) {
       // 搜索公开的通用角色（用于资产关联）
       characters = db.prepare(`
         SELECT id, name, system, avatar_url, spec_version, is_public, download_count,
-               seed_price, char_type, created_at, updated_at
+               seed_price, char_type, created_at, updated_at,
+               user_id, 0 as _purchased
         FROM rpg_characters
         WHERE (is_public = 1 OR user_id = ?)
           AND char_type = 'universal'
@@ -36,12 +39,40 @@ export async function GET(request: NextRequest) {
         LIMIT 20
       `).all(user.userId, `%${search}%`);
     } else {
-      characters = db.prepare(`
-        SELECT id, name, system, avatar_url, spec_version, is_public, download_count,
-               seed_price, char_type, created_at, updated_at
-        FROM rpg_characters WHERE user_id = ?
-        ORDER BY updated_at DESC
-      `).all(user.userId);
+      // 自有角色（tab=owned 或 all）
+      const owned = (tab === 'owned' || tab === 'all')
+        ? db.prepare(`
+            SELECT id, name, system, avatar_url, spec_version, is_public, download_count,
+                   seed_price, char_type, created_at, updated_at,
+                   user_id, 0 as _purchased
+            FROM rpg_characters
+            WHERE user_id = ?
+            ORDER BY updated_at DESC
+          `).all(user.userId) as any[]
+        : [];
+
+      // 已购买的角色（tab=purchased 或 all）
+      const purchased = (tab === 'purchased' || tab === 'all')
+        ? db.prepare(`
+            SELECT c.id, c.name, c.system, c.avatar_url, c.spec_version, c.is_public,
+                   c.download_count, c.seed_price, c.char_type, c.created_at, c.updated_at,
+                   c.user_id, 1 as _purchased
+            FROM rpg_characters c
+            INNER JOIN rpg_asset_library al ON al.asset_id = c.id AND al.asset_type = 'character'
+            WHERE al.user_id = ? AND al.source = 'purchased'
+            ORDER BY al.acquired_at DESC
+          `).all(user.userId) as any[]
+        : [];
+
+      // 合并去重
+      const ids = new Set<string>();
+      characters = [];
+      for (const c of [...owned, ...purchased]) {
+        if (!ids.has(c.id)) {
+          ids.add(c.id);
+          characters.push(c);
+        }
+      }
     }
 
     return NextResponse.json({ success: true, data: characters });

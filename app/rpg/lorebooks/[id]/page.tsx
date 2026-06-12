@@ -39,6 +39,7 @@ export default function LorebookEditorPage() {
   const [editEntry, setEditEntry] = useState<LorebookEntry>(emptyEntry());
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [system, setSystem] = useState('custom');
   const [filterText, setFilterText] = useState('');
 
   const loadLorebook = useCallback(async () => {
@@ -50,6 +51,7 @@ export default function LorebookEditorPage() {
         setEntries(d.data.entries || []);
         setName(d.data.name || '');
         setDescription(d.data.description || '');
+        setSystem(d.data.system || 'custom');
       }
     } catch {} finally { setLoading(false); }
   }, [params.id]);
@@ -67,7 +69,7 @@ export default function LorebookEditorPage() {
       await fetch(`/api/rpg/lorebooks/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name, description, system }),
       });
       showSaveMsg('基本信息已保存');
     } catch {} finally { setSaving(false); }
@@ -205,6 +207,22 @@ export default function LorebookEditorPage() {
                   width: '100%', padding: '8px 12px', borderRadius: 6,
                   background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, fontSize: 14,
                 }} />
+            </div>
+            <div style={{ minWidth: 160 }}>
+              <label style={{ display: 'block', fontSize: 12, color: C.textSec, marginBottom: 4 }}>
+                推荐规则系统
+                <span style={{ fontSize: 10, color: C.textDim, marginLeft: 4 }}>创建副本时自动填充</span>
+              </label>
+              <select value={system} onChange={e => setSystem(e.target.value)}
+                style={{
+                  width: '100%', padding: '8px 12px', borderRadius: 6,
+                  background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, fontSize: 14,
+                }}>
+                <option value="custom">自由叙事</option>
+                <option value="dnd5e">龙与地下城 5e</option>
+                <option value="coc7th">克苏鲁的呼唤 7th</option>
+                <option value="shadowrun">暗影狂奔</option>
+              </select>
             </div>
             <button onClick={handleSaveMeta} disabled={saving}
               style={{

@@ -11,7 +11,7 @@ const C = {
 };
 
 const TYPE_LABEL: Record<string, string> = {
-  character: '人物卡', lorebook: '世界书', module: '战役模组',
+  character: '人物卡', lorebook: '世界书', module: '副本',
 };
 const TYPE_ICON: Record<string, string> = {
   character: '✦', lorebook: '📖', module: '⚔️',
@@ -45,7 +45,10 @@ export default function RpgMarketPage() {
   // List asset modal
   const [showListModal, setShowListModal] = useState(false);
   const [listForm, setListForm] = useState({ asset_type: 'character', asset_id: '', price: 100, license_mode: 'full_copy' });
-  const [userAssets, setUserAssets] = useState<any[]>([]);
+  const [userCharacters, setUserCharacters] = useState<any[]>([]);
+  const [userLorebooks, setUserLorebooks] = useState<any[]>([]);
+  const [userCampaigns, setUserCampaigns] = useState<any[]>([]);
+  const [loadingAssets, setLoadingAssets] = useState(false);
 
   // Tasks
   const [tasks, setTasks] = useState<any[]>([]);
@@ -94,13 +97,33 @@ export default function RpgMarketPage() {
     } catch {}
   };
 
-  // Load user characters for listing
+  // Load user assets for listing (all types)
   const loadUserAssets = async () => {
+    setLoadingAssets(true);
     try {
-      const res = await fetch('/api/rpg/characters');
-      const d = await res.json();
-      if (d.success) setUserAssets(d.data.filter((c: any) => !c.license_type?.startsWith('public')));
-    } catch {}
+      const [charRes, loreRes, campRes] = await Promise.all([
+        fetch('/api/rpg/characters?tab=owned'),
+        fetch('/api/rpg/lorebooks?tab=owned'),
+        fetch('/api/rpg/campaigns'),
+      ]);
+      if (charRes.ok) {
+        const d = await charRes.json();
+        if (d.success) setUserCharacters((d.data || []).filter((c: any) => !c.license_type?.startsWith('public')));
+      }
+      if (loreRes.ok) {
+        const d = await loreRes.json();
+        if (d.success) setUserLorebooks((d.data || []).filter((l: any) => !l.license_type?.startsWith('public')));
+      }
+      if (campRes.ok) {
+        const d = await campRes.json();
+        if (d.success) setUserCampaigns(d.data || []);
+      }
+    } catch {} finally { setLoadingAssets(false); }
+  };
+
+  // Reset asset_id when type changes
+  const handleAssetTypeChange = (newType: string) => {
+    setListForm(f => ({ ...f, asset_type: newType, asset_id: '' }));
   };
 
   useEffect(() => {
@@ -139,6 +162,10 @@ export default function RpgMarketPage() {
 
   // List asset
   const handleListAsset = async () => {
+    if (!listForm.asset_id) {
+      alert('请选择要上架的资产');
+      return;
+    }
     try {
       const res = await fetch('/api/rpg/market', {
         method: 'POST',
@@ -163,10 +190,10 @@ export default function RpgMarketPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             <h1 style={{ fontFamily: "'Fraunces', Georgia, serif", color: C.gold, fontSize: 28, margin: 0 }}>
-              🏪 跑团市场
+              🏪 异界世场
             </h1>
             <p style={{ color: C.textSec, fontSize: 14, marginTop: 4 }}>
-              发现优秀的人物卡、世界书和战役模组
+              发现优秀的人物卡、世界书和副本
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -320,16 +347,6 @@ export default function RpgMarketPage() {
                     <div style={{ color: C.text, fontSize: 24, fontWeight: 700 }}>{creatorStats.totalTransactions || 0}</div>
                     <div style={{ color: C.textDim, fontSize: 11 }}>笔</div>
                   </div>
-                  <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16, textAlign: 'center' }}>
-                    <div style={{ color: C.textDim, fontSize: 11, marginBottom: 4 }}>AI GM 收入</div>
-                    <div style={{ color: C.text, fontSize: 24, fontWeight: 700 }}>{creatorStats.totalGMIncome?.toLocaleString() || 0}</div>
-                    <div style={{ color: C.textDim, fontSize: 11 }}>🌱 SEED</div>
-                  </div>
-                  <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16, textAlign: 'center' }}>
-                    <div style={{ color: C.textDim, fontSize: 11, marginBottom: 4 }}>本月预计基金注入</div>
-                    <div style={{ color: C.success, fontSize: 24, fontWeight: 700 }}>{creatorStats.projectedFund?.toLocaleString() || 0}</div>
-                    <div style={{ color: C.textDim, fontSize: 11 }}>🌱 SEED</div>
-                  </div>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: 60, color: C.textDim, fontSize: 14 }}>加载中...</div>
@@ -346,7 +363,9 @@ export default function RpgMarketPage() {
                     <div key={item.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                         <span style={{ fontSize: 11, color: C.textDim }}>
-                          {myTab === 'listings' ? TYPE_LABEL[item.asset_type] || item.asset_type : item.source === 'purchased' ? '已购买' : item.license_mode === 'reference_only' ? '引用模式' : '完整复制'}
+                          {myTab === 'listings'
+                            ? TYPE_LABEL[item.asset_type] || item.asset_type
+                            : item.source === 'purchased' ? '已购买' : item.license_mode === 'reference_only' ? '引用模式' : '完整复制'}
                         </span>
                         {myTab === 'listings' && (
                           <span style={{ color: C.gold, fontSize: 14 }}>{item.price} 🌱</span>
@@ -384,7 +403,7 @@ export default function RpgMarketPage() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ color: C.textSec, fontSize: 13, margin: 0 }}>
-                发布创作需求，让社区的创作者为你量身定制角色卡、世界书或战役模组
+                发布创作需求，让社区的创作者为你量身定制角色卡、世界书或副本
               </p>
               <Link href="/rpg/market/tasks/new"
                 style={{ padding: '6px 14px', borderRadius: 6, background: C.goldDim + '20', border: `1px solid ${C.goldDim}`, color: C.gold, textDecoration: 'none', fontSize: 13 }}>
@@ -506,28 +525,52 @@ export default function RpgMarketPage() {
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 12, color: C.textSec, display: 'block', marginBottom: 4 }}>资产类型</label>
-                <select value={listForm.asset_type} onChange={e => setListForm(f => ({ ...f, asset_type: e.target.value }))}
+                <select value={listForm.asset_type} onChange={e => handleAssetTypeChange(e.target.value)}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: 6, background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, fontSize: 13 }}>
                   <option value="character">人物卡</option>
                   <option value="lorebook">世界书</option>
-                  <option value="module">战役模组</option>
+                  <option value="module">副本</option>
                 </select>
               </div>
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 12, color: C.textSec, display: 'block', marginBottom: 4 }}>选择资产</label>
+
+                {/* 人物卡下拉 */}
                 {listForm.asset_type === 'character' && (
                   <select value={listForm.asset_id} onChange={e => setListForm(f => ({ ...f, asset_id: e.target.value }))}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 6, background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, fontSize: 13 }}>
                     <option value="">-- 选择角色卡 --</option>
-                    {userAssets.map((c: any) => (
-                      <option key={c.id} value={c.id}>{c.name} {c.seed_price ? `(${c.seed_price}🌱)` : ''}</option>
+                    {userCharacters.map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 )}
-                {listForm.asset_type !== 'character' && (
-                  <input placeholder="输入资产 ID" value={listForm.asset_id} onChange={e => setListForm(f => ({ ...f, asset_id: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, fontSize: 13 }} />
+
+                {/* 世界书下拉 */}
+                {listForm.asset_type === 'lorebook' && (
+                  <select value={listForm.asset_id} onChange={e => setListForm(f => ({ ...f, asset_id: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, fontSize: 13 }}>
+                    <option value="">-- 选择世界书 --</option>
+                    {userLorebooks.map((l: any) => (
+                      <option key={l.id} value={l.id}>{l.name} ({l.entry_count || 0} 条目)</option>
+                    ))}
+                  </select>
+                )}
+
+                {/* 副本下拉 */}
+                {listForm.asset_type === 'module' && (
+                  <select value={listForm.asset_id} onChange={e => setListForm(f => ({ ...f, asset_id: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, fontSize: 13 }}>
+                    <option value="">-- 选择副本 --</option>
+                    {userCampaigns.map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.mode || 'solo'})</option>
+                    ))}
+                  </select>
+                )}
+
+                {loadingAssets && (
+                  <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>加载资产中...</div>
                 )}
               </div>
 
@@ -552,7 +595,14 @@ export default function RpgMarketPage() {
                   取消
                 </button>
                 <button onClick={handleListAsset}
-                  style={{ flex: 1, padding: '8px', borderRadius: 6, background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`, border: 'none', color: '#0b0b0f', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  disabled={!listForm.asset_id}
+                  style={{
+                    flex: 1, padding: '8px', borderRadius: 6,
+                    background: listForm.asset_id ? `linear-gradient(135deg, ${C.gold}, ${C.goldDim})` : C.border,
+                    border: 'none', color: listForm.asset_id ? '#0b0b0f' : C.textDim,
+                    cursor: listForm.asset_id ? 'pointer' : 'not-allowed',
+                    fontSize: 13, fontWeight: 600,
+                  }}>
                   上架
                 </button>
               </div>
