@@ -39,6 +39,24 @@ interface NormalizedChapter {
   };
 }
 
+// ─── Obsidian Codex Palette ───
+const C = {
+  bg: '#0b0b0f',
+  card: '#131318',
+  elevated: '#1a1a22',
+  hover: '#22222c',
+  text: '#f0ece4',
+  dim: '#9a9a8e',
+  muted: '#5a5a52',
+  gold: '#c9a55c',
+  goldLight: '#e4cc8a',
+  goldGlow: 'rgba(201,165,92,0.12)',
+  border: 'rgba(255,255,255,0.06)',
+  borderGold: 'rgba(201,165,92,0.2)',
+  fontDisplay: "'Fraunces', Georgia, serif",
+  fontMono: "'DM Mono', 'Menlo', monospace",
+} as const;
+
 export default async function ChapterPage({ params }: Props) {
   const { id, chapterId } = await params;
 
@@ -161,265 +179,563 @@ export default async function ChapterPage({ params }: Props) {
     ...(mfResult?.choices || []),
   ];
 
-  // 自定义 Markdown 渲染组件
+  // ─── Obsidian Codex: Markdown 渲染组件 ───
   const markdownComponents: Components = {
     p: ({ children }) => (
-      <p className="mb-5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+      <p style={{
+        marginBottom: 20,
+        lineHeight: 1.85,
+        color: C.text,
+        fontFamily: C.fontDisplay,
+        fontSize: 17,
+        letterSpacing: '0.01em',
+      }}>
         {children}
       </p>
     ),
     h1: ({ children }) => (
-      <h1 className="text-2xl font-bold mt-8 mb-4" style={{ color: 'var(--text-primary)' }}>
+      <h1 style={{
+        fontSize: 28,
+        fontWeight: 700,
+        marginTop: 40,
+        marginBottom: 16,
+        color: C.text,
+        fontFamily: C.fontDisplay,
+        letterSpacing: '-0.02em',
+      }}>
         {children}
       </h1>
     ),
     h2: ({ children }) => (
-      <h2 className="text-xl font-bold mt-6 mb-3" style={{ color: 'var(--text-primary)' }}>
+      <h2 style={{
+        fontSize: 22,
+        fontWeight: 700,
+        marginTop: 32,
+        marginBottom: 12,
+        color: C.text,
+        fontFamily: C.fontDisplay,
+        letterSpacing: '-0.01em',
+      }}>
         {children}
       </h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-lg font-semibold mt-5 mb-2" style={{ color: 'var(--text-primary)' }}>
+      <h3 style={{
+        fontSize: 18,
+        fontWeight: 600,
+        marginTop: 24,
+        marginBottom: 8,
+        color: C.text,
+        fontFamily: C.fontDisplay,
+      }}>
         {children}
       </h3>
     ),
     ul: ({ children }) => (
-      <ul className="list-disc list-inside mb-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
+      <ul style={{
+        listStyle: 'disc',
+        listStylePosition: 'inside',
+        marginBottom: 16,
+        color: C.dim,
+        lineHeight: 1.85,
+      }}>
         {children}
       </ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal list-inside mb-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
+      <ol style={{
+        listStyle: 'decimal',
+        listStylePosition: 'inside',
+        marginBottom: 16,
+        color: C.dim,
+        lineHeight: 1.85,
+      }}>
         {children}
       </ol>
     ),
     li: ({ children }) => (
-      <li className="leading-relaxed">{children}</li>
+      <li style={{ lineHeight: 1.85, marginBottom: 4 }}>{children}</li>
     ),
     blockquote: ({ children }) => (
-      <blockquote
-        className="border-l-4 pl-4 my-4 italic"
-        style={{ borderColor: 'var(--accent)', color: 'var(--text-muted)' }}
-      >
+      <blockquote style={{
+        borderLeft: `3px solid ${C.gold}`,
+        paddingLeft: 20,
+        marginTop: 20,
+        marginBottom: 20,
+        fontStyle: 'italic',
+        color: C.dim,
+        background: `linear-gradient(90deg, rgba(201,165,92,0.04) 0%, transparent 100%)`,
+        padding: '14px 20px',
+        borderRadius: '0 8px 8px 0',
+      }}>
         {children}
       </blockquote>
     ),
     strong: ({ children }) => (
-      <strong className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+      <strong style={{
+        fontWeight: 600,
+        color: C.text,
+      }}>
         {children}
       </strong>
     ),
     em: ({ children }) => (
-      <em className="italic">{children}</em>
+      <em style={{ fontStyle: 'italic', color: C.dim }}>{children}</em>
     ),
     hr: () => (
-      <hr className="my-6" style={{ borderColor: 'var(--border-light)' }} />
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        margin: '32px 0',
+      }}>
+        <div style={{ height: 1, flex: 1, background: C.border }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, opacity: 0.4 }} />
+        <div style={{ height: 1, flex: 1, background: C.border }} />
+      </div>
     ),
     code: ({ children }) => (
-      <code
-        className="px-1.5 py-0.5 rounded text-sm font-mono"
-        style={{ background: 'var(--bg-secondary)', color: 'var(--accent)' }}
-      >
+      <code style={{
+        padding: '2px 8px',
+        borderRadius: 6,
+        fontSize: 14,
+        fontFamily: C.fontMono,
+        background: 'rgba(201,165,92,0.1)',
+        color: C.gold,
+        border: `1px solid ${C.borderGold}`,
+      }}>
         {children}
       </code>
     ),
     pre: ({ children }) => (
-      <pre
-        className="p-4 rounded-lg overflow-x-auto my-4"
-        style={{ background: 'var(--bg-secondary)' }}
-      >
+      <pre style={{
+        padding: 20,
+        borderRadius: 12,
+        overflowX: 'auto',
+        marginTop: 16,
+        marginBottom: 16,
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        fontFamily: C.fontMono,
+        fontSize: 13,
+        lineHeight: 1.7,
+      }}>
         {children}
       </pre>
     ),
   };
 
+  const progressPercent = mainChapters.length > 1
+    ? (currentIndex / (mainChapters.length - 1)) * 100
+    : 100;
+
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      <HideHeader />
-      {/* 顶部导航 */}
-      <header
-        className="glass sticky top-0 z-50"
-        style={{ borderBottom: '1px solid var(--border-light)' }}
-      >
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <Link
-              href={`/novels/${id}`}
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: 'var(--accent-glow)' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13 8H3M7 4L3 8l4 4"/>
-              </svg>
-            </Link>
-            <div className="min-w-0 hide-mobile">
-              <p className="text-sm font-medium truncate max-w-[200px]" style={{ color: 'var(--text-primary)' }}>
-                {novel.title}
-              </p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{chapter.title}</p>
+    <div style={{ minHeight: '100vh', position: 'relative' }}>
+      {/* Obsidian Codex background texture */}
+      <div className="codex-bg" />
+
+      {/* Content layer above background */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <HideHeader />
+
+        {/* ─── Header: charcoal glass + gold accent ─── */}
+        <header style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          background: 'rgba(19,19,24,0.82)',
+          backdropFilter: 'blur(16px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+          borderBottom: `1px solid ${C.border}`,
+        }}>
+          <div style={{
+            maxWidth: 768,
+            margin: '0 auto',
+            padding: '12px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            {/* Left: back arrow + novel/chapter info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+              <Link
+                href={`/novels/${id}`}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  background: C.goldGlow,
+                  border: `1px solid ${C.borderGold}`,
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={C.gold} strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M13 8H3M7 4L3 8l4 4" />
+                </svg>
+              </Link>
+              <div style={{ minWidth: 0, overflow: 'hidden' }} className="codex-hide-mobile">
+                <p style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: C.text,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: 220,
+                  fontFamily: C.fontDisplay,
+                }}>
+                  {novel.title}
+                </p>
+                <p style={{
+                  fontSize: 12,
+                  color: C.muted,
+                  fontFamily: C.fontMono,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: 220,
+                }}>
+                  {chapter.title}
+                </p>
+              </div>
+            </div>
+
+            {/* Right: controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <ReadingControls />
+              <Link
+                href={`/novels/${id}`}
+                title="目录"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  color: C.dim,
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M2 3h14M2 9h14M2 15h14" strokeLinecap="round" />
+                </svg>
+              </Link>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <ReadingControls />
-            <Link
-              href={`/novels/${id}`}
-              className="btn-ghost"
-              title="目录"
+        </header>
+
+        {/* ─── Reading progress bar: gold gradient ─── */}
+        <div style={{ height: 3, background: C.border }}>
+          <div style={{
+            height: '100%',
+            borderRadius: '0 4px 4px 0',
+            transition: 'width 0.8s ease',
+            width: `${progressPercent}%`,
+            background: `linear-gradient(90deg, ${C.gold}, ${C.goldLight})`,
+            boxShadow: `0 0 12px rgba(201,165,92,0.25)`,
+          }} />
+        </div>
+
+        {/* ─── Article body ─── */}
+        <article style={{
+          maxWidth: 680,
+          margin: '0 auto',
+          padding: '48px 20px 56px',
+        }}>
+
+          {/* ─── Chapter heading ─── */}
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            {/* Chapter number label */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              marginBottom: 14,
+            }}>
+              <span style={{
+                fontFamily: C.fontMono,
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: 3,
+                textTransform: 'uppercase',
+                color: C.gold,
+              }}>
+                Chapter {currentIndex + 1}
+              </span>
+
+              {/* Branch indicator */}
+              {allChoices.length > 0 && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '3px 10px',
+                  borderRadius: 20,
+                  fontSize: 11,
+                  fontWeight: 500,
+                  fontFamily: C.fontMono,
+                  background: 'rgba(34,197,94,0.1)',
+                  color: '#22c55e',
+                  border: '1px solid rgba(34,197,94,0.2)',
+                }}>
+                  {allChoices.length} branches
+                </span>
+              )}
+
+              {/* Custom branch enabled indicator */}
+              {chapter.custom_branch_enabled && allChoices.length === 0 && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '3px 10px',
+                  borderRadius: 20,
+                  fontSize: 11,
+                  fontWeight: 500,
+                  fontFamily: C.fontMono,
+                  background: 'rgba(201,165,92,0.12)',
+                  color: C.gold,
+                  border: `1px solid ${C.borderGold}`,
+                }}>
+                  Open branch
+                </span>
+              )}
+            </div>
+
+            {/* Chapter title */}
+            <h1 style={{
+              fontFamily: C.fontDisplay,
+              fontSize: 'clamp(26px, 4vw, 36px)',
+              fontWeight: 700,
+              lineHeight: 1.25,
+              color: C.text,
+              letterSpacing: '-0.02em',
+              margin: 0,
+            }}>
+              {chapter.title}
+            </h1>
+          </div>
+
+          {/* ─── Codex ornamental divider ─── */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 14,
+            marginBottom: 44,
+          }}>
+            <div style={{ height: 1, flex: 1, background: C.border }} />
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1L10 6H15L11 9.5L12.5 15L8 11.5L3.5 15L5 9.5L1 6H6L8 1Z" fill={C.gold} opacity="0.3" />
+            </svg>
+            <div style={{ height: 1, flex: 1, background: C.border }} />
+          </div>
+
+          {/* ─── Markdown content ─── */}
+          <div className="reading-content" style={{ fontFamily: C.fontDisplay }}>
+            <ReactMarkdown
+              components={markdownComponents}
+              remarkPlugins={hasMF ? [remarkFlow] : undefined}
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M2 3h14M2 9h14M2 15h14" strokeLinecap="round"/>
-              </svg>
-            </Link>
+              {renderedContent}
+            </ReactMarkdown>
           </div>
-        </div>
-      </header>
 
-      {/* 阅读进度条 */}
-      <div className="h-0.5" style={{ background: 'var(--border-light)' }}>
-        <div
-          className="h-full rounded-r-full transition-all duration-300"
-          style={{
-            width: `${mainChapters.length > 1 ? (currentIndex / (mainChapters.length - 1)) * 100 : 100}%`,
-            background: 'linear-gradient(90deg, var(--accent), var(--accent-light))'
-          }}
-        />
-      </div>
+          {/* ─── Branch choices ─── */}
+          {allChoices.length > 0 && (
+            <BranchChoice
+              choices={allChoices}
+              novelId={id}
+              chapterId={chapterId}
+              currentBranch={chapter.branch}
+              userId={userId}
+              userBranch={userBranch}
+              customBranchEnabled={chapter.custom_branch_enabled === true}
+            />
+          )}
 
-      {/* 正文 */}
-      <article className="max-w-2xl mx-auto px-4 py-10 sm:py-14">
-        {/* 章节标题 */}
-        <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <p className="text-xs font-medium tracking-widest" style={{ color: 'var(--text-muted)' }}>
-              第 {currentIndex + 1} 章
-            </p>
-            {/* 有分支选项时显示分支指示器 */}
-            {allChoices.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
-                🌿 {allChoices.length}个分支
-              </span>
-            )}
-            {/* 允许自定义分支时显示 */}
-            {chapter.custom_branch_enabled && allChoices.length === 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
-                ✍️ 可创作分支
-              </span>
-            )}
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold leading-snug" style={{ color: 'var(--text-primary)' }}>
-            {chapter.title}
-          </h1>
-        </div>
-
-        {/* 分割线 */}
-        <div className="flex items-center justify-center gap-3 mb-10">
-          <div className="h-px flex-1" style={{ background: 'var(--border-light)' }} />
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)', opacity: 0.5 }} />
-          <div className="h-px flex-1" style={{ background: 'var(--border-light)' }} />
-        </div>
-
-        {/* 正文 - Markdown渲染 */}
-        <div className="reading-content">
-          <ReactMarkdown
-            components={markdownComponents}
-            remarkPlugins={hasMF ? [remarkFlow] : undefined}
-          >
-            {renderedContent}
-          </ReactMarkdown>
-        </div>
-
-        {/* --- 分支选择器（有预设选项时展示） --- */}
-        {allChoices.length > 0 && (
-          <BranchChoice
-            choices={allChoices}
+          {/* ─── Branch invite card ─── */}
+          <BranchInviteCard
             novelId={id}
             chapterId={chapterId}
-            currentBranch={chapter.branch}
-            userId={userId}
-            userBranch={userBranch}
-            customBranchEnabled={chapter.custom_branch_enabled === true}
+            novelTitle={novel.title}
+            chapterTitle={chapter.title}
           />
-        )}
 
-        {/* 🌿 分支创作邀请卡片（全章节展示，方便 AI 创作者一键发起分支创作） */}
-        <BranchInviteCard
-          novelId={id}
-          chapterId={chapterId}
-          novelTitle={novel.title}
-          chapterTitle={chapter.title}
-        />
+          {/* ─── Vote buttons ─── */}
+          <VoteButtons novelId={id} chapterId={chapterId} />
 
-        {/* 📊 章节评分（Phase 0: 有用/无用投票） */}
-        <VoteButtons novelId={id} chapterId={chapterId} />
+          {/* ─── Chapter navigation ─── */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 56,
+            paddingTop: 32,
+            borderTop: `1px solid ${C.border}`,
+          }}>
+            {prevChapter ? (
+              <Link
+                href={`/novels/${id}/${prevChapter.id}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '12px 18px',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontFamily: C.fontMono,
+                  background: C.card,
+                  color: C.dim,
+                  border: `1px solid ${C.border}`,
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 7H2M6 3L2 7l4 4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span style={{
+                  maxWidth: 140,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {prevChapter.title}
+                </span>
+              </Link>
+            ) : (
+              <div />
+            )}
 
-        {/* 章节导航 */}
+            {nextChapter ? (
+              <Link
+                href={`/novels/${id}/${nextChapter.id}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '12px 22px',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontFamily: C.fontMono,
+                  fontWeight: 500,
+                  background: C.gold,
+                  color: C.bg,
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  border: 'none',
+                }}
+              >
+                <span style={{
+                  maxWidth: 140,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {nextChapter.title}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+            ) : (
+              <Link
+                href={`/novels/${id}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '12px 22px',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontFamily: C.fontMono,
+                  fontWeight: 500,
+                  background: C.gold,
+                  color: C.bg,
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  border: 'none',
+                }}
+              >
+                Back to Index
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+            )}
+          </div>
+
+          {/* Mobile bottom spacer - CSS class handles height on mobile only */}
+          <div className="mobile-bottom-spacer" />
+        </article>
+
+        {/* ─── Mobile bottom bar: charcoal + gold active ───
+             CSS class .mobile-bottom-bar controls responsive show/hide:
+             display:none on desktop, display:flex on mobile (<=640px).
+             Inline styles only set Codex visual identity (no display/position). */}
         <div
-          className="flex items-center justify-between mt-12 pt-8"
-          style={{ borderTop: '1px solid var(--border-light)' }}
+          className="mobile-bottom-bar"
+          style={{
+            background: 'rgba(19,19,24,0.92)',
+            backdropFilter: 'blur(16px) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+            borderTop: `1px solid ${C.border}`,
+          }}
         >
-          {prevChapter ? (
-            <Link
-              href={`/novels/${id}/${prevChapter.id}`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm group"
-              style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="group-hover:-translate-x-0.5 transition-transform">
-                <path d="M12 7H2M6 3L2 7l4 4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span className="max-w-[120px] truncate">{prevChapter.title}</span>
-            </Link>
-          ) : (
-            <div />
-          )}
+          {/* Prev */}
+          <Link
+            href={prevChapter ? `/novels/${id}/${prevChapter.id}` : '#'}
+            style={{
+              color: prevChapter ? C.gold : C.muted,
+              opacity: prevChapter ? 1 : 0.3,
+              pointerEvents: prevChapter ? 'auto' : 'none',
+              textDecoration: 'none',
+              transition: 'color 0.2s ease',
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M15 18L9 12l6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
 
-          {nextChapter ? (
-            <Link
-              href={`/novels/${id}/${nextChapter.id}`}
-              className="btn-primary text-sm py-2.5 px-4"
-            >
-              <span className="max-w-[120px] truncate">{nextChapter.title}</span>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="group-hover:translate-x-0.5 transition-transform">
-                <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-          ) : (
-            <Link href={`/novels/${id}`} className="btn-primary text-sm py-2.5 px-4">
-              返回目录
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-          )}
+          {/* Index */}
+          <Link
+            href={`/novels/${id}`}
+            style={{
+              color: C.dim,
+              textDecoration: 'none',
+              transition: 'color 0.2s ease',
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 5h16M3 11h16M3 17h10" strokeLinecap="round" />
+            </svg>
+          </Link>
+
+          {/* Next */}
+          <Link
+            href={nextChapter ? `/novels/${id}/${nextChapter.id}` : '#'}
+            style={{
+              color: nextChapter ? C.gold : C.muted,
+              opacity: nextChapter ? 1 : 0.3,
+              pointerEvents: nextChapter ? 'auto' : 'none',
+              textDecoration: 'none',
+              transition: 'color 0.2s ease',
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M7 18L13 12l-6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
         </div>
-        {/* 移动端底部留白：防止文章末尾被底部固定栏遮挡 */}
-        <div className="mobile-bottom-spacer" />
-      </article>
-
-      {/* 移动端底部导航 */}
-      <div className="mobile-bottom-bar">
-        <Link
-          href={prevChapter ? `/novels/${id}/${prevChapter.id}` : '#'}
-          className={!prevChapter ? 'opacity-30 pointer-events-none' : ''}
-        >
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M15 18L9 12l6-6" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </Link>
-        <Link href={`/novels/${id}`}>
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M3 5h16M3 11h16M3 17h10" strokeLinecap="round"/>
-          </svg>
-        </Link>
-        <Link
-          href={nextChapter ? `/novels/${id}/${nextChapter.id}` : '#'}
-          className={!nextChapter ? 'opacity-30 pointer-events-none' : ''}
-        >
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M7 18L13 12l-6-6" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </Link>
       </div>
     </div>
   );

@@ -20,13 +20,14 @@ export async function POST(request: NextRequest) {
     const parsed = safeParseJSON(bodyText);
     if (!parsed.success) return parsed.response;
 
-    const { username, password } = parsed.data;
+    const { username: loginId, password } = parsed.data;
 
-    if (!username || !password) {
+    if (!loginId || !password) {
       return NextResponse.json({ error: '请填写完整信息' }, { status: 400 });
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
+    // 支持用户名或邮箱登录
+    const user = db.prepare('SELECT * FROM users WHERE username = ? OR email = ?').get(loginId, loginId) as any;
     
     if (!user) {
       return NextResponse.json({ error: '用户不存在' }, { status: 401 });

@@ -137,49 +137,51 @@ export default function CrowdfundingPage() {
   const maxDate = new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <>
+      <div className="codex-bg" />
+      <div className="codex-shell" style={{ paddingTop: 48, paddingBottom: 48 }}>
 
         {/* 头部 */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between mb-4">
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-2">
+              <h1 className="codex-display" style={{ fontSize: 32, fontWeight: 700, color: '#f0ece4', marginBottom: 8 }}>
                 众筹广场
               </h1>
-              <p className="text-muted-foreground">
+              <p className="codex-mono" style={{ fontSize: 13, color: '#9a9a8e' }}>
                 支持喜爱的创作项目，成为早期支持者获得专属权益
               </p>
             </div>
-            <button
-              onClick={handleCreateClick}
-              className="px-5 py-2.5 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium shadow-lg text-sm whitespace-nowrap"
-            >
+            <button onClick={handleCreateClick} className="codex-btn codex-btn-gold" style={{ whiteSpace: 'nowrap' }}>
               + 发起众筹
             </button>
           </div>
 
           {/* 筛选器 */}
-          <div className="bg-card border rounded-lg p-4">
-            <div className="flex flex-wrap gap-4">
+          <div className="codex-card" style={{ padding: 20 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
               <div>
-                <label className="block text-sm font-medium mb-2">状态</label>
+                <label className="codex-mono" style={{ display: 'block', fontSize: 12, color: '#9a9a8e', marginBottom: 8 }}>
+                  状态
+                </label>
                 <select value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                  className="px-4 py-2 border rounded-lg bg-background text-foreground">
-                  <option value="active" className="bg-background text-foreground">进行中</option>
-                  <option value="successful" className="bg-background text-foreground">已成功</option>
-                  <option value="failed" className="bg-background text-foreground">已失败</option>
+                  className="codex-select">
+                  <option value="active">进行中</option>
+                  <option value="successful">已成功</option>
+                  <option value="failed">已失败</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">排序</label>
+                <label className="codex-mono" style={{ display: 'block', fontSize: 12, color: '#9a9a8e', marginBottom: 8 }}>
+                  排序
+                </label>
                 <select value={sortBy}
                   onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                  className="px-4 py-2 border rounded-lg bg-background text-foreground">
-                  <option value="newest" className="bg-background text-foreground">最新发布</option>
-                  <option value="popular" className="bg-background text-foreground">最热门</option>
-                  <option value="ending_soon" className="bg-background text-foreground">即将结束</option>
+                  className="codex-select">
+                  <option value="newest">最新发布</option>
+                  <option value="popular">最热门</option>
+                  <option value="ending_soon">即将结束</option>
                 </select>
               </div>
             </div>
@@ -188,69 +190,89 @@ export default function CrowdfundingPage() {
 
         {/* 项目列表 */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="codex-card" style={{ padding: 24 }}>
+                <div className="codex-skeleton" style={{ height: 8, marginBottom: 16 }} />
+                <div className="codex-skeleton" style={{ height: 24, marginBottom: 12 }} />
+                <div className="codex-skeleton" style={{ height: 48, marginBottom: 16 }} />
+                <div className="codex-skeleton" style={{ height: 60 }} />
+              </div>
+            ))}
           </div>
         ) : projects.length === 0 ? (
-          <div className="text-center py-12 bg-card border rounded-lg">
-            <div className="text-6xl mb-4">🚀</div>
-            <h3 className="text-xl font-semibold mb-2">暂无众筹项目</h3>
-            <p className="text-muted-foreground mb-4">
-              {permission?.canCreate
-                ? '成为第一个发起众筹的人吧！'
-                : '开通 VIP 会员即可发起众筹项目'}
-            </p>
-            <button onClick={handleCreateClick}
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:opacity-90">
-              {permission?.canCreate ? '发起众筹' : '了解 VIP'}
-            </button>
+          <div className="codex-card">
+            <div className="codex-empty">
+              <div className="codex-empty-icon">🚀</div>
+              <h3 className="codex-empty-title">暂无众筹项目</h3>
+              <p className="codex-empty-desc">
+                {permission?.canCreate
+                  ? '成为第一个发起众筹的人吧！'
+                  : '开通 VIP 会员即可发起众筹项目'}
+              </p>
+              <button onClick={handleCreateClick} className="codex-btn codex-btn-gold">
+                {permission?.canCreate ? '发起众筹' : '了解 VIP'}
+              </button>
+            </div>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
               {projects.map((project) => (
-                <Link key={project.id} href={`/crowdfunding/${project.id}`}
-                  className="block bg-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="h-2 bg-gray-200 dark:bg-gray-700">
-                    <div className="h-full bg-gradient-to-r from-primary to-purple-600 transition-all"
-                      style={{ width: `${Math.min(project.progress_percentage || 0, 100)}%` }} />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold mb-2 line-clamp-1">{project.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{project.description}</p>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">已筹集</span>
-                        <span className="font-bold text-primary">
-                          {project.current_amount} / {project.target_amount} SEED
+                <Link key={project.id} href={`/crowdfunding/${project.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="codex-card codex-animate">
+                    <div className="codex-progress">
+                      <div className="codex-progress-bar"
+                        style={{ width: `${Math.min(project.progress_percentage || 0, 100)}%` }} />
+                    </div>
+                    <div style={{ padding: 24 }}>
+                      <h3 style={{ fontSize: 18, fontWeight: 600, color: '#f0ece4', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {project.title}
+                      </h3>
+                      <p style={{ fontSize: 13, color: '#9a9a8e', marginBottom: 16, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {project.description}
+                      </p>
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+                          <span style={{ color: '#9a9a8e' }}>已筹集</span>
+                          <span className="codex-mono" style={{ fontWeight: 700, color: '#c9a55c' }}>
+                            {project.current_amount} / {project.target_amount} SEED
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+                          <span style={{ color: '#9a9a8e' }}>进度</span>
+                          <span style={{ color: '#f0ece4' }}>{project.progress_percentage || 0}%</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                          <span style={{ color: '#9a9a8e' }}>支持者</span>
+                          <span style={{ color: '#f0ece4' }}>{project.supporter_count} 人</span>
+                        </div>
+                      </div>
+                      <div className="codex-divider" style={{ marginBottom: 12 }} />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: '#9a9a8e' }}>
+                        <span>{project.author_name}</span>
+                        <span className="codex-mono" style={project.days_left && project.days_left <= 3 ? { color: '#ef4444' } : {}}>
+                          {project.days_left} 天
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">进度</span>
-                        <span className="font-medium">{project.progress_percentage || 0}%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">支持者</span>
-                        <span>{project.supporter_count} 人</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t">
-                      <span>{project.author_name}</span>
-                      <span className={project.days_left && project.days_left <= 3 ? 'text-red-600' : ''}>
-                        {project.days_left} 天
-                      </span>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 40 }}>
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="px-4 py-2 border rounded-lg disabled:opacity-50">上一页</button>
-                <span className="px-4 py-2">第 {page} / {totalPages} 页</span>
+                  className="codex-btn codex-btn-ghost" style={{ opacity: page === 1 ? 0.5 : 1 }}>
+                  上一页
+                </button>
+                <span className="codex-mono" style={{ padding: '10px 16px', fontSize: 13, color: '#9a9a8e' }}>
+                  第 {page} / {totalPages} 页
+                </span>
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="px-4 py-2 border rounded-lg disabled:opacity-50">下一页</button>
+                  className="codex-btn codex-btn-ghost" style={{ opacity: page === totalPages ? 0.5 : 1 }}>
+                  下一页
+                </button>
               </div>
             )}
           </>
@@ -259,50 +281,55 @@ export default function CrowdfundingPage() {
 
       {/* ═══════ VIP 引导弹窗 ═══════ */}
       {showVipTip && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowVipTip(false)}>
-          <div className="bg-card border rounded-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-            <div className="text-center mb-5">
-              <div className="text-5xl mb-3">👑</div>
-              <h3 className="text-xl font-bold mb-1">发起众筹需要 VIP</h3>
-              <p className="text-sm text-muted-foreground">
-                开通月卡或年卡 VIP 即可发起众筹项目
-              </p>
-            </div>
-
-            <div className="space-y-3 mb-5">
-              <div className="p-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-sm">月卡 VIP</span>
-                  <span className="text-primary font-bold text-sm">29.9 /月</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {['发起众筹', '解锁分支剧情', '无限收藏', '去广告'].map(t => (
-                    <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200">{t}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 relative">
-                <div className="absolute -top-2 right-3 text-xs px-2 py-0.5 rounded-full bg-amber-500 text-white font-medium">推荐</div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-sm">年卡 VIP</span>
-                  <span className="text-primary font-bold text-sm">199 /年</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {['含月卡全部', '众筹推荐位', '专属身份标识', '付费章节解锁'].map(t => (
-                    <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-200">{t}</span>
-                  ))}
-                </div>
+        <div className="codex-modal-overlay" onClick={() => setShowVipTip(false)}>
+          <div className="codex-modal" onClick={e => e.stopPropagation()}>
+            <div className="codex-modal-header">
+              <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>👑</div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: '#f0ece4', marginBottom: 4 }}>
+                  发起众筹需要 VIP
+                </h3>
+                <p className="codex-mono" style={{ fontSize: 12, color: '#9a9a8e' }}>
+                  开通月卡或年卡 VIP 即可发起众筹项目
+                </p>
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <button onClick={() => setShowVipTip(false)}
-                className="flex-1 px-4 py-2.5 border rounded-lg hover:bg-secondary text-sm">
+            <div className="codex-modal-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                <div style={{ padding: 16, borderRadius: 10, border: '1px solid rgba(168,85,247,0.2)', background: 'rgba(168,85,247,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontWeight: 600, fontSize: 14, color: '#f0ece4' }}>月卡 VIP</span>
+                    <span className="codex-mono" style={{ fontWeight: 700, fontSize: 14, color: '#c9a55c' }}>29.9 /月</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {['发起众筹', '解锁分支剧情', '无限收藏', '去广告'].map(t => (
+                      <span key={t} className="codex-badge codex-badge-purple" style={{ fontSize: 11 }}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ padding: 16, borderRadius: 10, border: '1px solid rgba(201,165,92,0.25)', background: 'rgba(201,165,92,0.08)', position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: -8, right: 12, fontSize: 11, padding: '2px 10px', borderRadius: 12, background: '#c9a55c', color: '#0b0b0f', fontWeight: 600 }}>
+                    推荐
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontWeight: 600, fontSize: 14, color: '#f0ece4' }}>年卡 VIP</span>
+                    <span className="codex-mono" style={{ fontWeight: 700, fontSize: 14, color: '#c9a55c' }}>199 /年</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {['含月卡全部', '众筹推荐位', '专属身份标识', '付费章节解锁'].map(t => (
+                      <span key={t} className="codex-badge codex-badge-gold" style={{ fontSize: 11 }}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="codex-modal-footer">
+              <button onClick={() => setShowVipTip(false)} className="codex-btn codex-btn-ghost" style={{ flex: 1 }}>
                 稍后再说
               </button>
-              <Link href="/vip" onClick={() => setShowVipTip(false)}
-                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:opacity-90 text-sm text-center font-medium">
+              <Link href="/vip" onClick={() => setShowVipTip(false)} className="codex-btn codex-btn-gold" style={{ flex: 1, textDecoration: 'none' }}>
                 开通 VIP
               </Link>
             </div>
@@ -312,91 +339,88 @@ export default function CrowdfundingPage() {
 
       {/* ═══════ 创建众筹弹窗 ═══════ */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowCreateModal(false)}>
-          <div className="bg-card border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-bold">发起众筹</h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {permission?.via === 'admin' ? '管理员权限' : 'VIP 会员权限'}
-                  </p>
-                </div>
-                <button onClick={() => setShowCreateModal(false)} className="text-2xl text-muted-foreground hover:text-foreground">×</button>
+        <div className="codex-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="codex-modal" style={{ maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+            <div className="codex-modal-header">
+              <div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f0ece4' }}>发起众筹</h2>
+                <p className="codex-mono" style={{ fontSize: 11, color: '#9a9a8e', marginTop: 4 }}>
+                  {permission?.via === 'admin' ? '管理员权限' : 'VIP 会员权限'}
+                </p>
               </div>
+              <button onClick={() => setShowCreateModal(false)} style={{ fontSize: 24, color: '#9a9a8e', background: 'none', border: 'none', cursor: 'pointer' }}>
+                ×
+              </button>
+            </div>
 
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    项目标题 <span className="text-red-500">*</span>
+            <form onSubmit={handleCreate}>
+              <div className="codex-modal-body">
+                <div style={{ marginBottom: 16 }}>
+                  <label className="codex-mono" style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#9a9a8e', marginBottom: 8 }}>
+                    项目标题 <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input type="text" value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
                     placeholder="例如：《星际迷航》系列互动小说众筹"
-                    className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                    className="codex-input"
                     required minLength={5} maxLength={100} />
-                  <p className="text-xs text-muted-foreground mt-1">5-100 个字符</p>
+                  <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>5-100 个字符</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    项目描述 <span className="text-red-500">*</span>
+                <div style={{ marginBottom: 16 }}>
+                  <label className="codex-mono" style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#9a9a8e', marginBottom: 8 }}>
+                    项目描述 <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <textarea value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="详细介绍你的创作计划、目标、回报方案等..."
-                    className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none min-h-[120px]"
+                    className="codex-input"
+                    style={{ minHeight: 120, resize: 'vertical' }}
                     required minLength={20} maxLength={5000} />
-                  <p className="text-xs text-muted-foreground mt-1">20-5000 个字符</p>
+                  <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>20-5000 个字符</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      目标金额 (SEED) <span className="text-red-500">*</span>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#9a9a8e', marginBottom: 8 }}>
+                      目标金额 (SEED) <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <input type="number" value={form.targetAmount}
                       onChange={(e) => setForm({ ...form, targetAmount: e.target.value })}
                       placeholder="例如：5000"
-                      className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                      className="codex-input"
                       required min={100} max={100000} />
-                    <p className="text-xs text-muted-foreground mt-1">100-100000 SEED</p>
+                    <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>100-100000 SEED</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      截止日期 <span className="text-red-500">*</span>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#9a9a8e', marginBottom: 8 }}>
+                      截止日期 <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <input type="date" value={form.deadline}
                       onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                      className="codex-input"
                       required min={minDate} max={maxDate} />
-                    <p className="text-xs text-muted-foreground mt-1">7-90 天后</p>
+                    <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>7-90 天后</p>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
-                    众筹达标后 SEED 将转入你的账户（平台抽成 10%）。未达标则全额退还支持者。每人最多同时发起 3 个活跃项目。
-                  </p>
+                <div className="codex-tip codex-tip-info">
+                  众筹达标后 SEED 将转入你的账户（平台抽成 10%）。未达标则全额退还支持者。每人最多同时发起 3 个活跃项目。
                 </div>
+              </div>
 
-                <div className="flex gap-4 pt-2">
-                  <button type="button" onClick={() => setShowCreateModal(false)}
-                    className="flex-1 px-6 py-3 border rounded-lg hover:bg-secondary transition-colors">
-                    取消
-                  </button>
-                  <button type="submit" disabled={creating}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
-                    {creating ? '创建中...' : '发起众筹'}
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="codex-modal-footer">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="codex-btn codex-btn-ghost" style={{ flex: 1 }}>
+                  取消
+                </button>
+                <button type="submit" disabled={creating} className="codex-btn codex-btn-gold" style={{ flex: 1, opacity: creating ? 0.5 : 1 }}>
+                  {creating ? '创建中...' : '发起众筹'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

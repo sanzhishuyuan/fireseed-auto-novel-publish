@@ -1,0 +1,348 @@
+/* ═══════════════════════════════════════════════════════════════
+   OBSIDIAN CODEX · 黑曜手稿 — Shared Design System
+   Applied across all FireSeed pages for unified visual identity.
+   
+   Design tokens:
+     --codex-bg: #0b0b0f
+     --codex-bg-card: #131318
+     --codex-bg-elevated: #1a1a22
+     --codex-bg-hover: #22222c
+     --codex-text: #f0ece4
+     --codex-text-dim: #9a9a8e
+     --codex-text-muted: #5a5a52
+     --codex-gold: #c9a55c
+     --codex-gold-light: #e4cc8a
+     --codex-gold-glow: rgba(201,165,92,0.12)
+     --codex-border: rgba(255,255,255,0.06)
+     --codex-border-gold: rgba(201,165,92,0.2)
+     --font-display: 'Fraunces', Georgia, serif
+     --font-mono: 'DM Mono', 'Menlo', monospace
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════ Codex Background Texture ═══════ */
+.codex-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 5%, rgba(201,165,92,0.03) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 90%, rgba(99,102,241,0.02) 0%, transparent 50%),
+    #0b0b0f;
+}
+.codex-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background-repeat: repeat; opacity: 0.5;
+}
+
+/* ═══════ Page Shell ═══════ */
+.codex-shell {
+  position: relative; z-index: 1;
+  max-width: 1280px; margin: 0 auto; padding: 0 24px;
+}
+
+/* ═══════ Card ═══════ */
+.codex-card {
+  background: #131318;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.codex-card:hover {
+  border-color: rgba(201,165,92,0.2);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+/* ═══════ Buttons ═══════ */
+.codex-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 24px; border-radius: 8px;
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s ease;
+  text-decoration: none; border: none;
+}
+.codex-btn-gold {
+  background: #c9a55c; color: #0b0b0f;
+}
+.codex-btn-gold:hover {
+  background: #e4cc8a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(201,165,92,0.12);
+}
+.codex-btn-ghost {
+  background: transparent; color: #9a9a8e;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.codex-btn-ghost:hover {
+  border-color: #c9a55c; color: #c9a55c;
+}
+.codex-btn-danger {
+  background: rgba(239,68,68,0.12); color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.2);
+}
+.codex-btn-danger:hover { background: rgba(239,68,68,0.2); }
+.codex-btn-success {
+  background: rgba(34,197,94,0.12); color: #22c55e;
+  border: 1px solid rgba(34,197,94,0.2);
+}
+.codex-btn-success:hover { background: rgba(34,197,94,0.2); }
+
+/* ═══════ Inputs ═══════ */
+.codex-input {
+  width: 100%; padding: 12px 16px;
+  background: #131318; border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #f0ece4; outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.codex-input::placeholder { color: #5a5a52; }
+.codex-input:focus {
+  border-color: #c9a55c;
+  box-shadow: 0 0 0 3px rgba(201,165,92,0.12);
+}
+.codex-select {
+  padding: 10px 14px; background: #131318;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; font-size: 13px;
+  color: #f0ece4; outline: none; cursor: pointer;
+  font-family: 'DM Mono', monospace;
+}
+.codex-select:focus { border-color: #c9a55c; }
+.codex-select option { background: #131318; color: #f0ece4; }
+
+/* ═══════ Tag Pill ═══════ */
+.codex-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: transparent; color: #9a9a8e;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+}
+.codex-pill:hover { border-color: #c9a55c; color: #c9a55c; }
+.codex-pill.active {
+  background: #c9a55c; color: #0b0b0f;
+  border-color: #c9a55c; font-weight: 600;
+}
+
+/* ═══════ Status Badges ═══════ */
+.codex-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.5px;
+}
+.codex-badge-green {
+  background: rgba(34,197,94,0.12); color: #22c55e;
+  border: 1px solid rgba(34,197,94,0.2);
+}
+.codex-badge-gold {
+  background: rgba(201,165,92,0.15); color: #c9a55c;
+  border: 1px solid rgba(201,165,92,0.25);
+}
+.codex-badge-blue {
+  background: rgba(59,130,246,0.12); color: #3b82f6;
+  border: 1px solid rgba(59,130,246,0.2);
+}
+.codex-badge-red {
+  background: rgba(239,68,68,0.1); color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.15);
+}
+.codex-badge-gray {
+  background: rgba(255,255,255,0.04); color: #5a5a52;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.codex-badge-purple {
+  background: rgba(168,85,247,0.12); color: #a855f7;
+  border: 1px solid rgba(168,85,247,0.2);
+}
+.codex-badge-yellow {
+  background: rgba(245,158,11,0.12); color: #f59e0b;
+  border: 1px solid rgba(245,158,11,0.2);
+}
+
+/* ═══════ Progress Bar ═══════ */
+.codex-progress {
+  height: 4px; background: rgba(255,255,255,0.06);
+  border-radius: 4px; overflow: hidden;
+}
+.codex-progress-bar {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, #c9a55c, #e4cc8a);
+  transition: width 0.8s ease;
+}
+.codex-progress-bar-green {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+/* ═══════ Stat Number ═══════ */
+.codex-stat-num {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 32px; font-weight: 900;
+  color: #c9a55c; line-height: 1;
+  letter-spacing: -0.5px;
+}
+.codex-stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: #5a5a52; text-transform: uppercase;
+}
+
+/* ═══════ Divider ═══════ */
+.codex-divider {
+  height: 1px; background: rgba(255,255,255,0.06);
+  border: none; margin: 0;
+}
+
+/* ═══════ Section Title ═══════ */
+.codex-section-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 20px; font-weight: 700;
+  color: #f0ece4; margin-bottom: 16px;
+}
+.codex-section-subtitle {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 1px;
+  color: #5a5a52;
+}
+
+/* ═══════ Tab Bar ═══════ */
+.codex-tabs {
+  display: flex; gap: 2px; padding: 3px;
+  background: #131318; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.codex-tab {
+  flex: 1; padding: 8px 16px; border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s ease;
+  background: transparent; color: #5a5a52;
+  border: none; text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+}
+.codex-tab:hover { color: #9a9a8e; }
+.codex-tab.active {
+  background: #1a1a22; color: #c9a55c;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ═══════ Modal ═══════ */
+.codex-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50; padding: 16px;
+}
+.codex-modal {
+  background: #131318;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  max-width: 560px; width: 100%;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.5);
+}
+.codex-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.codex-modal-body { padding: 24px; }
+.codex-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex; gap: 12px;
+}
+
+/* ═══════ Empty State ═══════ */
+.codex-empty {
+  text-align: center; padding: 48px 20px;
+}
+.codex-empty-icon {
+  width: 64px; height: 64px; margin: 0 auto 16px;
+  border-radius: 16px;
+  background: rgba(201,165,92,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.codex-empty-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 20px; font-weight: 700;
+  color: #f0ece4; margin-bottom: 8px;
+}
+.codex-empty-desc {
+  font-size: 14px; color: #9a9a8e; margin-bottom: 20px;
+}
+
+/* ═══════ Skeleton ═══════ */
+.codex-skeleton {
+  background: #1a1a22; border-radius: 8px;
+  animation: codex-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes codex-shimmer {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+}
+
+/* ═══════ Animations ═══════ */
+@keyframes codex-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.codex-animate {
+  animation: codex-fade-up 0.5s ease forwards; opacity: 0;
+}
+
+/* ═══════ Typography helpers ═══════ */
+.codex-display {
+  font-family: 'Fraunces', Georgia, serif;
+}
+.codex-mono {
+  font-family: 'DM Mono', 'Menlo', monospace;
+}
+
+/* ═══════ Scrollbar ═══════ */
+.codex-scrollbar::-webkit-scrollbar { width: 5px; }
+.codex-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.codex-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+.codex-scrollbar::-webkit-scrollbar-thumb:hover { background: #c9a55c; }
+
+/* ═══════ Info tip box ═══════ */
+.codex-tip {
+  padding: 14px 16px; border-radius: 10px;
+  background: rgba(201,165,92,0.06);
+  border: 1px solid rgba(201,165,92,0.12);
+  font-size: 13px; color: #9a9a8e; line-height: 1.6;
+}
+.codex-tip-warn {
+  background: rgba(245,158,11,0.06);
+  border-color: rgba(245,158,11,0.12);
+}
+.codex-tip-info {
+  background: rgba(59,130,246,0.06);
+  border-color: rgba(59,130,246,0.12);
+}
+.codex-tip-success {
+  background: rgba(34,197,94,0.06);
+  border-color: rgba(34,197,94,0.12);
+}
+.codex-tip-danger {
+  background: rgba(239,68,68,0.06);
+  border-color: rgba(239,68,68,0.12);
+}
+
+/* ═══════ Responsive helpers ═══════ */
+@media (max-width: 768px) {
+  .codex-shell { padding: 0 14px; }
+  .codex-stat-num { font-size: 24px; }
+  .codex-hide-mobile { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 export default function RegisterPage() {
   const router = useRouter();
   const [referralCodeFromUrl, setReferralCodeFromUrl] = useState('');
-  const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [referralCode, setReferralCode] = useState('');
@@ -89,6 +89,12 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError('请输入有效的邮箱地址');
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       setError('两次密码输入不一致');
       return;
@@ -109,6 +115,7 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: form.username,
+          email: form.email,
           password: form.password,
           referralCode: referralCode || undefined
         })
@@ -425,6 +432,21 @@ ${installLinks}`;
                 placeholder="3-20位字母或数字"
                 required
                 autoComplete="username"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+                邮箱
+              </label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="input"
+                placeholder="your@email.com"
+                required
+                autoComplete="email"
               />
             </div>
 

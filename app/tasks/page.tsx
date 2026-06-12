@@ -155,15 +155,15 @@ export default function TasksPage() {
     return diff;
   };
 
-  // 状态标签颜色
-  const getStatusColor = (status: string) => {
+  // 状态 badge class
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'assigned': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'pending_review': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'completed': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'open': return 'codex-badge codex-badge-green';
+      case 'assigned': return 'codex-badge codex-badge-blue';
+      case 'pending_review': return 'codex-badge codex-badge-yellow';
+      case 'completed': return 'codex-badge codex-badge-gray';
+      case 'cancelled': return 'codex-badge codex-badge-red';
+      default: return 'codex-badge codex-badge-gray';
     }
   };
 
@@ -180,85 +180,91 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <>
+      <div className="codex-bg" />
+      <div className="codex-shell" style={{ paddingTop: 40, paddingBottom: 60 }}>
+
         {/* 头部 */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                🔥 任务市场
+              <h1 className="codex-display" style={{ fontSize: 32, fontWeight: 800, color: '#f0ece4', marginBottom: 8 }}>
+                任务市场
               </h1>
-              <p className="text-muted-foreground mt-2">
-                发布小说创作需求，或接单赚取SEED奖励
+              <p className="codex-mono" style={{ fontSize: 13, color: '#9a9a8e' }}>
+                发布小说创作需求，或接单赚取 SEED 奖励
               </p>
             </div>
             <button
               onClick={() => setShowPublishModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium shadow-lg"
+              className="codex-btn codex-btn-gold"
             >
               + 发布任务
             </button>
           </div>
 
           {/* 统计信息 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-card border rounded-lg p-4">
-              <div className="text-sm text-muted-foreground">总任务数</div>
-              <div className="text-2xl font-bold">{total}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ marginBottom: 24 }}>
+            <div className="codex-card" style={{ padding: '20px 24px' }}>
+              <div className="codex-stat-label">总任务数</div>
+              <div className="codex-stat-num" style={{ marginTop: 6 }}>{total}</div>
             </div>
-            <div className="bg-card border rounded-lg p-4">
-              <div className="text-sm text-muted-foreground">开放中</div>
-              <div className="text-2xl font-bold text-green-600">
+            <div className="codex-card" style={{ padding: '20px 24px' }}>
+              <div className="codex-stat-label">开放中</div>
+              <div className="codex-stat-num" style={{ marginTop: 6, color: '#22c55e' }}>
                 {tasks.filter(t => t.status === 'open').length}
               </div>
             </div>
-            <div className="bg-card border rounded-lg p-4">
-              <div className="text-sm text-muted-foreground">今日新增</div>
-              <div className="text-2xl font-bold text-blue-600">--</div>
+            <div className="codex-card" style={{ padding: '20px 24px' }}>
+              <div className="codex-stat-label">今日新增</div>
+              <div className="codex-stat-num" style={{ marginTop: 6, color: '#3b82f6' }}>--</div>
             </div>
           </div>
 
           {/* 筛选器 */}
-          <div className="bg-card border rounded-lg p-4 mb-6">
-            <div className="flex flex-wrap gap-4">
+          <div className="codex-card" style={{ padding: '16px 20px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
               <div>
-                <label className="block text-sm font-medium mb-2">状态</label>
+                <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                  状态
+                </label>
                 <select
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="px-4 py-2 border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary outline-none"
+                  className="codex-select"
                 >
-                  <option value="open" className="bg-background text-foreground">开放中</option>
-                  <option value="assigned" className="bg-background text-foreground">已接单</option>
-                  <option value="pending_review" className="bg-background text-foreground">待审核</option>
-                  <option value="completed" className="bg-background text-foreground">已完成</option>
-                  <option value="all" className="bg-background text-foreground">全部</option>
+                  <option value="open">开放中</option>
+                  <option value="assigned">已接单</option>
+                  <option value="pending_review">待审核</option>
+                  <option value="completed">已完成</option>
+                  <option value="all">全部</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">题材</label>
+                <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                  题材
+                </label>
                 <select
                   value={genreFilter}
                   onChange={(e) => {
                     setGenreFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="px-4 py-2 border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary outline-none"
+                  className="codex-select"
                 >
-                  <option value="" className="bg-background text-foreground">全部题材</option>
-                  <option value="科幻" className="bg-background text-foreground">科幻</option>
-                  <option value="奇幻" className="bg-background text-foreground">奇幻</option>
-                  <option value="悬疑" className="bg-background text-foreground">悬疑</option>
-                  <option value="言情" className="bg-background text-foreground">言情</option>
-                  <option value="武侠" className="bg-background text-foreground">武侠</option>
-                  <option value="历史" className="bg-background text-foreground">历史</option>
-                  <option value="都市" className="bg-background text-foreground">都市</option>
-                  <option value="其他" className="bg-background text-foreground">其他</option>
+                  <option value="">全部题材</option>
+                  <option value="科幻">科幻</option>
+                  <option value="奇幻">奇幻</option>
+                  <option value="悬疑">悬疑</option>
+                  <option value="言情">言情</option>
+                  <option value="武侠">武侠</option>
+                  <option value="历史">历史</option>
+                  <option value="都市">都市</option>
+                  <option value="其他">其他</option>
                 </select>
               </div>
             </div>
@@ -267,83 +273,95 @@ export default function TasksPage() {
 
         {/* 任务列表 */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">加载中...</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '64px 0' }}>
+            <div className="codex-skeleton" style={{ width: 48, height: 48, borderRadius: '50%' }} />
+            <p className="codex-mono" style={{ marginTop: 16, fontSize: 13, color: '#5a5a52' }}>加载中...</p>
           </div>
         ) : tasks.length === 0 ? (
-          <div className="text-center py-12 bg-card border rounded-lg">
-            <div className="text-6xl mb-4">📝</div>
-            <h3 className="text-xl font-semibold mb-2">暂无任务</h3>
-            <p className="text-muted-foreground mb-4">成为第一个发布任务的人吧！</p>
-            <button
-              onClick={() => setShowPublishModal(true)}
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:opacity-90"
-            >
-              发布任务
-            </button>
+          <div className="codex-card">
+            <div className="codex-empty">
+              <div className="codex-empty-icon">📝</div>
+              <div className="codex-empty-title">暂无任务</div>
+              <div className="codex-empty-desc">成为第一个发布任务的人吧！</div>
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="codex-btn codex-btn-gold"
+              >
+                发布任务
+              </button>
+            </div>
           </div>
         ) : (
           <>
-            <div className="grid gap-4">
+            <div style={{ display: 'grid', gap: 16 }}>
               {tasks.map((task) => (
                 <Link
                   key={task.id}
                   href={`/tasks/${task.id}`}
-                  className="block bg-card border rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                  className="codex-card codex-animate"
+                  style={{ display: 'block', padding: 24, textDecoration: 'none', cursor: 'pointer' }}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-2 line-clamp-1">{task.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 style={{ fontSize: 17, fontWeight: 600, color: '#f0ece4', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {task.title}
+                      </h3>
+                      <p style={{ fontSize: 13, color: '#9a9a8e', lineHeight: 1.6, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {task.description}
                       </p>
-                      
+
                       {/* 标签 */}
-                      <div className="flex flex-wrap gap-2 mb-2">
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                         {task.genre && (
-                          <span className="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded">
+                          <span className="codex-pill" style={{ cursor: 'default', fontSize: 11 }}>
                             {task.genre}
                           </span>
                         )}
                         {task.target_words && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded dark:bg-blue-900 dark:text-blue-200">
-                            {task.target_words >= 10000 
+                          <span className="codex-badge codex-badge-blue">
+                            {task.target_words >= 10000
                               ? `${(task.target_words / 10000).toFixed(1)}万字`
                               : `${task.target_words}字`
                             }
                           </span>
                         )}
-                        <span className={`px-2 py-1 text-xs rounded ${getStatusColor(task.status)}`}>
+                        <span className={getStatusBadge(task.status)}>
                           {getStatusText(task.status)}
                         </span>
                       </div>
                     </div>
 
                     {/* 预算 */}
-                    <div className="text-right ml-4">
-                      <div className="text-2xl font-bold text-primary">
-                        {task.budget} SEED
+                    <div style={{ textAlign: 'right', marginLeft: 16, flexShrink: 0 }}>
+                      <div className="codex-display" style={{ fontSize: 24, fontWeight: 800, color: '#c9a55c' }}>
+                        {task.budget} <span style={{ fontSize: 13, fontWeight: 500 }}>SEED</span>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginTop: 4 }}>
                         预算
                       </div>
                     </div>
                   </div>
 
                   {/* 底部信息 */}
-                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-3 border-t">
-                    <div className="flex items-center gap-4">
-                      <span>👤 {task.publisher_name || '匿名用户'}</span>
+                  <div className="codex-divider" style={{ margin: '12px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <span className="codex-mono" style={{ color: '#9a9a8e' }}>
+                        {task.publisher_name || '匿名用户'}
+                      </span>
                       {task.assignee_name && (
-                        <span>✍️ {task.assignee_name}</span>
+                        <span className="codex-mono" style={{ color: '#9a9a8e' }}>
+                          {task.assignee_name}
+                        </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span>📅 {formatDate(task.created_at)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <span className="codex-mono" style={{ color: '#5a5a52' }}>
+                        {formatDate(task.created_at)}
+                      </span>
                       {task.status === 'open' && (
-                        <span className={getDaysLeft(task.deadline) <= 3 ? 'text-red-600 font-medium' : ''}>
-                          ⏰ 剩余{getDaysLeft(task.deadline)}天
+                        <span className="codex-mono" style={{ color: getDaysLeft(task.deadline) <= 3 ? '#ef4444' : '#5a5a52', fontWeight: getDaysLeft(task.deadline) <= 3 ? 600 : 400 }}>
+                          剩余 {getDaysLeft(task.deadline)} 天
                         </span>
                       )}
                     </div>
@@ -354,23 +372,25 @@ export default function TasksPage() {
 
             {/* 分页 */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 40 }}>
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary"
+                  className="codex-btn codex-btn-ghost"
+                  style={{ opacity: page === 1 ? 0.4 : 1, cursor: page === 1 ? 'not-allowed' : 'pointer' }}
                 >
                   上一页
                 </button>
-                
-                <span className="px-4 py-2">
-                  第 {page} / {totalPages} 页（共 {total} 个任务）
+
+                <span className="codex-mono" style={{ padding: '8px 16px', fontSize: 13, color: '#9a9a8e' }}>
+                  第 {page} / {totalPages} 页 (共 {total} 个任务)
                 </span>
 
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary"
+                  className="codex-btn codex-btn-ghost"
+                  style={{ opacity: page === totalPages ? 0.4 : 1, cursor: page === totalPages ? 'not-allowed' : 'pointer' }}
                 >
                   下一页
                 </button>
@@ -382,150 +402,158 @@ export default function TasksPage() {
 
       {/* 发布任务弹窗 */}
       {showPublishModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">发布新任务</h2>
-                <button
-                  onClick={() => setShowPublishModal(false)}
-                  className="text-2xl hover:text-destructive"
-                >
-                  ×
-                </button>
-              </div>
+        <div className="codex-modal-overlay">
+          <div className="codex-modal codex-scrollbar">
+            <div className="codex-modal-header">
+              <h2 className="codex-display" style={{ fontSize: 20, fontWeight: 700, color: '#f0ece4' }}>
+                发布新任务
+              </h2>
+              <button
+                onClick={() => setShowPublishModal(false)}
+                style={{ background: 'none', border: 'none', color: '#5a5a52', fontSize: 24, cursor: 'pointer', lineHeight: 1 }}
+              >
+                &times;
+              </button>
+            </div>
 
-              <form onSubmit={handlePublish} className="space-y-4">
+            <form onSubmit={handlePublish}>
+              <div className="codex-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    任务标题 <span className="text-red-500">*</span>
+                  <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                    任务标题 <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     placeholder="例如：创作一部科幻小说"
-                    className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                    className="codex-input"
                     required
                     minLength={5}
                     maxLength={100}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">5-100个字符</p>
+                  <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>5-100 个字符</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    任务描述 <span className="text-red-500">*</span>
+                  <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                    任务描述 <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     placeholder="详细描述你的需求，包括题材、风格、要求等..."
-                    className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none min-h-[120px]"
+                    className="codex-input"
+                    style={{ minHeight: 120, resize: 'vertical' }}
                     required
                     minLength={20}
                     maxLength={2000}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">20-2000个字符</p>
+                  <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>20-2000 个字符</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">题材分类</label>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                      题材分类
+                    </label>
                     <select
                       value={formData.genre}
                       onChange={(e) => setFormData({...formData, genre: e.target.value})}
-                      className="w-full px-4 py-2 border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary outline-none"
+                      className="codex-select"
+                      style={{ width: '100%' }}
                     >
-                      <option value="" className="bg-background text-foreground">不限</option>
-                      <option value="科幻" className="bg-background text-foreground">科幻</option>
-                      <option value="奇幻" className="bg-background text-foreground">奇幻</option>
-                      <option value="悬疑" className="bg-background text-foreground">悬疑</option>
-                      <option value="言情" className="bg-background text-foreground">言情</option>
-                      <option value="武侠" className="bg-background text-foreground">武侠</option>
-                      <option value="历史" className="bg-background text-foreground">历史</option>
-                      <option value="都市" className="bg-background text-foreground">都市</option>
-                      <option value="其他" className="bg-background text-foreground">其他</option>
+                      <option value="">不限</option>
+                      <option value="科幻">科幻</option>
+                      <option value="奇幻">奇幻</option>
+                      <option value="悬疑">悬疑</option>
+                      <option value="言情">言情</option>
+                      <option value="武侠">武侠</option>
+                      <option value="历史">历史</option>
+                      <option value="都市">都市</option>
+                      <option value="其他">其他</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">目标字数</label>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                      目标字数
+                    </label>
                     <input
                       type="number"
                       value={formData.target_words}
                       onChange={(e) => setFormData({...formData, target_words: e.target.value})}
-                      placeholder="例如：100000（10万字）"
-                      className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                      placeholder="例如：100000"
+                      className="codex-input"
                       min={1000}
                       max={1000000}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">1,000 - 1,000,000 字（默认 10 万字）</p>
+                    <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>1,000 - 1,000,000 字</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      预算 (SEED) <span className="text-red-500">*</span>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                      预算 (SEED) <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <input
                       type="number"
                       value={formData.budget}
                       onChange={(e) => setFormData({...formData, budget: e.target.value})}
                       placeholder="例如：500"
-                      className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                      className="codex-input"
                       required
                       min={50}
                       max={50000}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">50 - 50,000 SEED（建议 500+）</p>
+                    <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>50 - 50,000 SEED</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      截止日期 <span className="text-red-500">*</span>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                      截止日期 <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <input
                       type="date"
                       value={formData.deadline}
                       onChange={(e) => setFormData({...formData, deadline: e.target.value})}
-                      className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                      className="codex-input"
                       required
                       min={minDeadline}
                       max={maxDeadline}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">1 - 90 天（建议 30 天）</p>
+                    <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>1 - 90 天</p>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
-                    💡 提示：发布任务将立即冻结预算 SEED，任务完成后支付给作者（平台抽成 10%）。新用户注册赠送 100 SEED。
-                  </p>
+                <div className="codex-tip codex-tip-info">
+                  发布任务将立即冻结预算 SEED，任务完成后支付给作者（平台抽成 10%）。新用户注册赠送 100 SEED。
                 </div>
+              </div>
 
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowPublishModal(false)}
-                    className="flex-1 px-6 py-3 border rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    取消
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={publishing}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    {publishing ? '发布中...' : '发布任务'}
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="codex-modal-footer">
+                <button
+                  type="button"
+                  onClick={() => setShowPublishModal(false)}
+                  className="codex-btn codex-btn-ghost"
+                  style={{ flex: 1 }}
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  disabled={publishing}
+                  className="codex-btn codex-btn-gold"
+                  style={{ flex: 1, opacity: publishing ? 0.5 : 1 }}
+                >
+                  {publishing ? '发布中...' : '发布任务'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

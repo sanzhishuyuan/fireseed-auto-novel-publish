@@ -143,14 +143,14 @@ export default function TaskDetailPage() {
     return diff;
   };
 
-  // 状态标签
+  // 状态 badge
   const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      open: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      assigned: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      pending_review: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      completed: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-      cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    const badgeMap: Record<string, string> = {
+      open: 'codex-badge codex-badge-green',
+      assigned: 'codex-badge codex-badge-blue',
+      pending_review: 'codex-badge codex-badge-yellow',
+      completed: 'codex-badge codex-badge-gray',
+      cancelled: 'codex-badge codex-badge-red'
     };
 
     const texts: Record<string, string> = {
@@ -162,7 +162,7 @@ export default function TaskDetailPage() {
     };
 
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium ${colors[status] || colors.open}`}>
+      <span className={badgeMap[status] || badgeMap.open}>
         {texts[status] || status}
       </span>
     );
@@ -170,26 +170,34 @@ export default function TaskDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">加载中...</p>
+      <>
+        <div className="codex-bg" />
+        <div className="codex-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="codex-skeleton" style={{ width: 48, height: 48, borderRadius: '50%', margin: '0 auto' }} />
+            <p className="codex-mono" style={{ marginTop: 16, fontSize: 13, color: '#5a5a52' }}>加载中...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!task) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-xl font-semibold mb-2">任务不存在</h2>
-          <Link href="/tasks" className="text-primary hover:underline">
-            返回任务市场
-          </Link>
+      <>
+        <div className="codex-bg" />
+        <div className="codex-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 16, color: '#5a5a52' }}>&times;</div>
+            <h2 className="codex-display" style={{ fontSize: 20, fontWeight: 700, color: '#f0ece4', marginBottom: 12 }}>
+              任务不存在
+            </h2>
+            <Link href="/tasks" style={{ color: '#c9a55c', textDecoration: 'underline' }}>
+              返回任务市场
+            </Link>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -198,34 +206,39 @@ export default function TaskDetailPage() {
   const daysLeft = getDaysLeft(task.deadline);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <>
+      <div className="codex-bg" />
+      <div className="codex-shell" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 860, margin: '0 auto' }}>
+
         {/* 返回按钮 */}
         <Link
           href="/tasks"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6"
+          className="codex-btn codex-btn-ghost"
+          style={{ marginBottom: 28, display: 'inline-flex', padding: '8px 16px', fontSize: 12, textDecoration: 'none' }}
         >
-          ← 返回任务市场
+          &larr; 返回任务市场
         </Link>
 
         {/* 任务头部 */}
-        <div className="bg-card border rounded-lg p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <h1 className="text-2xl font-bold">{task.title}</h1>
+        <div className="codex-card" style={{ padding: 28, marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <h1 className="codex-display" style={{ fontSize: 24, fontWeight: 700, color: '#f0ece4' }}>
+                  {task.title}
+                </h1>
                 {getStatusBadge(task.status)}
               </div>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                 {task.genre && (
-                  <span className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-full">
-                    📚 {task.genre}
+                  <span className="codex-pill" style={{ cursor: 'default' }}>
+                    {task.genre}
                   </span>
                 )}
                 {task.target_words && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full dark:bg-blue-900 dark:text-blue-200">
-                    📝 {task.target_words >= 10000 
+                  <span className="codex-badge codex-badge-blue">
+                    {task.target_words >= 10000
                       ? `${(task.target_words / 10000).toFixed(1)}万字`
                       : `${task.target_words}字`
                     }
@@ -235,90 +248,91 @@ export default function TaskDetailPage() {
             </div>
 
             {/* 预算 */}
-            <div className="text-right ml-6">
-              <div className="text-3xl font-bold text-primary">
-                {task.budget} SEED
+            <div style={{ textAlign: 'right', marginLeft: 24, flexShrink: 0 }}>
+              <div className="codex-display" style={{ fontSize: 32, fontWeight: 800, color: '#c9a55c', lineHeight: 1 }}>
+                {task.budget} <span style={{ fontSize: 16, fontWeight: 500 }}>SEED</span>
               </div>
-              <div className="text-sm text-muted-foreground mt-1">
+              <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginTop: 6 }}>
                 任务预算
               </div>
             </div>
           </div>
 
           {/* 任务描述 */}
-          <div className="prose dark:prose-invert max-w-none">
-            <h3 className="text-lg font-semibold mb-2">任务描述</h3>
-            <p className="whitespace-pre-wrap">{task.description}</p>
-          </div>
+          <div className="codex-divider" style={{ marginBottom: 20 }} />
+          <h3 className="codex-section-title" style={{ marginBottom: 12 }}>任务描述</h3>
+          <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+            {task.description}
+          </p>
         </div>
 
         {/* 任务信息 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5" style={{ marginBottom: 24 }}>
           {/* 发布者信息 */}
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">👤 发布者</h3>
-            <div className="space-y-2">
-              <div>
-                <span className="text-muted-foreground">用户名：</span>
-                <span className="font-medium">{task.publisher_name || '匿名用户'}</span>
+          <div className="codex-card" style={{ padding: 24 }}>
+            <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>发布者</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span className="codex-mono" style={{ fontSize: 12, color: '#5a5a52' }}>用户名</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: '#f0ece4' }}>{task.publisher_name || '匿名用户'}</span>
               </div>
-              <div>
-                <span className="text-muted-foreground">发布时间：</span>
-                <span>{formatDate(task.created_at)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span className="codex-mono" style={{ fontSize: 12, color: '#5a5a52' }}>发布时间</span>
+                <span className="codex-mono" style={{ fontSize: 12, color: '#9a9a8e' }}>{formatDate(task.created_at)}</span>
               </div>
             </div>
           </div>
 
           {/* 接单人信息 */}
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">✍️ 接单人</h3>
+          <div className="codex-card" style={{ padding: 24 }}>
+            <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>接单人</h3>
             {task.assignee_name ? (
-              <div className="space-y-2">
-                <div>
-                  <span className="text-muted-foreground">用户名：</span>
-                  <span className="font-medium">{task.assignee_name}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span className="codex-mono" style={{ fontSize: 12, color: '#5a5a52' }}>用户名</span>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: '#f0ece4' }}>{task.assignee_name}</span>
                 </div>
                 {task.assigned_at && (
-                  <div>
-                    <span className="text-muted-foreground">接单时间：</span>
-                    <span>{formatDate(task.assigned_at)}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span className="codex-mono" style={{ fontSize: 12, color: '#5a5a52' }}>接单时间</span>
+                    <span className="codex-mono" style={{ fontSize: 12, color: '#9a9a8e' }}>{formatDate(task.assigned_at)}</span>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground">尚未有人接单</p>
+              <p className="codex-mono" style={{ fontSize: 13, color: '#5a5a52' }}>尚未有人接单</p>
             )}
           </div>
         </div>
 
         {/* 时间和状态 */}
-        <div className="bg-card border rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">⏰ 时间安排</h3>
+        <div className="codex-card" style={{ padding: 24, marginBottom: 24 }}>
+          <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>时间安排</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <div className="text-sm text-muted-foreground">截止日期</div>
-              <div className="font-medium">{formatDate(task.deadline)}</div>
+              <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginBottom: 6 }}>截止日期</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#f0ece4' }}>{formatDate(task.deadline)}</div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">剩余时间</div>
-              <div className={`font-medium ${daysLeft <= 3 ? 'text-red-600' : ''}`}>
+              <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginBottom: 6 }}>剩余时间</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: daysLeft <= 3 ? '#ef4444' : '#f0ece4' }}>
                 {daysLeft > 0 ? `${daysLeft} 天` : '已过期'}
               </div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">最后更新</div>
-              <div className="font-medium">{formatDate(task.updated_at)}</div>
+              <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginBottom: 6 }}>最后更新</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#f0ece4' }}>{formatDate(task.updated_at)}</div>
             </div>
           </div>
         </div>
 
-        {/* 交付信息（如果已完成） */}
+        {/* 交付信息 */}
         {task.delivery_url && (
-          <div className="bg-card border rounded-lg p-6 mb-6">
-            <h3 className="text-lg font-semibold mb-4">📦 交付成果</h3>
+          <div className="codex-card" style={{ padding: 24, marginBottom: 24 }}>
+            <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 12 }}>交付成果</h3>
             <Link
               href={task.delivery_url}
-              className="text-primary hover:underline break-all"
+              style={{ color: '#c9a55c', textDecoration: 'underline', wordBreak: 'break-all', fontSize: 14 }}
               target="_blank"
             >
               {task.delivery_url}
@@ -326,61 +340,64 @@ export default function TaskDetailPage() {
           </div>
         )}
 
-        {/* 评价（如果已完成） */}
+        {/* 评价 */}
         {task.rating && (
-          <div className="bg-card border rounded-lg p-6 mb-6">
-            <h3 className="text-lg font-semibold mb-4">⭐ 评价</h3>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">{'⭐'.repeat(task.rating)}</span>
-              <span className="text-lg font-medium">{task.rating}/5</span>
+          <div className="codex-card" style={{ padding: 24, marginBottom: 24 }}>
+            <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 12 }}>评价</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: 24, color: '#c9a55c', letterSpacing: 4 }}>{'\u2605'.repeat(task.rating)}</span>
+              <span className="codex-display" style={{ fontSize: 18, fontWeight: 700, color: '#c9a55c' }}>{task.rating}/5</span>
             </div>
             {task.review && (
-              <p className="text-muted-foreground">{task.review}</p>
+              <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.7 }}>{task.review}</p>
             )}
           </div>
         )}
 
         {/* 操作区域 */}
         {!currentUser ? (
-          <div className="bg-card border rounded-lg p-6 text-center">
-            <p className="mb-4">请先登录以执行操作</p>
+          <div className="codex-card" style={{ padding: 28, textAlign: 'center' }}>
+            <p style={{ fontSize: 14, color: '#9a9a8e', marginBottom: 16 }}>请先登录以执行操作</p>
             <Link
               href="/auth/login"
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:opacity-90"
+              className="codex-btn codex-btn-gold"
+              style={{ textDecoration: 'none' }}
             >
               登录
             </Link>
           </div>
         ) : (
           <>
-            {/* 发布者操作 */}
+            {/* 发布者操作 - 取消任务 */}
             {isPublisher && task.status === 'open' && (
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">🎯 我的操作</h3>
+              <div className="codex-card" style={{ padding: 24 }}>
+                <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>我的操作</h3>
                 <button
                   onClick={() => handleAction('cancel')}
                   disabled={actionLoading}
-                  className="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  className="codex-btn codex-btn-danger"
+                  style={{ width: '100%', opacity: actionLoading ? 0.5 : 1 }}
                 >
                   {actionLoading ? '处理中...' : '取消任务（退款）'}
                 </button>
-                <p className="text-sm text-muted-foreground mt-2">
-                  取消后将全额退还SEED到您的钱包
-                </p>
+                <div className="codex-tip codex-tip-danger" style={{ marginTop: 12 }}>
+                  取消后将全额退还 SEED 到您的钱包
+                </div>
               </div>
             )}
 
             {/* 作者接单 */}
             {!isPublisher && !isAssignee && task.status === 'open' && (
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">✍️ 接单创作</h3>
-                <p className="text-muted-foreground mb-4">
-                  接单后您将负责完成此任务，完成后获得 {Math.floor(task.budget * 0.9)} SEED（平台抽成10%）
+              <div className="codex-card" style={{ padding: 24 }}>
+                <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 12 }}>接单创作</h3>
+                <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.7, marginBottom: 16 }}>
+                  接单后您将负责完成此任务，完成后获得 {Math.floor(task.budget * 0.9)} SEED（平台抽成 10%）
                 </p>
                 <button
                   onClick={() => handleAction('assign')}
                   disabled={actionLoading}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="codex-btn codex-btn-gold"
+                  style={{ width: '100%', opacity: actionLoading ? 0.5 : 1 }}
                 >
                   {actionLoading ? '处理中...' : '立即接单'}
                 </button>
@@ -389,28 +406,29 @@ export default function TaskDetailPage() {
 
             {/* 作者提交完成 */}
             {isAssignee && task.status === 'assigned' && (
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">📦 提交完成</h3>
-                <div className="space-y-4">
+              <div className="codex-card" style={{ padding: 24 }}>
+                <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>提交完成</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      交付链接 <span className="text-red-500">*</span>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                      交付链接 <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <input
                       type="text"
                       value={deliveryUrl}
                       onChange={(e) => setDeliveryUrl(e.target.value)}
                       placeholder="例如：/novels/xxx 或外部链接"
-                      className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none"
+                      className="codex-input"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>
                       提供小说链接或其他交付物地址
                     </p>
                   </div>
                   <button
                     onClick={() => handleAction('complete')}
                     disabled={actionLoading || !deliveryUrl}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="codex-btn codex-btn-gold"
+                    style={{ width: '100%', opacity: (actionLoading || !deliveryUrl) ? 0.5 : 1 }}
                   >
                     {actionLoading ? '提交中...' : '提交完成'}
                   </button>
@@ -420,45 +438,56 @@ export default function TaskDetailPage() {
 
             {/* 发布者确认完成 */}
             {isPublisher && task.status === 'pending_review' && (
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">✅ 确认完成</h3>
-                <div className="space-y-4">
+              <div className="codex-card" style={{ padding: 24 }}>
+                <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>确认完成</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
-                    <label className="block text-sm font-medium mb-2">评分</label>
-                    <div className="flex gap-2">
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                      评分
+                    </label>
+                    <div style={{ display: 'flex', gap: 8 }}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
                           onClick={() => setRating(star)}
-                          className={`text-2xl ${star <= rating ? 'text-yellow-500' : 'text-gray-300'}`}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: 24,
+                            cursor: 'pointer',
+                            color: star <= rating ? '#c9a55c' : '#5a5a52',
+                            transition: 'color 0.2s ease'
+                          }}
                         >
-                          ⭐
+                          {'\u2605'}
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">评价（可选）</label>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                      评价（可选）
+                    </label>
                     <textarea
                       value={review}
                       onChange={(e) => setReview(e.target.value)}
                       placeholder="分享您对作品的评价..."
-                      className="w-full px-4 py-2 border rounded-lg bg-background focus:ring-2 focus:ring-primary outline-none min-h-[100px]"
+                      className="codex-input"
+                      style={{ minHeight: 100, resize: 'vertical' }}
                       maxLength={500}
                     />
                   </div>
 
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                    <p className="text-sm text-green-800 dark:text-green-200">
-                      💰 确认后将从冻结预算中支付 {Math.floor(task.budget * 0.9)} SEED 给作者，平台收取 {task.budget - Math.floor(task.budget * 0.9)} SEED 手续费
-                    </p>
+                  <div className="codex-tip codex-tip-success">
+                    确认后将从冻结预算中支付 {Math.floor(task.budget * 0.9)} SEED 给作者，平台收取 {task.budget - Math.floor(task.budget * 0.9)} SEED 手续费
                   </div>
 
                   <button
                     onClick={() => handleAction('confirm')}
                     disabled={actionLoading}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="codex-btn codex-btn-success"
+                    style={{ width: '100%', opacity: actionLoading ? 0.5 : 1 }}
                   >
                     {actionLoading ? '处理中...' : '确认完成并支付'}
                   </button>
@@ -468,28 +497,32 @@ export default function TaskDetailPage() {
 
             {/* 任务已完成提示 */}
             {task.status === 'completed' && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
-                <div className="text-4xl mb-2">✅</div>
-                <h3 className="text-lg font-semibold mb-2">任务已完成</h3>
-                <p className="text-muted-foreground">
-                  SEED已支付给作者，感谢您的参与！
-                </p>
+              <div className="codex-card">
+                <div className="codex-empty">
+                  <div className="codex-empty-icon" style={{ background: 'rgba(34,197,94,0.12)' }}>&#10003;</div>
+                  <div className="codex-empty-title">任务已完成</div>
+                  <div className="codex-empty-desc">
+                    SEED 已支付给作者，感谢您的参与！
+                  </div>
+                </div>
               </div>
             )}
 
             {/* 任务已取消提示 */}
             {task.status === 'cancelled' && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-                <div className="text-4xl mb-2">❌</div>
-                <h3 className="text-lg font-semibold mb-2">任务已取消</h3>
-                <p className="text-muted-foreground">
-                  SEED已退还给发布者
-                </p>
+              <div className="codex-card">
+                <div className="codex-empty">
+                  <div className="codex-empty-icon" style={{ background: 'rgba(239,68,68,0.12)' }}>&times;</div>
+                  <div className="codex-empty-title">任务已取消</div>
+                  <div className="codex-empty-desc">
+                    SEED 已退还给发布者
+                  </div>
+                </div>
               </div>
             )}
           </>
         )}
       </div>
-    </div>
+    </>
   );
 }

@@ -40,3 +40,4 @@ dist/
 /covers/
 # ===== 服务器配置（敏感）=====
 .server-config.md
+ecosystem.config.js
