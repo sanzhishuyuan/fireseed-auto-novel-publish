@@ -59,13 +59,13 @@ export default function RpgLobbyPage() {
               }}>
               ✦ 创建角色
             </Link>
-            <Link href="/rpg/campaigns/new"
+            <Link href="/rpg/campaigns"
               style={{
                 padding: '8px 20px', borderRadius: 6,
-                background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
-                color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
+                background: '#ef444415', border: '1px solid #ef444440',
+                color: '#f87171', textDecoration: 'none', fontSize: 14,
               }}>
-              ⚔️ 开始冒险
+              ⚔ 副本
             </Link>
             <Link href="/rpg/lorebooks"
               style={{
@@ -74,6 +74,14 @@ export default function RpgLobbyPage() {
                 color: '#a78bfa', textDecoration: 'none', fontSize: 14,
               }}>
               📖 世界书
+            </Link>
+            <Link href="/rpg/campaigns/new"
+              style={{
+                padding: '8px 20px', borderRadius: 6,
+                background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
+                color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
+              }}>
+              ⚔️ 开始冒险
             </Link>
             <Link href="/rpg/market"
               style={{
