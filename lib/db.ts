@@ -1165,6 +1165,14 @@ try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN rating_count INTEGER DEFAUL
 try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN copy_count INTEGER DEFAULT 0;`); } catch (e) {}
 try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN license_type TEXT DEFAULT 'personal';`); } catch (e) {}
 
+// ===== 副本（rpg_campaigns）经济字段迁移 =====
+try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN seed_price INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN download_count INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN copy_count INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN avg_rating REAL DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN rating_count INTEGER DEFAULT 0;`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN license_type TEXT DEFAULT 'personal';`); } catch (e) {}
+
 // ===== 用户信誉等级字段 =====
 try { db.exec(`ALTER TABLE users ADD COLUMN creator_score INTEGER DEFAULT 0;`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN creator_level INTEGER DEFAULT 0;`); } catch (e) {}
