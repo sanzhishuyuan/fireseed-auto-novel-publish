@@ -23,19 +23,35 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function CampaignsListPage() {
+  const [tab, setTab] = useState<'owned' | 'purchased'>('owned');
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/rpg/campaigns')
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(c => {
-        if (c.success) setCampaigns(c.data || []);
-      })
-      .catch(() => setAuthError(true))
-      .finally(() => setLoading(false));
-  }, []);
+  const loadList = async (t?: string) => {
+    setLoading(true);
+    try {
+      const currentTab = t || tab;
+      const res = await fetch(`/api/rpg/campaigns?tab=${currentTab}`);
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      if (d.success) setCampaigns(d.data || []);
+    } catch {
+      setAuthError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadList(); }, []);
+
+  const handleTabChange = (t: 'owned' | 'purchased') => {
+    setTab(t);
+    loadList(t);
+  };
+
+  const ownedCount = campaigns.filter(c => !c._purchased).length;
+  const purchasedCount = campaigns.filter(c => !!c._purchased).length;
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text }}>
@@ -47,7 +63,7 @@ export default function CampaignsListPage() {
               ⚔ 副本
             </h1>
             <p style={{ color: C.textSec, fontSize: 13, margin: '4px 0 0' }}>
-              管理你的所有副本，或创建新的冒险
+              管理你的所有副本，创建或购买新的冒险
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -59,14 +75,16 @@ export default function CampaignsListPage() {
               }}>
               ← 返回酒馆
             </Link>
-            <Link href="/rpg/campaigns/new"
-              style={{
-                padding: '8px 20px', borderRadius: 6,
-                background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
-                color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
-              }}>
-              + 创建副本
-            </Link>
+            {tab === 'owned' && (
+              <Link href="/rpg/campaigns/new"
+                style={{
+                  padding: '8px 20px', borderRadius: 6,
+                  background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
+                  color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
+                }}>
+                + 创建副本
+              </Link>
+            )}
           </div>
         </div>
 
@@ -81,6 +99,33 @@ export default function CampaignsListPage() {
           </div>
         )}
 
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: `1px solid ${C.border}` }}>
+          {([
+            { key: 'owned' as const, label: '我的副本', count: ownedCount },
+            { key: 'purchased' as const, label: '已购买', count: purchasedCount },
+          ]).map(t => (
+            <button key={t.key} onClick={() => handleTabChange(t.key)}
+              style={{
+                padding: '10px 20px', cursor: 'pointer', fontSize: 14,
+                background: 'transparent', border: 'none',
+                color: tab === t.key ? C.gold : C.textDim,
+                borderBottom: tab === t.key ? `2px solid ${C.gold}` : '2px solid transparent',
+                transition: 'all 0.2s',
+              }}>
+              {t.label}
+              {tab === t.key && t.count > 0 && (
+                <span style={{
+                  marginLeft: 8, padding: '1px 8px', borderRadius: 10, fontSize: 11,
+                  background: C.gold + '20', color: C.gold,
+                }}>
+                  {t.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
         {/* Content */}
         {loading ? (
           <div style={{ display: 'grid', gap: 12 }}>
@@ -91,16 +136,24 @@ export default function CampaignsListPage() {
         ) : campaigns.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 20px', color: C.textDim }}>
             <p style={{ fontSize: 48, marginBottom: 12 }}>⚔️</p>
-            <p style={{ fontSize: 16, marginBottom: 8, color: C.textSec }}>还没有副本</p>
-            <p style={{ fontSize: 13, marginBottom: 20 }}>创建你的第一个副本，开始 AI 驱动的冒险之旅</p>
-            <Link href="/rpg/campaigns/new"
-              style={{
-                display: 'inline-block', padding: '10px 24px', borderRadius: 6,
-                background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
-                color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
-              }}>
-              创建副本
-            </Link>
+            <p style={{ fontSize: 16, marginBottom: 8, color: C.textSec }}>
+              {tab === 'purchased' ? '还没有购买过副本' : '还没有副本'}
+            </p>
+            <p style={{ fontSize: 13, marginBottom: 20 }}>
+              {tab === 'purchased' ? (
+                <Link href="/rpg/market" style={{ color: C.gold }}>去异界世场逛逛，购买其他创作者的副本</Link>
+              ) : '创建你的第一个副本，开始 AI 驱动的冒险之旅'}
+            </p>
+            {tab === 'owned' && (
+              <Link href="/rpg/campaigns/new"
+                style={{
+                  display: 'inline-block', padding: '10px 24px', borderRadius: 6,
+                  background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
+                  color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
+                }}>
+                创建副本
+              </Link>
+            )}
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>

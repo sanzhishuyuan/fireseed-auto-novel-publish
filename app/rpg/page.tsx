@@ -51,7 +51,7 @@ export default function RpgLobbyPage() {
             在迷雾笼罩的酒馆中，冒险正在等待。创建你的角色，踏上 AI 驱动的史诗冒险。
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
-            <Link href="/rpg/characters/create"
+            <Link href="/rpg/characters"
               style={{
                 padding: '8px 20px', borderRadius: 6,
                 background: C.goldDim + '20', border: `1px solid ${C.goldDim}`,
@@ -229,59 +229,33 @@ export default function RpgLobbyPage() {
             </div>
           )
         ) : (
-          characters.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: C.textDim }}>
-              <p style={{ fontSize: 36, marginBottom: 12 }}>🎭</p>
-              <p style={{ fontSize: 15, marginBottom: 8, color: C.textSec }}>还没有角色</p>
-              <p style={{ fontSize: 13 }}>创建你的第一个角色，为冒险做好准备</p>
-              <Link href="/rpg/characters/create"
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: C.textDim }}>
+            <p style={{ fontSize: 36, marginBottom: 12 }}>🎭</p>
+            <p style={{ fontSize: 15, marginBottom: 8, color: C.textSec }}>
+              {characters.length > 0 ? `已拥有 ${characters.length} 个角色` : '还没有角色'}
+            </p>
+            <p style={{ fontSize: 13, marginBottom: 20 }}>
+              管理你创建和购买的所有角色卡
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <Link href="/rpg/characters"
                 style={{
-                  display: 'inline-block', marginTop: 16, padding: '10px 24px', borderRadius: 6,
+                  display: 'inline-block', padding: '10px 24px', borderRadius: 6,
+                  background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
+                  color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
+                }}>
+                进入角色工坊
+              </Link>
+              <Link href="/rpg/market"
+                style={{
+                  display: 'inline-block', padding: '10px 24px', borderRadius: 6,
                   background: C.goldDim + '20', border: `1px solid ${C.goldDim}`,
                   color: C.gold, textDecoration: 'none', fontSize: 14,
                 }}>
-                创建角色
+                去市场购买
               </Link>
             </div>
-          ) : (
-            <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
-              {characters.map((ch: any) => {
-                const isPurchased = !!ch._purchased;
-                return (
-                  <Link key={ch.id} href={`/rpg/characters/${ch.id}`}
-                    style={{
-                      padding: 14, borderRadius: 8, background: C.card,
-                      border: `1px solid ${isPurchased ? C.purple + '30' : C.border}`, textDecoration: 'none',
-                      transition: 'border-color 0.2s',
-                    }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: '50%',
-                        background: C.gold + '15', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 18, flexShrink: 0,
-                      }}>
-                        🎭
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 14, color: C.text, fontWeight: 500 }}>
-                          {ch.name}
-                          {isPurchased && (
-                            <span style={{
-                              marginLeft: 6, padding: '0px 6px', borderRadius: 3, fontSize: 10,
-                              background: C.purple + '20', color: C.purple,
-                            }}>
-                              购买
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 12, color: C.textDim }}>{SYS_LABEL[ch.system] || ch.system}</div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )
+          </div>
         )}
       </div>
     </div>

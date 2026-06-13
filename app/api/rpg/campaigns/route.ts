@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/rpg/campaigns — 获取用户的副本列表（含已购买的副本）
+ * 支持 ?tab=owned|purchased|all 过滤自有/已购买副本（默认 all）
  */
 export async function GET(request: NextRequest) {
   try {
@@ -18,28 +19,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: '请先登录' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const tab = searchParams.get('tab') || 'all';
+
     // 自有或参与的副本
-    const owned = db.prepare(`
-      SELECT c.*, 
-        (SELECT COUNT(*) FROM rpg_campaign_members WHERE campaign_id = c.id) as player_count,
-        0 as _purchased
-      FROM rpg_campaigns c
-      WHERE c.created_by = ? OR c.id IN (
-        SELECT campaign_id FROM rpg_campaign_members WHERE user_id = ?
-      )
-      ORDER BY c.updated_at DESC
-    `).all(user.userId, user.userId) as any[];
+    const owned = (tab === 'owned' || tab === 'all')
+      ? db.prepare(`
+          SELECT c.*, 
+            (SELECT COUNT(*) FROM rpg_campaign_members WHERE campaign_id = c.id) as player_count,
+            0 as _purchased
+          FROM rpg_campaigns c
+          WHERE c.created_by = ? OR c.id IN (
+            SELECT campaign_id FROM rpg_campaign_members WHERE user_id = ?
+          )
+          ORDER BY c.updated_at DESC
+        `).all(user.userId, user.userId) as any[]
+      : [];
 
     // 已购买的副本（从 rpg_asset_library 查 asset_type='module'）
-    const purchased = db.prepare(`
-      SELECT c.*,
-        (SELECT COUNT(*) FROM rpg_campaign_members WHERE campaign_id = c.id) as player_count,
-        1 as _purchased
-      FROM rpg_campaigns c
-      INNER JOIN rpg_asset_library al ON al.asset_id = c.id AND al.asset_type = 'module'
-      WHERE al.user_id = ? AND al.source = 'purchased'
-      ORDER BY al.acquired_at DESC
-    `).all(user.userId) as any[];
+    const purchased = (tab === 'purchased' || tab === 'all')
+      ? db.prepare(`
+          SELECT c.*,
+            (SELECT COUNT(*) FROM rpg_campaign_members WHERE campaign_id = c.id) as player_count,
+            1 as _purchased
+          FROM rpg_campaigns c
+          INNER JOIN rpg_asset_library al ON al.asset_id = c.id AND al.asset_type = 'module'
+          WHERE al.user_id = ? AND al.source = 'purchased'
+          ORDER BY al.acquired_at DESC
+        `).all(user.userId) as any[]
+      : [];
 
     // 合并去重
     const ids = new Set<string>();

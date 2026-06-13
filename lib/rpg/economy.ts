@@ -209,6 +209,8 @@ export function listAsset(
     db.prepare("UPDATE rpg_characters SET license_type = 'public_full' WHERE id = ?").run(assetId);
   } else if (assetType === 'lorebook') {
     db.prepare("UPDATE rpg_lorebooks SET license_type = 'public_full' WHERE id = ?").run(assetId);
+  } else if (assetType === 'module') {
+    db.prepare("UPDATE rpg_campaigns SET license_type = 'public_full' WHERE id = ?").run(assetId);
   }
 
   return {
@@ -229,6 +231,12 @@ export function buyAsset(
   if (!listing) throw new Error('该商品已下架或不存在');
   if (listing.seller_id === buyerId) throw new Error('不能购买自己的资产');
 
+  // 检查买家余额
+  const balance = getBalance(buyerId);
+  if (balance < listing.price) {
+    throw new Error(`SEED 余额不足！当前 ${balance} 🌱，需要 ${listing.price} 🌱`);
+  }
+
   // 获取资产信息
   let assetName = '';
   let assetData: any = null;
@@ -238,7 +246,6 @@ export function buyAsset(
   } else if (listing.asset_type === 'lorebook') {
     assetData = db.prepare('SELECT id, name, description, entries FROM rpg_lorebooks WHERE id = ?').get(listing.asset_id);
     assetName = assetData?.name || '世界书';
-    // 引用模式：只存引用记录，不复制条目
     if (listing.license_mode === 'reference_only') {
       assetData = { ...assetData, _referenceOnly: true };
     }
@@ -249,47 +256,53 @@ export function buyAsset(
 
   if (!assetData) throw new Error('资产数据不存在');
 
-  // 执行交易
-  const result = transferBetweenUsers(buyerId, listing.seller_id, listing.price, 'rpg_purchase', {
-    refId: listingId,
-    description: `购买 ${listing.asset_type === 'character' ? '角色卡' : listing.asset_type === 'lorebook' ? '世界书' : '战役模组'}：${assetName}`,
-    platformShare: listing.platform_fee,
-  });
-
-  // 更新挂牌状态
-  db.prepare(`
-    UPDATE rpg_market_listings SET status = 'sold', buyer_id = ?, sold_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(buyerId, listingId);
-
-  // 添加到买家资产库
+  // 在事务中执行所有操作，确保原子性
   const libId = uuidv4();
-  db.prepare(`
-    INSERT INTO rpg_asset_library (id, user_id, asset_type, asset_id, license_mode, source, source_listing_id)
-    VALUES (?, ?, ?, ?, ?, 'purchased', ?)
-  `).run(libId, buyerId, listing.asset_type, listing.asset_id, listing.license_mode, listingId);
-
-  // 更新下载/复制计数
-  if (listing.asset_type === 'character') {
-    db.prepare('UPDATE rpg_characters SET download_count = download_count + 1, copy_count = copy_count + 1 WHERE id = ?').run(listing.asset_id);
-  } else if (listing.asset_type === 'lorebook') {
-    db.prepare('UPDATE rpg_lorebooks SET download_count = download_count + 1, copy_count = copy_count + 1 WHERE id = ?').run(listing.asset_id);
-  }
-
-  // 给创作者加信誉积分
-  addCreatorScore(listing.seller_id, 5);
-  // 增加创作者的销售额统计
-  db.prepare('UPDATE users SET total_sales_volume = total_sales_volume + ? WHERE id = ?')
-    .run(listing.price, listing.seller_id);
-
-  // 创作者基金（5%）
   const fundAmount = Math.floor(listing.price * CREATOR_FUND_RATE);
-  if (fundAmount > 0) {
-    transferSeed('platform', fundAmount, 'rpg_purchase', {
+
+  db.transaction(() => {
+    // 1. 执行交易（SEED 转移）
+    transferBetweenUsers(buyerId, listing.seller_id, listing.price, 'rpg_purchase', {
       refId: listingId,
-      description: `创作者基金注入：${assetName}`,
+      description: `购买 ${listing.asset_type === 'character' ? '角色卡' : listing.asset_type === 'lorebook' ? '世界书' : '战役模组'}：${assetName}`,
+      platformShare: listing.platform_fee,
     });
-  }
+
+    // 2. 更新挂牌状态
+    db.prepare(`
+      UPDATE rpg_market_listings SET status = 'sold', buyer_id = ?, sold_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(buyerId, listingId);
+
+    // 3. 添加到买家资产库（关键：必须成功才能显示已购买）
+    db.prepare(`
+      INSERT INTO rpg_asset_library (id, user_id, asset_type, asset_id, license_mode, source, source_listing_id)
+      VALUES (?, ?, ?, ?, ?, 'purchased', ?)
+    `).run(libId, buyerId, listing.asset_type, listing.asset_id, listing.license_mode, listingId);
+
+    // 4. 更新下载/复制计数（含副本）
+    if (listing.asset_type === 'character') {
+      db.prepare('UPDATE rpg_characters SET download_count = download_count + 1, copy_count = copy_count + 1 WHERE id = ?').run(listing.asset_id);
+    } else if (listing.asset_type === 'lorebook') {
+      db.prepare('UPDATE rpg_lorebooks SET download_count = download_count + 1, copy_count = copy_count + 1 WHERE id = ?').run(listing.asset_id);
+    } else if (listing.asset_type === 'module') {
+      db.prepare('UPDATE rpg_campaigns SET download_count = download_count + 1, copy_count = copy_count + 1 WHERE id = ?').run(listing.asset_id);
+    }
+
+    // 5. 给创作者加信誉积分
+    addCreatorScore(listing.seller_id, 5);
+    // 6. 增加创作者的销售额统计
+    db.prepare('UPDATE users SET total_sales_volume = total_sales_volume + ? WHERE id = ?')
+      .run(listing.price, listing.seller_id);
+
+    // 7. 创作者基金（5%）
+    if (fundAmount > 0) {
+      transferSeed('platform', fundAmount, 'rpg_purchase', {
+        refId: listingId,
+        description: `创作者基金注入：${assetName}`,
+      });
+    }
+  })();
 
   return {
     success: true,
@@ -313,6 +326,8 @@ export function delistAsset(sellerId: string, listingId: string): void {
     db.prepare("UPDATE rpg_characters SET license_type = 'personal' WHERE id = ?").run(listing.asset_id);
   } else if (listing.asset_type === 'lorebook') {
     db.prepare("UPDATE rpg_lorebooks SET license_type = 'personal' WHERE id = ?").run(listing.asset_id);
+  } else if (listing.asset_type === 'module') {
+    db.prepare("UPDATE rpg_campaigns SET license_type = 'personal' WHERE id = ?").run(listing.asset_id);
   }
 }
 
@@ -362,9 +377,9 @@ export function browseMarket(options: {
       COALESCE(c.name, l.name, cp.name) as name,
       COALESCE(json_extract(c.card_data, '$.description'), l.description, cp.world_brief) as description,
       u.username as seller_name,
-      COALESCE(c.avg_rating, l.avg_rating, 0) as avg_rating,
-      COALESCE(c.rating_count, l.rating_count, 0) as rating_count,
-      COALESCE(c.download_count, l.download_count, 0) as sales
+      COALESCE(c.avg_rating, l.avg_rating, cp.avg_rating, 0) as avg_rating,
+      COALESCE(c.rating_count, l.rating_count, cp.rating_count, 0) as rating_count,
+      COALESCE(c.download_count, l.download_count, cp.download_count, 0) as sales
     FROM rpg_market_listings ml
     LEFT JOIN rpg_characters c ON ml.asset_type = 'character' AND ml.asset_id = c.id
     LEFT JOIN rpg_lorebooks l ON ml.asset_type = 'lorebook' AND ml.asset_id = l.id
@@ -465,6 +480,9 @@ export function submitRating(
       .run(avgRating, newCount, listing.asset_id);
   } else if (listing.asset_type === 'lorebook') {
     db.prepare('UPDATE rpg_lorebooks SET avg_rating = ?, rating_count = ? WHERE id = ?')
+      .run(avgRating, newCount, listing.asset_id);
+  } else if (listing.asset_type === 'module') {
+    db.prepare('UPDATE rpg_campaigns SET avg_rating = ?, rating_count = ? WHERE id = ?')
       .run(avgRating, newCount, listing.asset_id);
   }
 
