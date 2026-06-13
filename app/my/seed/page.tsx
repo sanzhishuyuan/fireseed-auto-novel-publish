@@ -51,7 +51,7 @@ export default function MySeedPage() {
       fetch('/api/seed/transactions', { credentials: 'include' }).then(r => r.json()),
     ])
       .then(([balData, txData]) => {
-        if (balData.success) setWallet(balData);
+        if (balData.success && balData.data) setWallet(balData.data);
         if (txData.success) setTxns(txData.data);
       })
       .catch(() => {})
@@ -82,14 +82,14 @@ export default function MySeedPage() {
         {wallet && (
           <div className="card p-6 mb-6 text-center">
             <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>当前余额</p>
-            <p className="text-4xl font-bold mb-4" style={{ color: '#10b981' }}>🌱 {wallet.balance.toLocaleString()}</p>
+            <p className="text-4xl font-bold mb-4" style={{ color: '#10b981' }}>🌱 {(wallet?.balance ?? 0).toLocaleString()}</p>
             <div className="flex justify-center gap-8 text-sm">
               <div>
-                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>🌾 {wallet.total_earned.toLocaleString()}</p>
+                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>🌾 {(wallet?.total_earned ?? 0).toLocaleString()}</p>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>累计收入</p>
               </div>
               <div>
-                <p className="font-semibold" style={{ color: '#ef4444' }}>💸 {wallet.total_spent.toLocaleString()}</p>
+                <p className="font-semibold" style={{ color: '#ef4444' }}>💸 {(wallet?.total_spent ?? 0).toLocaleString()}</p>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>累计消费</p>
               </div>
             </div>

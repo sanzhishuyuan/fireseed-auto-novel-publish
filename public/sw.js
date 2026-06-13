@@ -1,7 +1,7 @@
 // FireSeed PWA Service Worker
 // 缓存策略：静态资源优先缓存，API 请求优先网络
 
-const CACHE_NAME = 'fireseed-v1';
+const CACHE_NAME = 'fireseed-v2-1781309258';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

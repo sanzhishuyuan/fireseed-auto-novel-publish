@@ -131,6 +131,8 @@ export default function RegisterPage() {
           body: JSON.stringify({ username: form.username, password: form.password })
         });
 
+        window.dispatchEvent(new CustomEvent('auth-changed'));
+
         setSuccess({
           username: form.username,
           password: form.password,

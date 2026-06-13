@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 /**
  * 全局钱包余额指示器 — 固定在右上角工具栏旁
@@ -16,16 +15,15 @@ export default function WalletBadge() {
   const router = useRouter();
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/user/me', { credentials: 'include' }).then(r => r.json()),
-      fetch('/api/seed/balance', { credentials: 'include' }).then(r => r.json()),
-    ])
-      .then(([userData, balanceData]) => {
-        if (userData.loggedIn && userData.user) {
-          setUser(userData.user);
-        }
-        if (balanceData.success) {
-          setBalance(balanceData.balance);
+    fetch('/api/user/me', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.loggedIn && data.user) {
+          setUser(data.user);
+          fetch('/api/seed/balance', { credentials: 'include' })
+            .then(r => r.json())
+            .then(d => { if (d.success) setBalance(d.data != null ? d.data.balance : d.balance); })
+            .catch(() => {});
         }
         setLoading(false);
       })
@@ -67,14 +65,14 @@ export default function WalletBadge() {
               </p>
             </div>
             <div className="py-1">
-              <Link
+              <a
                 href="/my/seed"
                 className="flex items-center gap-2 px-4 py-2.5 text-xs hover:bg-opacity-50"
                 style={{ color: 'var(--accent)' }}
                 onClick={() => setOpen(false)}
               >
                 📊 交易记录
-              </Link>
+              </a>
               <button
                 onClick={() => { setOpen(false); router.push('/skills'); }}
                 className="flex items-center gap-2 px-4 py-2.5 text-xs w-full text-left"

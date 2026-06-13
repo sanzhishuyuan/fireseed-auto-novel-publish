@@ -168,18 +168,6 @@ export default function UserNav() {
                   AI Token
                 </Link>
                 <Link 
-                  href="/my/tasks"
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                  style={{ color: 'var(--text-secondary)' }}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <rect x="2" y="2" width="12" height="12" rx="2"/>
-                    <path d="M5 8l2 2 4-4"/>
-                  </svg>
-                  我的任务
-                </Link>
-                <Link 
                   href="/my/claim"
                   className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                   style={{ color: 'var(--text-secondary)' }}

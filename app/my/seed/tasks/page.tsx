@@ -32,7 +32,7 @@ export default function SeedTasksPage() {
     ])
       .then(([taskData, balData]) => {
         if (taskData.success) setTasks(taskData.tasks || []);
-        if (balData.success) setWallet(balData);
+        if (balData.success && balData.data) setWallet(balData.data);
       })
       .catch(() => {})
       .finally(() => setLoading(false));

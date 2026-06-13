@@ -96,7 +96,7 @@ export default function MyDashboard() {
       const walletRes = await fetch('/api/seed/balance', { credentials: 'include' });
       if (walletRes.ok) {
         const wd = await walletRes.json();
-        if (wd.success) setWallet(wd);
+        if (wd.success && wd.data) setWallet(wd.data);
       }
 
       // 加载交易记录
