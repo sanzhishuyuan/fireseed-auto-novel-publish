@@ -119,7 +119,24 @@ function NewCampaignForm() {
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text }}>
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div style={{ marginBottom: 24 }}>
-          <Link href="/rpg" style={{ color: C.gold, fontSize: 14, textDecoration: 'none' }}>← 返回酒馆</Link>
+          <Link href="/rpg"
+            className="nav-back-btn"
+            style={{
+              color: C.gold,
+              fontSize: 15,
+              fontWeight: 600,
+              textDecoration: 'none',
+              padding: '8px 18px',
+              borderRadius: 6,
+              background: `${C.gold}10`,
+              border: `1px solid ${C.gold}40`,
+              transition: 'all 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}>
+            ← 回到酒馆
+          </Link>
         </div>
 
         <h1 style={{ fontFamily: "'Fraunces', Georgia, serif", color: C.gold, fontSize: 24, marginBottom: 4 }}>

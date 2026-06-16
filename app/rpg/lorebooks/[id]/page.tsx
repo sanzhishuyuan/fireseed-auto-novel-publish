@@ -175,7 +175,24 @@ export default function LorebookEditorPage() {
         {/* 顶部导航 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link href="/rpg/lorebooks" style={{ color: C.gold, fontSize: 14, textDecoration: 'none' }}>← 世界书</Link>
+            <Link href="/rpg/lorebooks"
+              className="nav-back-btn"
+              style={{
+                color: C.gold,
+                fontSize: 15,
+                fontWeight: 600,
+                textDecoration: 'none',
+                padding: '8px 18px',
+                borderRadius: 6,
+                background: `${C.gold}10`,
+                border: `1px solid ${C.gold}40`,
+                transition: 'all 0.2s',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+              }}>
+              ← 回到酒馆
+            </Link>
             <span style={{ color: C.textDim }}>/</span>
             <span style={{ fontFamily: "'Fraunces', Georgia, serif", color: C.gold, fontSize: 16 }}>{lorebook.name}</span>
           </div>

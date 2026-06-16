@@ -214,12 +214,37 @@ export default function RpgMarketPage() {
               发现优秀的人物卡、世界书和副本
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Link href="/rpg" style={{ padding: '6px 14px', borderRadius: 6, background: C.card, border: `1px solid ${C.border}`, color: C.textSec, textDecoration: 'none', fontSize: 13 }}>
-              ← 返回酒馆
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link href="/rpg"
+              className="nav-back-btn"
+              style={{
+                padding: '8px 18px',
+                borderRadius: 6,
+                background: `${C.gold}10`,
+                border: `1px solid ${C.gold}40`,
+                color: C.gold,
+                textDecoration: 'none',
+                fontSize: 15,
+                fontWeight: 600,
+                transition: 'all 0.2s',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+              }}>
+              ← 回到酒馆
             </Link>
             <button onClick={() => { setShowListModal(true); loadUserAssets(); }}
-              style={{ padding: '6px 14px', borderRadius: 6, background: C.goldDim + '20', border: `1px solid ${C.goldDim}`, color: C.gold, cursor: 'pointer', fontSize: 13 }}>
+              style={{
+                padding: '8px 18px',
+                borderRadius: 6,
+                background: C.goldDim + '20',
+                border: `1px solid ${C.goldDim}`,
+                color: C.gold,
+                cursor: 'pointer',
+                fontSize: 15,
+                fontWeight: 600,
+                transition: 'all 0.2s',
+              }}>
               + 上架资产
             </button>
           </div>
@@ -292,8 +317,8 @@ export default function RpgMarketPage() {
                       <span style={{ fontSize: 11, color: C.textDim, background: C.bg, padding: '2px 8px', borderRadius: 4 }}>
                         {TYPE_ICON[item.type]} {TYPE_LABEL[item.type] || item.type}
                       </span>
-                      <span style={{ color: C.gold, fontWeight: 600, fontSize: 15 }}>
-                        {item.price} 🌱
+                      <span style={{ color: item.price === 0 ? C.success : C.gold, fontWeight: 600, fontSize: 15 }}>
+                        {item.price === 0 ? '免费' : `${item.price} 🌱`}
                       </span>
                     </div>
                     <h3 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 6px', color: C.text, lineHeight: 1.3 }}>
@@ -497,8 +522,8 @@ export default function RpgMarketPage() {
               </div>
 
               <div style={{ background: C.bg, borderRadius: 8, padding: 16, marginBottom: 16, textAlign: 'center' }}>
-                <div style={{ color: C.gold, fontSize: 28, fontWeight: 700, marginBottom: 4 }}>
-                  {detailItem.price} 🌱
+                <div style={{ color: detailItem.price === 0 ? C.success : C.gold, fontSize: 28, fontWeight: 700, marginBottom: 4 }}>
+                  {detailItem.price === 0 ? '免费' : `${detailItem.price} 🌱`}
                 </div>
                 {detailItem.license_mode === 'reference_only' && (
                   <div style={{ color: C.textDim, fontSize: 12 }}>
@@ -510,7 +535,7 @@ export default function RpgMarketPage() {
               {purchaseResult ? (
                 <div style={{ background: C.success + '15', border: `1px solid ${C.success}30`, borderRadius: 8, padding: 16, textAlign: 'center' }}>
                   <div style={{ color: C.success, fontSize: 24, marginBottom: 8 }}>✓</div>
-                  <p style={{ color: C.text, fontSize: 14, margin: 0 }}>购买成功！资产已添加到你的库中</p>
+                  <p style={{ color: C.text, fontSize: 14, margin: 0 }}>{detailItem.price === 0 ? '领取成功！' : '购买成功！'}资产已添加到你的库中</p>
                 </div>
               ) : purchasing ? (
                 <div style={{
@@ -523,10 +548,13 @@ export default function RpgMarketPage() {
                 <button onClick={() => handlePurchaseClick(detailItem.id)} disabled={purchasing}
                   style={{
                     width: '100%', padding: '10px', borderRadius: 8, cursor: 'pointer',
-                    background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`, color: '#0b0b0f',
+                    background: detailItem.price === 0
+                      ? `linear-gradient(135deg, ${C.success}, #16a34a)`
+                      : `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
+                    color: detailItem.price === 0 ? '#fff' : '#0b0b0f',
                     border: 'none', fontSize: 15, fontWeight: 600,
                   }}>
-                  购买 - {detailItem.price} 🌱
+                  {detailItem.price === 0 ? '免费领取' : `购买 - ${detailItem.price} 🌱`}
                 </button>
               )}
 
@@ -601,7 +629,7 @@ export default function RpgMarketPage() {
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 12, color: C.textSec, display: 'block', marginBottom: 4 }}>价格（SEED）</label>
-                <input type="number" min={1} value={listForm.price} onChange={e => setListForm(f => ({ ...f, price: parseInt(e.target.value) || 0 }))}
+                <input type="number" min={0} value={listForm.price} onChange={e => setListForm(f => ({ ...f, price: parseInt(e.target.value) || 0 }))}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: 6, background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, fontSize: 13 }} />
               </div>
 
@@ -640,37 +668,39 @@ export default function RpgMarketPage() {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}
             onClick={e => { if (e.target === e.currentTarget) setShowPurchaseConfirm(false); }}>
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 28, maxWidth: 400, width: '90%', textAlign: 'center' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🛒</div>
-              <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", color: C.gold, fontSize: 18, margin: '0 0 12px' }}>
-                确认购买
+              <div style={{ fontSize: 36, marginBottom: 12 }}>{detailItem.price === 0 ? '🎁' : '🛒'}</div>
+              <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", color: detailItem.price === 0 ? C.success : C.gold, fontSize: 18, margin: '0 0 12px' }}>
+                {detailItem.price === 0 ? '免费领取' : '确认购买'}
               </h3>
               <p style={{ color: C.textSec, fontSize: 14, margin: '0 0 8px', lineHeight: 1.5 }}>
-                你即将购买 <strong style={{ color: C.text }}>{TYPE_ICON[detailItem.type]} {detailItem.name || '未命名'}</strong>
+                你即将{detailItem.price === 0 ? '免费领取' : '购买'} <strong style={{ color: C.text }}>{TYPE_ICON[detailItem.type]} {detailItem.name || '未命名'}</strong>
               </p>
               <p style={{ color: C.textDim, fontSize: 13, margin: '0 0 16px' }}>
                 {TYPE_LABEL[detailItem.type] || detailItem.type} · {detailItem.license_mode === 'reference_only' ? '引用模式' : '完整复制'}
               </p>
 
-              <div style={{
-                background: C.bg, borderRadius: 8, padding: 16, marginBottom: 20,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ color: C.textDim, fontSize: 11, marginBottom: 2 }}>支付金额</div>
-                  <div style={{ color: C.gold, fontSize: 22, fontWeight: 700 }}>{detailItem.price} 🌱</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ color: C.textDim, fontSize: 11, marginBottom: 2 }}>你的余额</div>
-                  <div style={{
-                    color: userBalance !== null && userBalance < detailItem.price ? C.danger : C.text,
-                    fontSize: 16, fontWeight: 600,
-                  }}>
-                    {userBalance !== null ? `${userBalance.toLocaleString()} 🌱` : '加载中...'}
+              {detailItem.price > 0 && (
+                <div style={{
+                  background: C.bg, borderRadius: 8, padding: 16, marginBottom: 20,
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ color: C.textDim, fontSize: 11, marginBottom: 2 }}>支付金额</div>
+                    <div style={{ color: C.gold, fontSize: 22, fontWeight: 700 }}>{detailItem.price} 🌱</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: C.textDim, fontSize: 11, marginBottom: 2 }}>你的余额</div>
+                    <div style={{
+                      color: userBalance !== null && userBalance < detailItem.price ? C.danger : C.text,
+                      fontSize: 16, fontWeight: 600,
+                    }}>
+                      {userBalance !== null ? `${userBalance.toLocaleString()} 🌱` : '加载中...'}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {userBalance !== null && userBalance < detailItem.price && (
+              {detailItem.price > 0 && userBalance !== null && userBalance < detailItem.price && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 6, background: C.danger + '15',
                   border: `1px solid ${C.danger}30`, marginBottom: 16, fontSize: 13, color: C.danger,
@@ -689,14 +719,23 @@ export default function RpgMarketPage() {
                   取消
                 </button>
                 <button onClick={handlePurchaseConfirm}
-                  disabled={userBalance !== null && userBalance < detailItem.price}
+                  disabled={detailItem.price > 0 && userBalance !== null && userBalance < detailItem.price}
                   style={{
-                    flex: 1, padding: '10px', borderRadius: 6, cursor: (userBalance !== null && userBalance < detailItem.price) ? 'not-allowed' : 'pointer',
-                    background: (userBalance !== null && userBalance < detailItem.price) ? C.border : `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
-                    border: 'none', color: (userBalance !== null && userBalance < detailItem.price) ? C.textDim : '#0b0b0f',
-                    fontSize: 14, fontWeight: 600, opacity: (userBalance !== null && userBalance < detailItem.price) ? 0.5 : 1,
+                    flex: 1, padding: '10px', borderRadius: 6,
+                    cursor: (detailItem.price > 0 && userBalance !== null && userBalance < detailItem.price) ? 'not-allowed' : 'pointer',
+                    background: (detailItem.price > 0 && userBalance !== null && userBalance < detailItem.price)
+                      ? C.border
+                      : detailItem.price === 0
+                        ? `linear-gradient(135deg, ${C.success}, #16a34a)`
+                        : `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
+                    border: 'none',
+                    color: (detailItem.price > 0 && userBalance !== null && userBalance < detailItem.price)
+                      ? C.textDim
+                      : detailItem.price === 0 ? '#fff' : '#0b0b0f',
+                    fontSize: 14, fontWeight: 600,
+                    opacity: (detailItem.price > 0 && userBalance !== null && userBalance < detailItem.price) ? 0.5 : 1,
                   }}>
-                  确认购买 {detailItem.price} 🌱
+                  {detailItem.price === 0 ? '确认领取' : `确认购买 ${detailItem.price} 🌱`}
                 </button>
               </div>
             </div>

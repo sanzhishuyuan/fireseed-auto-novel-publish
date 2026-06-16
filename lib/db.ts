@@ -1140,16 +1140,73 @@ db.exec(`
     delivery_asset_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  -- ===== 战斗系统表 =====
+  CREATE TABLE IF NOT EXISTS rpg_combat_sessions (
+    id TEXT PRIMARY KEY,
+    campaign_id TEXT NOT NULL,
+    state_json TEXT NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ended_at DATETIME,
+    FOREIGN KEY (campaign_id) REFERENCES rpg_campaigns(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS rpg_combat_participants (
+    id TEXT PRIMARY KEY,
+    combat_session_id TEXT NOT NULL,
+    participant_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    is_player INTEGER NOT NULL DEFAULT 0,
+    agility INTEGER NOT NULL DEFAULT 10,
+    health INTEGER NOT NULL DEFAULT 100,
+    max_health INTEGER NOT NULL DEFAULT 100,
+    status_effects TEXT DEFAULT '[]',
+    FOREIGN KEY (combat_session_id) REFERENCES rpg_combat_sessions(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS rpg_combat_turns (
+    id TEXT PRIMARY KEY,
+    combat_session_id TEXT NOT NULL,
+    turn_number INTEGER NOT NULL,
+    actor_id TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    target_id TEXT,
+    result_json TEXT NOT NULL DEFAULT '{}',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (combat_session_id) REFERENCES rpg_combat_sessions(id) ON DELETE CASCADE
+  );
 `);
 
 // 索引
 try {
+  // 市场列表核心索引
   db.exec(`CREATE INDEX IF NOT EXISTS idx_market_type_status ON rpg_market_listings(asset_type, status)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_market_seller ON rpg_market_listings(seller_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_market_price ON rpg_market_listings(price)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_market_created ON rpg_market_listings(created_at DESC)`);
+
+  // 资产库索引
   db.exec(`CREATE INDEX IF NOT EXISTS idx_library_user ON rpg_asset_library(user_id, asset_type)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_library_asset ON rpg_asset_library(asset_id, asset_type)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_library_source ON rpg_asset_library(user_id, source)`);
+
+  // 创作者评价索引
   db.exec(`CREATE INDEX IF NOT EXISTS idx_ratings_ratee ON rpg_creator_ratings(ratee_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ratings_listing ON rpg_creator_ratings(listing_id)`);
+
+  // 创作任务索引
   db.exec(`CREATE INDEX IF NOT EXISTS idx_commission_status ON rpg_commission_tasks(status)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_commission_requester ON rpg_commission_tasks(requester_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_commission_assignee ON rpg_commission_tasks(assignee_id)`);
+
+  // RPG 资产排序优化索引
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_characters_rating ON rpg_characters(avg_rating DESC, rating_count DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_characters_downloads ON rpg_characters(download_count DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_lorebooks_rating ON rpg_lorebooks(avg_rating DESC, rating_count DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_lorebooks_downloads ON rpg_lorebooks(download_count DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_campaigns_rating ON rpg_campaigns(avg_rating DESC, rating_count DESC)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_campaigns_downloads ON rpg_campaigns(download_count DESC)`);
 } catch (e) { /* 索引已存在，忽略 */ }
 
 // ===== RPG 经济迁移：为已有 RPG 表新增字段 =====

@@ -66,14 +66,24 @@ export default function CampaignsListPage() {
               管理你的所有副本，创建或购买新的冒险
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 10 }}>
             <Link href="/rpg"
+              className="nav-back-btn"
               style={{
-                padding: '8px 16px', borderRadius: 6,
-                background: 'transparent', border: `1px solid ${C.border}`,
-                color: C.textSec, textDecoration: 'none', fontSize: 13,
+                padding: '8px 18px',
+                borderRadius: 6,
+                background: `${C.gold}10`,
+                border: `1px solid ${C.gold}40`,
+                color: C.gold,
+                textDecoration: 'none',
+                fontSize: 15,
+                fontWeight: 600,
+                transition: 'all 0.2s',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
               }}>
-              ← 返回酒馆
+              ← 回到酒馆
             </Link>
             {tab === 'owned' && (
               <Link href="/rpg/campaigns/new"

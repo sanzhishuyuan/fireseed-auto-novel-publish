@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const C = {
   bg: '#0b0b0f', card: '#131318', border: '#1e1e24',
@@ -133,6 +134,28 @@ export default function CreateCharacterPage() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text }}>
       <div className="max-w-2xl mx-auto px-4 py-12">
+        {/* 顶部导航 */}
+        <div style={{ marginBottom: 24 }}>
+          <Link href="/rpg/characters"
+            className="nav-back-btn"
+            style={{
+              color: C.gold,
+              fontSize: 15,
+              fontWeight: 600,
+              textDecoration: 'none',
+              padding: '8px 18px',
+              borderRadius: 6,
+              background: `${C.gold}10`,
+              border: `1px solid ${C.gold}40`,
+              transition: 'all 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}>
+            ← 回到角色工坊
+          </Link>
+        </div>
+
         <h1 style={{ fontFamily: "'Fraunces', Georgia, serif", color: C.gold, fontSize: 24, marginBottom: 4 }}>
           创建角色
         </h1>

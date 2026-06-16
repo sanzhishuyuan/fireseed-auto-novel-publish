@@ -504,3 +504,16 @@ body.no-scroll {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* === RPG Navigation Back Button === */
+.nav-back-btn:hover {
+  background: rgba(201, 165, 92, 0.2) !important;
+  border-color: rgba(201, 165, 92, 0.6) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(201, 165, 92, 0.15);
+}
+
+.nav-back-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(201, 165, 92, 0.1);
+}

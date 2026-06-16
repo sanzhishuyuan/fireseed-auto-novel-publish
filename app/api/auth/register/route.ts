@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { safeParseJSON } from '@/lib/request-parser';
 import { getOrCreateWallet, transferSeed } from '@/lib/seed';
+import { createStarterPack } from '@/lib/rpg/economy';
 import { sendNewUserNotification, sendWelcomeEmail } from '@/lib/mail';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ai-novel-secret-key-2024';
@@ -54,6 +55,13 @@ export async function POST(request: NextRequest) {
     transferSeed(userId, 100, 'register_bonus', {
       description: '🎉 注册成功，赠送 100 🌱 新手红包！可用于点赞、收藏等互动~'
     });
+
+    // 🎮 赠送 RPG 新手礼包（人物卡 + 世界书 + 副本）
+    try {
+      createStarterPack(userId);
+    } catch (e) {
+      console.warn('Starter pack creation failed (non-blocking):', e);
+    }
 
     // === 处理推广码 ===
     if (referralCode) {

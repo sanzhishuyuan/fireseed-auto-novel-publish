@@ -102,6 +102,25 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ success: false, error: '无权删除此角色' }, { status: 403 });
     }
 
+    // 安全检查：是否正在副本中使用
+    const inUse = db.prepare(
+      'SELECT COUNT(*) as c FROM rpg_campaign_members WHERE character_id = ?'
+    ).get(id) as any;
+    if (inUse.c > 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: `该角色正在 ${inUse.c} 个副本中使用，无法删除。请先移除相关成员关联。` 
+      }, { status: 409 });
+    }
+
+    // 下架市场挂牌
+    db.prepare("UPDATE rpg_market_listings SET status = 'cancelled' WHERE asset_id = ? AND asset_type = 'character'")
+      .run(id);
+
+    // 删除资产链接引用
+    db.prepare('DELETE FROM rpg_asset_links WHERE source_id = ? AND source_type = "character"').run(id);
+    db.prepare('DELETE FROM rpg_asset_links WHERE linked_id = ? AND linked_type = "character"').run(id);
+
     db.prepare('DELETE FROM rpg_characters WHERE id = ?').run(id);
 
     return NextResponse.json({ success: true, data: { deleted: true } });

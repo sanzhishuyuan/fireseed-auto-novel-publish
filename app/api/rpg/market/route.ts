@@ -35,12 +35,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { asset_type, asset_id, price, license_mode } = body;
 
-    if (!asset_type || !asset_id || !price) {
+    if (!asset_type || !asset_id || price === undefined || price === null) {
       return NextResponse.json({ success: false, error: '缺少必填字段' }, { status: 400 });
     }
 
-    if (price < 1) {
-      return NextResponse.json({ success: false, error: '价格至少为 1 SEED' }, { status: 400 });
+    if (price < 0) {
+      return NextResponse.json({ success: false, error: '价格不能为负数' }, { status: 400 });
     }
 
     const listing = listAsset(

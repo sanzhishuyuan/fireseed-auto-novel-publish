@@ -29,6 +29,17 @@ export interface CharacterCardData {
     spells: string[];
     backstory: string;
     inventory: { name: string; quantity: number; description?: string }[];
+    // 命运公式扩展字段
+    dynamic_state?: {
+      cultivation?: { realm: string; realm_value?: number };
+      reputation?: number;
+      resources?: number;
+      health?: number;
+      rank?: string;
+      [key: string]: any;
+    };
+    flags?: Record<string, boolean | number | string>;
+    relationships?: { target: string; value: number }[];
   };
   character_book?: {
     entries: LorebookEntry[];

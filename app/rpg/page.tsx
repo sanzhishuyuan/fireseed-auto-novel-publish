@@ -28,14 +28,35 @@ export default function RpgLobbyPage() {
   const [characters, setCharacters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
+  const [showNewbieGuide, setShowNewbieGuide] = useState(false);
+  const [newbieAssets, setNewbieAssets] = useState<{ campaignId?: string; characterName?: string }>({});
 
   useEffect(() => {
     Promise.all([
       fetch('/api/rpg/campaigns').then(r => r.ok ? r.json() : Promise.reject()),
       fetch('/api/rpg/characters').then(r => r.ok ? r.json() : Promise.reject()),
-    ]).then(([c, ch]) => {
+      // 检查是否有新手礼包资产
+      fetch('/api/rpg/assets/my').then(r => r.ok ? r.json() : Promise.resolve({ success: true, data: [] })),
+    ]).then(([c, ch, assets]) => {
       if (c.success) setCampaigns(c.data || []);
       if (ch.success) setCharacters(ch.data || []);
+      
+      // 检测新手引导条件
+      if (assets.success && assets.data) {
+        const starterPack = assets.data.find((a: any) => 
+          a.source === 'free_claim' && a.asset_type === 'module' && a.name?.includes('雾隐镇')
+        );
+        if (starterPack && campaigns.length > 0) {
+          const hasStartedCampaign = campaigns.some((cp: any) => cp.name?.includes('雾隐镇初冒险'));
+          if (!hasStartedCampaign) {
+            setShowNewbieGuide(true);
+            setNewbieAssets({
+              campaignId: starterPack.asset_id,
+              characterName: characters.find((ch: any) => ch.name === '李青云')?.name,
+            });
+          }
+        }
+      }
     }).catch(() => setAuthError(true)).finally(() => setLoading(false));
   }, []);
 
@@ -109,6 +130,52 @@ export default function RpgLobbyPage() {
             </Link>
           </div>
         </div>
+
+        {/* 新手引导卡片 */}
+        {showNewbieGuide && newbieAssets.campaignId && (
+          <div style={{
+            padding: 20, borderRadius: 12, marginBottom: 24,
+            background: `linear-gradient(135deg, ${C.gold}10, ${C.purple}10)`,
+            border: `1px solid ${C.gold}40`,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", color: C.gold, fontSize: 18, margin: '0 0 8px' }}>
+                  🎉 欢迎来到雾隐酒馆！
+                </h3>
+                <p style={{ color: C.textSec, fontSize: 14, lineHeight: 1.7, margin: '0 0 12px', maxWidth: 600 }}>
+                  你的冒险已经准备就绪：<strong>{newbieAssets.characterName || '李青云'}</strong> 正在等待出发，
+                  <strong>「雾隐镇初冒险」</strong>副本已为你创建。这是你的第一个任务——探索雾隐镇，结识伙伴，开启传奇之旅。
+                </p>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <Link href={`/rpg/campaigns/${newbieAssets.campaignId}`}
+                    style={{
+                      padding: '10px 24px', borderRadius: 6, textDecoration: 'none', fontSize: 14, fontWeight: 600,
+                      background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
+                      color: '#0b0b0f',
+                    }}>
+                    ⚔️ 开始第一次冒险
+                  </Link>
+                  <button onClick={() => setShowNewbieGuide(false)}
+                    style={{
+                      padding: '10px 20px', borderRadius: 6, cursor: 'pointer', fontSize: 14,
+                      background: 'transparent', border: `1px solid ${C.border}`,
+                      color: C.textDim,
+                    }}>
+                    稍后再说
+                  </button>
+                </div>
+              </div>
+              <button onClick={() => setShowNewbieGuide(false)}
+                style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  color: C.textDim, fontSize: 20, padding: 4,
+                }}>
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {authError && (
           <div style={{

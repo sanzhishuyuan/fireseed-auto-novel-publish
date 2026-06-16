@@ -162,7 +162,7 @@ export function listAsset(
 
   const level = seller.creator_level || 0;
   const maxPrice = getMaxPrice(level);
-  if (maxPrice === 0) throw new Error('当前等级不能发布专业资产，需要 L2 以上');
+  if (price > 0 && maxPrice === 0) throw new Error('当前等级不能发布付费资产，需要 L2 以上');
   if (price > maxPrice) throw new Error(`定价超出等级上限：${maxPrice} SEED`);
 
   // 验证资产存在且属于该用户
@@ -221,7 +221,7 @@ export function listAsset(
   };
 }
 
-/** 购买资产 */
+/** 购买/免费领取资产 */
 export function buyAsset(
   buyerId: string,
   listingId: string
@@ -229,12 +229,24 @@ export function buyAsset(
   const listing = db.prepare('SELECT * FROM rpg_market_listings WHERE id = ? AND status = ?')
     .get(listingId, 'active') as any;
   if (!listing) throw new Error('该商品已下架或不存在');
-  if (listing.seller_id === buyerId) throw new Error('不能购买自己的资产');
+  if (listing.seller_id === buyerId) throw new Error('不能获取自己的资产');
 
-  // 检查买家余额
-  const balance = getBalance(buyerId);
-  if (balance < listing.price) {
-    throw new Error(`SEED 余额不足！当前 ${balance} 🌱，需要 ${listing.price} 🌱`);
+  const isFree = listing.price === 0;
+
+  // 免费资产：检查是否已领取过
+  if (isFree) {
+    const alreadyClaimed = db.prepare(
+      "SELECT id FROM rpg_asset_library WHERE user_id = ? AND asset_id = ? AND asset_type = ?"
+    ).get(buyerId, listing.asset_id, listing.asset_type) as any;
+    if (alreadyClaimed) throw new Error('你已领取过该资产');
+  }
+
+  // 付费资产：检查余额
+  if (!isFree) {
+    const balance = getBalance(buyerId);
+    if (balance < listing.price) {
+      throw new Error(`SEED 余额不足！当前 ${balance} 🌱，需要 ${listing.price} 🌱`);
+    }
   }
 
   // 获取资产信息
@@ -258,27 +270,47 @@ export function buyAsset(
 
   // 在事务中执行所有操作，确保原子性
   const libId = uuidv4();
-  const fundAmount = Math.floor(listing.price * CREATOR_FUND_RATE);
 
   db.transaction(() => {
-    // 1. 执行交易（SEED 转移）
-    transferBetweenUsers(buyerId, listing.seller_id, listing.price, 'rpg_purchase', {
-      refId: listingId,
-      description: `购买 ${listing.asset_type === 'character' ? '角色卡' : listing.asset_type === 'lorebook' ? '世界书' : '战役模组'}：${assetName}`,
-      platformShare: listing.platform_fee,
-    });
+    if (!isFree) {
+      // === 付费资产：完整交易流程 ===
+      const fundAmount = Math.floor(listing.price * CREATOR_FUND_RATE);
 
-    // 2. 更新挂牌状态
-    db.prepare(`
-      UPDATE rpg_market_listings SET status = 'sold', buyer_id = ?, sold_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(buyerId, listingId);
+      // 1. 执行交易（SEED 转移）
+      transferBetweenUsers(buyerId, listing.seller_id, listing.price, 'rpg_purchase', {
+        refId: listingId,
+        description: `购买 ${listing.asset_type === 'character' ? '角色卡' : listing.asset_type === 'lorebook' ? '世界书' : '战役模组'}：${assetName}`,
+        platformShare: listing.platform_fee,
+      });
 
-    // 3. 添加到买家资产库（关键：必须成功才能显示已购买）
+      // 2. 更新挂牌状态（付费商品标记为已售出）
+      db.prepare(`
+        UPDATE rpg_market_listings SET status = 'sold', buyer_id = ?, sold_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(buyerId, listingId);
+
+      // 5. 给创作者加信誉积分
+      addCreatorScore(listing.seller_id, 5);
+      // 6. 增加创作者的销售额统计
+      db.prepare('UPDATE users SET total_sales_volume = total_sales_volume + ? WHERE id = ?')
+        .run(listing.price, listing.seller_id);
+
+      // 7. 创作者基金（5%）
+      if (fundAmount > 0) {
+        transferSeed('platform', fundAmount, 'rpg_purchase', {
+          refId: listingId,
+          description: `创作者基金注入：${assetName}`,
+        });
+      }
+    }
+    // 免费资产：不转移 SEED，不修改挂牌状态，不抽成，保持 active 供他人领取
+
+    // 3. 添加到买家/领取者资产库
     db.prepare(`
       INSERT INTO rpg_asset_library (id, user_id, asset_type, asset_id, license_mode, source, source_listing_id)
-      VALUES (?, ?, ?, ?, ?, 'purchased', ?)
-    `).run(libId, buyerId, listing.asset_type, listing.asset_id, listing.license_mode, listingId);
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(libId, buyerId, listing.asset_type, listing.asset_id, listing.license_mode,
+      isFree ? 'free_claim' : 'purchased', listingId);
 
     // 4. 更新下载/复制计数（含副本）
     if (listing.asset_type === 'character') {
@@ -287,26 +319,29 @@ export function buyAsset(
       db.prepare('UPDATE rpg_lorebooks SET download_count = download_count + 1, copy_count = copy_count + 1 WHERE id = ?').run(listing.asset_id);
     } else if (listing.asset_type === 'module') {
       db.prepare('UPDATE rpg_campaigns SET download_count = download_count + 1, copy_count = copy_count + 1 WHERE id = ?').run(listing.asset_id);
-    }
 
-    // 5. 给创作者加信誉积分
-    addCreatorScore(listing.seller_id, 5);
-    // 6. 增加创作者的销售额统计
-    db.prepare('UPDATE users SET total_sales_volume = total_sales_volume + ? WHERE id = ?')
-      .run(listing.price, listing.seller_id);
+      // 5. 购买副本后自动加入为成员（如果没有已存在的角色卡，需要用户自行创建或选择）
+      const alreadyMember = db.prepare(
+        'SELECT id FROM rpg_campaign_members WHERE campaign_id = ? AND user_id = ?'
+      ).get(listing.asset_id, buyerId);
+      
+      if (!alreadyMember) {
+        // 获取买家的第一个角色卡作为默认角色（如果有）
+        const defaultChar = db.prepare(
+          'SELECT id FROM rpg_characters WHERE user_id = ? ORDER BY created_at ASC LIMIT 1'
+        ).get(buyerId) as any;
 
-    // 7. 创作者基金（5%）
-    if (fundAmount > 0) {
-      transferSeed('platform', fundAmount, 'rpg_purchase', {
-        refId: listingId,
-        description: `创作者基金注入：${assetName}`,
-      });
+        db.prepare(`
+          INSERT OR IGNORE INTO rpg_campaign_members (campaign_id, user_id, character_id, role)
+          VALUES (?, ?, ?, 'player')
+        `).run(listing.asset_id, buyerId, defaultChar?.id || null);
+      }
     }
   })();
 
   return {
     success: true,
-    listing: { ...listing, status: 'sold', buyer_id: buyerId },
+    listing: { ...listing, status: isFree ? 'active' : 'sold', buyer_id: buyerId },
     assetData: listing.license_mode === 'reference_only'
       ? { id: assetData.id, name: assetData.name, description: assetData.description, _referenceOnly: true }
       : assetData,
@@ -350,8 +385,10 @@ export function browseMarket(options: {
     params.push(assetType);
   }
   if (search) {
+    // 转义 SQL LIKE 特殊字符 % _ \
+    const escapedSearch = search.replace(/([%_\\])/g, '\\$1');
     where += ' AND (a.name LIKE ? OR a.description LIKE ?)';
-    params.push(`%${search}%`, `%${search}%`);
+    params.push(`%${escapedSearch}%`, `%${escapedSearch}%`);
   }
 
   // 不同资产类型关联不同表
@@ -411,7 +448,7 @@ export function browseMarket(options: {
   };
 }
 
-/** 获取已购买的资产列表 */
+/** 获取已购买的资产列表（含免费领取） */
 export function getPurchasedAssets(userId: string): any[] {
   return db.prepare(`
     SELECT al.*, c.name as char_name, l.name as lore_name, cp.name as campaign_name
@@ -419,7 +456,7 @@ export function getPurchasedAssets(userId: string): any[] {
     LEFT JOIN rpg_characters c ON al.asset_type = 'character' AND al.asset_id = c.id
     LEFT JOIN rpg_lorebooks l ON al.asset_type = 'lorebook' AND al.asset_id = l.id
     LEFT JOIN rpg_campaigns cp ON al.asset_type = 'module' AND al.asset_id = cp.id
-    WHERE al.user_id = ? AND al.source = 'purchased'
+    WHERE al.user_id = ? AND al.source IN ('purchased', 'free_claim')
     ORDER BY al.acquired_at DESC
   `).all(userId);
 }
@@ -755,4 +792,99 @@ export function chargeGMInteraction(
 export function canAffordGM(userId: string, campaignMode: 'solo' | 'coop'): boolean {
   const cost = campaignMode === 'solo' ? GM_SOLO_COST : GM_COOP_COST;
   return getBalance(userId) >= cost;
+}
+
+// ===== 新手 Starter Pack =====
+
+/** 为新注册用户创建 RPG 新手礼包（人物卡 + 世界书 + 副本） */
+export function createStarterPack(userId: string): { characterId: string; lorebookId: string; campaignId: string } {
+  const characterId = uuidv4();
+  const lorebookId = uuidv4();
+  const campaignId = uuidv4();
+  const sessionId = uuidv4();
+
+  // 1. 创建新手人物卡 —— 流浪剑客
+  const cardData = {
+    name: '李青云',
+    description: '一位出身平凡的年轻剑客，自幼在山村长大。一场突如其来的变故让他踏上了冒险之路。他性格温和但意志坚定，手持一柄祖传铁剑，虽然不是什么神兵利器，却承载着他全部的信念。',
+    personality: '善良、坚韧，带着年轻人特有的好奇心与热血。说话坦诚，有时显得天真，但在关键时刻总能做出正确的选择。对陌生人保持友善，但内心有自己的底线。',
+    scenario: '李青云离开家乡已经三天了。沿着山间小路走了许久，他终于在黄昏时分来到了一座小镇——"雾隐镇"。镇口的告示牌上写着"欢迎来到雾隐镇——冒险者的起点"。',
+    first_mes: '"终于到了……"你站在镇口，望着远处炊烟袅袅的屋顶，深吸一口气。背后是连绵的群山，前方是未知但充满可能的冒险。你摸了摸腰间的铁剑，迈步走进了雾隐镇。',
+    mes_example: '',
+    system_prompt: '',
+    post_history_instructions: '',
+    tags: ['新手', '剑客', '冒险'],
+    creator: '系统',
+    character_version: '1.0',
+    trpg: {
+      system: 'dnd5e', level: 1,
+      attributes: { 力量: 14, 敏捷: 13, 体质: 12, 智力: 10, 感知: 11, 魅力: 12 },
+      skills: { 剑术: 4, 运动: 3, 察觉: 2, 求生: 2 },
+      hp: { current: 12, max: 12 },
+      equipment: ['祖传铁剑', '旅行者服装', '背包', '干粮（3天）', '水囊', '10枚铜币'],
+      spells: [],
+      backstory: '李青云出生在一个偏远的山村，从小跟着爷爷学习基础剑术。18岁那年，爷爷将祖传铁剑交到他手中，鼓励他出去闯荡。"去看看外面的世界，"爷爷说，"但记住，剑是用来保护人的，不是用来伤害人的。"',
+      inventory: [{ name: '家书', quantity: 1, description: '爷爷写的平安信' }],
+    },
+  };
+
+  db.prepare(`
+    INSERT INTO rpg_characters (id, user_id, name, spec_version, card_data, system, is_public, seed_price, license_type, char_type)
+    VALUES (?, ?, ?, '2.0', ?, 'dnd5e', 0, 0, 'personal', 'dedicated')
+  `).run(characterId, userId, '李青云', JSON.stringify(cardData));
+
+  // 2. 创建新手世界书 —— 雾隐大陆
+  const lorebookEntries = [
+    {
+      keys: ['雾隐镇', '雾隐'],
+      content: '雾隐镇是冒险者的起始之地，坐落于雾隐大陆的中央平原。小镇不大，但五脏俱全：有一家"醉仙楼"酒馆、一间杂货铺、一座冒险者公会分部，以及一座供奉战神的小神庙。镇长是一位退休的老冒险者，名叫赵铁柱。',
+      priority: 10, constant: true, selective: false,
+    },
+    {
+      keys: ['冒险者公会', '公会'],
+      content: '雾隐镇冒险者公部分部是一栋两层石楼。一楼是任务大厅，张贴着各种委托——从驱赶野兽到护送商队应有尽有。二楼是休息区和装备寄存处。公会负责人是一位名叫林婉儿的年轻女性，她总是笑容满面但办事效率极高。',
+      priority: 8, constant: false, selective: false,
+    },
+    {
+      keys: ['醉仙楼', '酒馆'],
+      content: '醉仙楼是雾隐镇最大的酒馆，老板是一位胖乎乎的中年人"王胖子"。这里提供各种美食和饮品，也是冒险者们交换情报的地方。招牌菜是"红烧灵猪肉"，招牌酒是"百年醉仙酿"（价格不菲但物有所值）。',
+      priority: 6, constant: false, selective: false,
+    },
+    {
+      keys: ['暗影森林', '森林'],
+      content: '位于雾隐镇以北十里的一片古老森林。据说林中栖息着各种奇异生物，偶尔还有冒险者报告在深处发现了古老遗迹。森林外围相对安全，但越往深处走，危险越大。新手冒险者通常只在外围完成采集和猎杀任务。',
+      priority: 7, constant: false, selective: false,
+    },
+  ];
+
+  db.prepare(`
+    INSERT INTO rpg_lorebooks (id, name, description, user_id, entries, is_public, st_compatible, seed_price, license_type)
+    VALUES (?, ?, ?, ?, ?, 0, 1, 0, 'personal')
+  `).run(lorebookId, '雾隐大陆', '一本简明的大陆设定集，包含雾隐镇及周边地区的基本信息，适合新手冒险者快速了解世界。', userId, JSON.stringify(lorebookEntries));
+
+  // 3. 创建新手副本 —— 雾隐镇初冒险
+  db.prepare(`
+    INSERT INTO rpg_campaigns (id, name, mode, system, gm_type, world_brief, lorebook_id, status, created_by)
+    VALUES (?, ?, 'solo', 'dnd5e', 'ai', ?, ?, 'active', ?)
+  `).run(
+    campaignId,
+    '雾隐镇初冒险',
+    '你是一名初出茅庐的冒险者，刚刚来到雾隐镇。在这里，你将接到第一个任务，认识第一个伙伴，迈出冒险生涯的第一步。前往冒险者公会，开始你的故事吧！',
+    lorebookId,
+    userId
+  );
+
+  // 4. 将用户添加为副本成员
+  db.prepare(`
+    INSERT OR IGNORE INTO rpg_campaign_members (campaign_id, user_id, character_id, role)
+    VALUES (?, ?, ?, 'player')
+  `).run(campaignId, userId, characterId);
+
+  // 5. 创建第一个会话
+  db.prepare(`
+    INSERT INTO rpg_sessions (id, campaign_id, title, session_number, status)
+    VALUES (?, ?, '第1章: 初到雾隐镇', 1, 'active')
+  `).run(sessionId, campaignId);
+
+  return { characterId, lorebookId, campaignId };
 }

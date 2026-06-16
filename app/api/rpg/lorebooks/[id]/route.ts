@@ -135,7 +135,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 /**
- * DELETE — 删除世界书
+ * DELETE — 删除世界书（含级联安全检查）
  */
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -151,8 +151,25 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ success: false, error: '世界书不存在或无权删除' }, { status: 404 });
     }
 
-    // 解除关联战役
+    // 检查是否有副本正在使用此世界书
+    const inUse = db.prepare('SELECT COUNT(*) as c FROM rpg_campaigns WHERE lorebook_id = ?').get(id) as any;
+    if (inUse.c > 0) {
+      return NextResponse.json(
+        { success: false, error: `该世界书正在 ${inUse.c} 个副本中使用，无法删除` },
+        { status: 409 }
+      );
+    }
+
+    // 下架市场中的世界书 listings
+    db.prepare("UPDATE rpg_market_listings SET status = 'cancelled' WHERE asset_id = ? AND asset_type = 'lorebook'").run(id);
+
+    // 清理资产库关联
+    db.prepare('DELETE FROM rpg_asset_library WHERE asset_id = ? AND asset_type = "lorebook"').run(id);
+
+    // 解除关联战役（兜底，理论上上面的检查已阻止）
     db.prepare('UPDATE rpg_campaigns SET lorebook_id = NULL WHERE lorebook_id = ?').run(id);
+    
+    // 删除世界书
     db.prepare('DELETE FROM rpg_lorebooks WHERE id = ?').run(id);
 
     return NextResponse.json({ success: true });

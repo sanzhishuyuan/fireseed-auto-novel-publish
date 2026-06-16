@@ -93,9 +93,26 @@ export default function CharacterDetailPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <Link href="/rpg" style={{ color: C.gold, fontSize: 14 }}>← 返回酒馆</Link>
+          <Link href="/rpg"
+            className="nav-back-btn"
+            style={{
+              color: C.gold,
+              fontSize: 15,
+              fontWeight: 600,
+              textDecoration: 'none',
+              padding: '8px 18px',
+              borderRadius: 6,
+              background: `${C.gold}10`,
+              border: `1px solid ${C.gold}40`,
+              transition: 'all 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}>
+            ← 回到酒馆
+          </Link>
           <span style={{ color: C.textDim }}>/</span>
-          <span style={{ color: C.textSec, fontSize: 14 }}>角色</span>
+          <span style={{ color: C.textSec, fontSize: 15 }}>角色工坊</span>
         </div>
 
         <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', marginBottom: 32 }}>

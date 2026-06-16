@@ -76,7 +76,24 @@ export default function LorebookListPage() {
       <div className="max-w-3xl mx-auto px-4 py-12">
         {/* 导航 */}
         <div style={{ marginBottom: 24 }}>
-          <Link href="/rpg" style={{ color: C.gold, fontSize: 14, textDecoration: 'none' }}>← 返回酒馆</Link>
+          <Link href="/rpg"
+            className="nav-back-btn"
+            style={{
+              color: C.gold,
+              fontSize: 15,
+              fontWeight: 600,
+              textDecoration: 'none',
+              padding: '8px 18px',
+              borderRadius: 6,
+              background: `${C.gold}10`,
+              border: `1px solid ${C.gold}40`,
+              transition: 'all 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}>
+            ← 回到酒馆
+          </Link>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>

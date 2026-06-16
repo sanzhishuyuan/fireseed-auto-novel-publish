@@ -1,7 +1,7 @@
 // FireSeed PWA Service Worker
 // 缓存策略：静态资源优先缓存，API 请求优先网络
 
-const CACHE_NAME = 'fireseed-v2-1781309258';
+const CACHE_NAME = 'fireseed-v3-' + Date.now();
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -50,12 +50,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 静态资源（.next, /public）：缓存优先
+  // 静态资源（.next, /public）：网络优先（避免部署后使用过期缓存）
   if (
     url.pathname.startsWith('/_next/') ||
     url.pathname.startsWith('/static/')
   ) {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(networkFirst(request));
     return;
   }
 

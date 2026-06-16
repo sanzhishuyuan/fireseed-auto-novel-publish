@@ -9,10 +9,38 @@ const C = {
   gold: '#c9a55c', goldDim: '#a6823a',
   text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
   inputBg: '#1a1a20', danger: '#ef4444', success: '#22c55e',
+  fateSuccess: '#22c55e', fateFail: '#ef4444', fateCritical: '#a855f7', fateMixed: '#eab308',
 };
 
 const SYS_LABEL: Record<string, string> = {
   dnd5e: 'D&D 5e', coc7th: 'CoC 7th', shadowrun: '暗影狂奔', custom: '自由',
+};
+
+const ACTION_BUTTONS = [
+  { key: 'combat_attack', label: '⚔️ 攻击', color: '#ef4444' },
+  { key: 'combat_defend', label: '🛡️ 防御', color: '#3b82f6' },
+  { key: 'persuade_neutral', label: '💬 说服', color: '#22c55e' },
+  { key: 'stealth', label: '🏃 潜行', color: '#8b5cf6' },
+  { key: 'search', label: '🔍 搜索', color: '#eab308' },
+  { key: 'perception', label: '👁️ 感知', color: '#06b6d4' },
+  { key: 'deceive', label: '🎭 欺骗', color: '#ec4899' },
+  { key: 'bargain', label: '💰 交易', color: '#f59e0b' },
+  { key: 'healing', label: '💊 治疗', color: '#10b981' },
+  { key: 'knowledge', label: '📚 知识', color: '#6366f1' },
+  { key: 'climb', label: '🧗 攀爬', color: '#78716c' },
+  { key: 'lockpick', label: '🔓 开锁', color: '#a78bfa' },
+  { key: 'breakthrough_minor', label: '✨ 修炼', color: '#c084fc' },
+  { key: 'breakthrough_major', label: '⚡ 渡劫', color: '#f472b6' },
+  { key: 'alchemy', label: '🧪 炼丹', color: '#14b8a6' },
+  { key: 'crafting', label: '⚒️ 锻造', color: '#fb923c' },
+];
+
+const DEGREE_LABELS: Record<string, { text: string; color: string; icon: string }> = {
+  critical_success: { text: '大成功', color: C.fateCritical, icon: '🌟' },
+  success: { text: '成功', color: C.fateSuccess, icon: '✓' },
+  mixed: { text: '勉强成功', color: C.fateMixed, icon: '~' },
+  failure: { text: '失败', color: C.fateFail, icon: '✗' },
+  critical_failure: { text: '大失败', color: '#dc2626', icon: '💀' },
 };
 
 export default function CampaignPage() {
@@ -39,6 +67,15 @@ export default function CampaignPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
 
+  // Fate Formula state
+  const [fateActionType, setFateActionType] = useState<string | null>(null);
+  const [fateDifficulty, setFateDifficulty] = useState<number>(1.0);
+  const [fateMods, setFateMods] = useState<any>(null);
+  const [fateModsLoading, setFateModsLoading] = useState(false);
+  const [lastFateResult, setLastFateResult] = useState<any>(null);
+  const [showFatePanel, setShowFatePanel] = useState(false);
+  const [showActionButtons, setShowActionButtons] = useState(false);
+
   const loadCampaign = async () => {
     try {
       const res = await fetch(`/api/rpg/campaigns/${params.id}`);
@@ -56,7 +93,7 @@ export default function CampaignPage() {
 
   useEffect(() => { loadCampaign(); }, [params.id]);
 
-  // 加载资产关联
+  // Load asset links
   const loadAssetLinks = async () => {
     try {
       const res = await fetch(`/api/rpg/asset-links?sourceType=module&sourceId=${params.id}`);
@@ -67,7 +104,23 @@ export default function CampaignPage() {
 
   useEffect(() => { if (params.id) loadAssetLinks(); }, [params.id]);
 
-  // 搜索可关联的资产
+  // Load fate mods when character is selected
+  useEffect(() => {
+    const memberChar = members.find(m => m.character_id);
+    if (!memberChar?.character_id || !params.id) return;
+
+    const loadFateMods = async () => {
+      setFateModsLoading(true);
+      try {
+        const res = await fetch(`/api/rpg/fate?characterId=${memberChar.character_id}&campaignId=${params.id}`);
+        const d = await res.json();
+        if (d.success) setFateMods(d.data);
+      } catch {}
+      setFateModsLoading(false);
+    };
+    loadFateMods();
+  }, [members, params.id]);
+
   const handleLinkSearch = async () => {
     if (!linkSearch.trim()) return;
     setSearching(true);
@@ -77,7 +130,6 @@ export default function CampaignPage() {
         const d = await res.json();
         setSearchResults(d.success ? (d.data || []) : []);
       } else {
-        // 搜索世界书（公开的）
         const res = await fetch(`/api/rpg/lorebooks?search=${encodeURIComponent(linkSearch.trim())}`);
         const d = await res.json();
         setSearchResults(d.success ? (d.data || []) : []);
@@ -87,18 +139,14 @@ export default function CampaignPage() {
     }
   };
 
-  // 创建关联
   const handleCreateLink = async (linkedId: string) => {
     try {
       const res = await fetch('/api/rpg/asset-links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sourceType: 'module',
-          sourceId: params.id,
-          linkedType: linkType,
-          linkedId,
-          role: '',
+          sourceType: 'module', sourceId: params.id,
+          linkedType: linkType, linkedId, role: '',
         }),
       });
       const d = await res.json();
@@ -109,7 +157,6 @@ export default function CampaignPage() {
     } catch {}
   };
 
-  // 删除关联
   const handleDeleteLink = async (linkId: string) => {
     try {
       await fetch(`/api/rpg/asset-links/${linkId}`, { method: 'DELETE' });
@@ -129,7 +176,6 @@ export default function CampaignPage() {
     const memberChar = members.find(m => m.character_id);
     const characterId = memberChar?.character_id || undefined;
 
-    // 添加玩家消息到本地
     const optimisticMsg = {
       id: 'temp-' + Date.now(),
       role: 'player',
@@ -138,23 +184,36 @@ export default function CampaignPage() {
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, optimisticMsg]);
+    const savedAction = action.trim();
     setAction('');
 
     try {
       const res = await fetch(`/api/rpg/campaigns/${params.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: action.trim(), characterId }),
+        body: JSON.stringify({
+          action: savedAction,
+          characterId,
+          fateActionType: fateActionType || undefined,
+          fateDifficulty: fateDifficulty !== 1.0 ? fateDifficulty : undefined,
+        }),
       });
       const d = await res.json();
       if (d.success) {
-        // 替换乐观消息为服务器消息
         setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
         setMessages(prev => [...prev, ...(d.data?.message ? [d.data.message] : [])]);
         if (d.data?.diceRolls?.length > 0) {
           setDiceResult(d.data.diceRolls);
           setTimeout(() => setDiceResult(null), 5000);
         }
+        // Show fate result
+        if (d.data?.fateResult) {
+          setLastFateResult(d.data.fateResult);
+          setShowFatePanel(true);
+          setTimeout(() => setLastFateResult(null), 15000);
+        }
+        // Clear action type after send
+        setFateActionType(null);
       } else {
         setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
         setError(d.error || 'AI GM 响应失败');
@@ -177,7 +236,6 @@ export default function CampaignPage() {
       const d = await res.json();
       if (d.success) {
         setDiceResult([{ expression: diceExpr, detail: d.data.detail, total: d.data.total }]);
-        // 添加骰子消息到聊天
         const diceMsg = {
           id: 'dice-' + Date.now(),
           role: 'system',
@@ -198,8 +256,6 @@ export default function CampaignPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      // 简单的反馈
-      setError('');
       alert('存档成功！');
     } catch {
       alert('存档失败');
@@ -213,6 +269,11 @@ export default function CampaignPage() {
     }
   };
 
+  const selectActionType = (key: string) => {
+    setFateActionType(prev => prev === key ? null : key);
+    setShowActionButtons(false);
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -224,7 +285,7 @@ export default function CampaignPage() {
   if (!campaign) {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-        <p>异时空不存在</p>
+        <p>战役不存在</p>
         <Link href="/rpg" style={{ color: C.gold }}>回到酒馆</Link>
       </div>
     );
@@ -238,7 +299,24 @@ export default function CampaignPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link href="/rpg" style={{ color: C.gold, fontSize: 13, textDecoration: 'none' }}>← 酒馆</Link>
+          <Link href="/rpg"
+            className="nav-back-btn"
+            style={{
+              color: C.gold,
+              fontSize: 15,
+              fontWeight: 600,
+              textDecoration: 'none',
+              padding: '6px 14px',
+              borderRadius: 6,
+              background: `${C.gold}10`,
+              border: `1px solid ${C.gold}40`,
+              transition: 'all 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}>
+            ← 回到酒馆
+          </Link>
           <span style={{ color: C.textDim }}>/</span>
           <span style={{ fontFamily: "'Fraunces', Georgia, serif", color: C.gold, fontSize: 15 }}>
             {campaign.name}
@@ -247,11 +325,11 @@ export default function CampaignPage() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={handleSave}
-            className="codex-btn-ghost" style={{ padding: '4px 12px', borderRadius: 4, border: `1px solid ${C.border}`, cursor: 'pointer', background: 'transparent', color: C.textDim, fontSize: 12 }}>
+            style={{ padding: '4px 12px', borderRadius: 4, border: `1px solid ${C.border}`, cursor: 'pointer', background: 'transparent', color: C.textDim, fontSize: 12 }}>
             💾 存档
           </button>
           <button onClick={() => setShowSidebar(!showSidebar)}
-            className="codex-btn-ghost" style={{ padding: '4px 8px', borderRadius: 4, border: `1px solid ${C.border}`, cursor: 'pointer', background: 'transparent', color: C.textDim, fontSize: 12 }}>
+            style={{ padding: '4px 8px', borderRadius: 4, border: `1px solid ${C.border}`, cursor: 'pointer', background: 'transparent', color: C.textDim, fontSize: 12 }}>
             {showSidebar ? '▸' : '◂'}
           </button>
         </div>
@@ -328,7 +406,49 @@ export default function CampaignPage() {
             <div ref={chatEnd} />
           </div>
 
-          {/* Action Input */}
+          {/* Fate Result Popup */}
+          {lastFateResult && (
+            <div style={{
+              margin: '0 16px 8px',
+              padding: '12px 16px',
+              borderRadius: 8,
+              background: C.card,
+              border: `2px solid ${DEGREE_LABELS[lastFateResult.degree]?.color || C.border}`,
+              animation: 'fadeIn 0.3s ease',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: DEGREE_LABELS[lastFateResult.degree]?.color }}>
+                  {DEGREE_LABELS[lastFateResult.degree]?.icon} 命运判定：{DEGREE_LABELS[lastFateResult.degree]?.text}
+                </span>
+                <button onClick={() => { setLastFateResult(null); setShowFatePanel(false); }}
+                  style={{ background: 'none', border: 'none', color: C.textDim, cursor: 'pointer', fontSize: 16, padding: 0, lineHeight: 1 }}>
+                  ×
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: C.textSec }}>
+                <span>成功率: <strong style={{ color: C.text }}>{lastFateResult.finalRate}%</strong></span>
+                <span>掷骰: <strong style={{ color: lastFateResult.success ? C.fateSuccess : C.fateFail }}>{lastFateResult.roll}</strong></span>
+                <span>难度: {lastFateResult.difficulty}x</span>
+                {lastFateResult.breakdown?.playerMods?.length > 0 && (
+                  <span>玩家修正: {lastFateResult.playerMod > 0 ? '+' : ''}{lastFateResult.playerMod}</span>
+                )}
+                {lastFateResult.breakdown?.worldMods?.length > 0 && (
+                  <span>世界修正: {lastFateResult.worldMod > 0 ? '+' : ''}{lastFateResult.worldMod}</span>
+                )}
+              </div>
+              {lastFateResult.breakdown?.playerMods?.length > 0 && (
+                <div style={{ marginTop: 6, fontSize: 11, color: C.textDim }}>
+                  {lastFateResult.breakdown.playerMods.map((m: any, i: number) => (
+                    <span key={i} style={{ marginRight: 8 }}>
+                      {m.source} <span style={{ color: m.value > 0 ? C.fateSuccess : C.fateFail }}>{m.value > 0 ? '+' : ''}{m.value}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action Input Area */}
           <div style={{
             borderTop: `1px solid ${C.border}`, padding: '12px 16px',
             background: C.bg,
@@ -348,12 +468,95 @@ export default function CampaignPage() {
               </div>
             )}
 
+            {/* Action Type Buttons */}
+            <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={() => setShowActionButtons(!showActionButtons)}
+                style={{
+                  padding: '4px 10px', borderRadius: 4,
+                  border: `1px solid ${fateActionType ? C.gold : C.border}`,
+                  background: fateActionType ? C.goldDim + '20' : 'transparent',
+                  color: fateActionType ? C.gold : C.textDim,
+                  cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap',
+                }}>
+                🎯 {fateActionType ? ACTION_BUTTONS.find(b => b.key === fateActionType)?.label?.replace(/^[^\s]+\s/, '') : '行动类型'}
+              </button>
+              {fateActionType && (
+                <span style={{ fontSize: 11, color: C.textSec }}>
+                  基础成功率: {(() => {
+                    const btn = ACTION_BUTTONS.find(b => b.key === fateActionType);
+                    const rates: Record<string, number> = {
+                      combat_attack: 60, combat_defend: 50, persuade_neutral: 50, stealth: 55,
+                      search: 30, perception: 55, deceive: 45, bargain: 40, healing: 55,
+                      knowledge: 50, climb: 50, lockpick: 40, breakthrough_minor: 70,
+                      breakthrough_major: 10, alchemy: 40, crafting: 45,
+                    };
+                    return rates[fateActionType] || 50;
+                  })()}%
+                </span>
+              )}
+              <div style={{ flex: 1 }} />
+              {/* Difficulty selector */}
+              <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <span style={{ fontSize: 10, color: C.textDim, marginRight: 4 }}>难度</span>
+                {[
+                  { v: 1.5, l: '简' },
+                  { v: 1.2, l: '易' },
+                  { v: 1.0, l: '常' },
+                  { v: 0.8, l: '难' },
+                  { v: 0.6, l: '极' },
+                ].map(d => (
+                  <button key={d.v} onClick={() => setFateDifficulty(d.v)}
+                    style={{
+                      padding: '2px 6px', borderRadius: 3, fontSize: 10,
+                      border: `1px solid ${fateDifficulty === d.v ? C.gold : C.border}`,
+                      background: fateDifficulty === d.v ? C.goldDim + '20' : 'transparent',
+                      color: fateDifficulty === d.v ? C.gold : C.textDim,
+                      cursor: 'pointer',
+                    }}>
+                    {d.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expanded Action Buttons */}
+            {showActionButtons && (
+              <div style={{
+                marginBottom: 8, padding: 8, borderRadius: 6,
+                background: C.card, border: `1px solid ${C.border}`,
+                display: 'flex', flexWrap: 'wrap', gap: 4,
+              }}>
+                {ACTION_BUTTONS.map(btn => (
+                  <button key={btn.key} onClick={() => selectActionType(btn.key)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 4, fontSize: 11,
+                      border: `1px solid ${fateActionType === btn.key ? btn.color : C.border}`,
+                      background: fateActionType === btn.key ? btn.color + '20' : 'transparent',
+                      color: fateActionType === btn.key ? btn.color : C.textDim,
+                      cursor: 'pointer', whiteSpace: 'nowrap',
+                    }}>
+                    {btn.label}
+                  </button>
+                ))}
+                <button onClick={() => { setFateActionType(null); setShowActionButtons(false); }}
+                  style={{
+                    padding: '4px 10px', borderRadius: 4, fontSize: 11,
+                    border: `1px solid ${C.border}`, background: 'transparent',
+                    color: C.textDim, cursor: 'pointer',
+                  }}>
+                  ✕ 清除
+                </button>
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 8 }}>
               <textarea
                 value={action}
                 onChange={e => setAction(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="输入你的行动... (按 Enter 发送，Shift+Enter 换行)"
+                placeholder={fateActionType
+                  ? `描述你的${ACTION_BUTTONS.find(b => b.key === fateActionType)?.label?.replace(/^[^\s]+\s/, '') || ''}行动... (Enter 发送)`
+                  : '输入你的行动... (按 Enter 发送，Shift+Enter 换行)'}
                 rows={2}
                 disabled={processing}
                 style={{
@@ -365,11 +568,13 @@ export default function CampaignPage() {
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <button onClick={handleSendAction} disabled={processing || !action.trim()}
-                  className="codex-btn-gold" style={{
+                  style={{
                     padding: '10px 16px', borderRadius: 6, border: 'none',
                     cursor: (processing || !action.trim()) ? 'not-allowed' : 'pointer',
                     fontSize: 13, opacity: (processing || !action.trim()) ? 0.5 : 1, flex: 1,
                     whiteSpace: 'nowrap',
+                    background: `linear-gradient(135deg, ${C.goldDim}, ${C.gold})`,
+                    color: '#0b0b0f', fontWeight: 600,
                   }}>
                   {processing ? '思考中...' : '发送'}
                 </button>
@@ -411,8 +616,10 @@ export default function CampaignPage() {
                   ))}
                 </div>
                 <button onClick={handleDiceRoll}
-                  className="codex-btn-gold" style={{
+                  style={{
                     padding: '6px 16px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 13,
+                    background: `linear-gradient(135deg, ${C.goldDim}, ${C.gold})`,
+                    color: '#0b0b0f', fontWeight: 600,
                   }}>
                   掷骰
                 </button>
@@ -426,10 +633,67 @@ export default function CampaignPage() {
           <div style={{
             width: 240, borderLeft: `1px solid ${C.border}`,
             padding: 12, overflowY: 'auto', flexShrink: 0,
-            display: 'none', // 移动端默认隐藏
+            display: 'none',
           } as any}
             className="sidebar-panel">
-            {/* 角色信息 */}
+
+            {/* Fate Mods Panel */}
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 13, color: C.gold, margin: '0 0 8px', letterSpacing: '0.5px' }}>
+                ⚖️ 命运修正
+              </h3>
+              {fateModsLoading ? (
+                <div style={{ fontSize: 11, color: C.textDim }}>加载中...</div>
+              ) : fateMods ? (
+                <div style={{
+                  padding: 8, borderRadius: 6, background: C.card,
+                  border: `1px solid ${C.border}`, fontSize: 11,
+                }}>
+                  {fateMods.playerMods?.length > 0 ? (
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ color: C.textSec, marginBottom: 3, fontWeight: 600 }}>玩家修正</div>
+                      {fateMods.playerMods.map((m: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0', color: C.textDim }}>
+                          <span>{m.source}</span>
+                          <span style={{ color: m.value > 0 ? C.fateSuccess : C.fateFail }}>
+                            {m.value > 0 ? '+' : ''}{m.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  {fateMods.worldMods?.length > 0 ? (
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ color: C.textSec, marginBottom: 3, fontWeight: 600 }}>世界修正</div>
+                      {fateMods.worldMods.map((m: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0', color: C.textDim }}>
+                          <span>{m.source}</span>
+                          <span style={{ color: m.value > 0 ? C.fateSuccess : C.fateFail }}>
+                            {m.value > 0 ? '+' : ''}{m.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <div style={{
+                    borderTop: `1px solid ${C.border}`, paddingTop: 4, marginTop: 2,
+                    display: 'flex', justifyContent: 'space-between',
+                  }}>
+                    <span style={{ color: C.textSec, fontWeight: 600 }}>总修正</span>
+                    <span style={{
+                      color: fateMods.totalMod > 0 ? C.fateSuccess : fateMods.totalMod < 0 ? C.fateFail : C.textDim,
+                      fontWeight: 600,
+                    }}>
+                      {fateMods.totalMod > 0 ? '+' : ''}{fateMods.totalMod}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: C.textDim }}>未绑定角色</div>
+              )}
+            </div>
+
+            {/* Members */}
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 13, color: C.gold, margin: '0 0 8px', letterSpacing: '0.5px' }}>
                 冒险者
@@ -445,10 +709,10 @@ export default function CampaignPage() {
               ))}
             </div>
 
-            {/* 异时空信息 */}
+            {/* Campaign Info */}
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 13, color: C.gold, margin: '0 0 8px', letterSpacing: '0.5px' }}>
-                异时空信息
+                战役信息
               </h3>
               <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.8 }}>
                 <div>系统: {SYS_LABEL[campaign.system] || campaign.system}</div>
@@ -458,7 +722,7 @@ export default function CampaignPage() {
               </div>
             </div>
 
-            {/* 快速掷骰 */}
+            {/* Quick Dice */}
             <div>
               <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 13, color: C.gold, margin: '0 0 8px', letterSpacing: '0.5px' }}>
                 快速掷骰
@@ -477,7 +741,7 @@ export default function CampaignPage() {
               </div>
             </div>
 
-            {/* 关联资产 */}
+            {/* Asset Links */}
             <div style={{ marginTop: 16 }}>
               <h3 style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 13, color: C.gold, margin: '0 0 8px', letterSpacing: '0.5px' }}>
                 关联资产
@@ -513,7 +777,6 @@ export default function CampaignPage() {
                 </div>
               )}
 
-              {/* 添加关联面板 */}
               {showLinkPanel && (
                 <div style={{
                   marginTop: 8, padding: 8, borderRadius: 6,
@@ -549,9 +812,11 @@ export default function CampaignPage() {
                         outline: 'none',
                       }} />
                     <button onClick={handleLinkSearch} disabled={searching}
-                      className="codex-btn-gold" style={{
+                      style={{
                         padding: '4px 10px', borderRadius: 4, border: 'none',
                         cursor: 'pointer', fontSize: 11,
+                        background: `linear-gradient(135deg, ${C.goldDim}, ${C.gold})`,
+                        color: '#0b0b0f', fontWeight: 600,
                       }}>
                       搜索
                     </button>
@@ -583,6 +848,10 @@ export default function CampaignPage() {
       <style>{`
         @media (min-width: 768px) {
           .sidebar-panel { display: block !important; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>

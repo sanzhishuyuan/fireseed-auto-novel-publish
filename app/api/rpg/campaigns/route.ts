@@ -85,11 +85,22 @@ export async function POST(request: NextRequest) {
 
     const id = uuidv4();
 
+    // 验证角色卡所有权或已购买（如果指定了 character_id）
+    if (character_id) {
+      const charOwned = db.prepare('SELECT id FROM rpg_characters WHERE id = ? AND user_id = ?').get(character_id, user.userId);
+      const charPurchased = db.prepare(
+        "SELECT id FROM rpg_asset_library WHERE asset_id = ? AND asset_type = 'character' AND user_id = ? AND source IN ('purchased', 'free_claim')"
+      ).get(character_id, user.userId);
+      if (!charOwned && !charPurchased) {
+        return NextResponse.json({ success: false, error: '角色卡不存在或无权使用' }, { status: 400 });
+      }
+    }
+
     // 验证世界书所有权或已购买（如果指定了 lorebook_id）
     if (lorebook_id) {
       const lbOwned = db.prepare('SELECT id FROM rpg_lorebooks WHERE id = ? AND user_id = ?').get(lorebook_id, user.userId);
       const lbPurchased = db.prepare(
-        "SELECT id FROM rpg_asset_library WHERE asset_id = ? AND asset_type = 'lorebook' AND user_id = ? AND source = 'purchased'"
+        "SELECT id FROM rpg_asset_library WHERE asset_id = ? AND asset_type = 'lorebook' AND user_id = ? AND source IN ('purchased', 'free_claim')"
       ).get(lorebook_id, user.userId);
       if (!lbOwned && !lbPurchased) {
         return NextResponse.json({ success: false, error: '世界书不存在或无权使用' }, { status: 400 });
