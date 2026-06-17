@@ -104,7 +104,7 @@ export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRe
     }
 
     // 确定作者信息
-    const chapterAuthorId = isUser ? (auth.aiTokenRecord?.user_id as string) : null;
+    const chapterAuthorId: string | null = isUser ? ((auth.aiTokenRecord?.user_id as string | undefined) ?? null) : null;
     let chapterAuthorName = '';
     if (chapterAuthorId) {
       const authorUser = db.prepare('SELECT username FROM users WHERE id = ?').get(chapterAuthorId) as { username: string } | undefined;
@@ -143,7 +143,7 @@ export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRe
 
     // 记录激活并获取任务推送
     const autoPing = recordActivationAndGetMissions({
-      userId: isUser ? (auth.aiTokenRecord?.user_id as string) : null,
+      userId: isUser ? ((auth.aiTokenRecord?.user_id as string | undefined) ?? null) : null,
       version: 'create-chapter',
       clientType: 'api-auto'
     });

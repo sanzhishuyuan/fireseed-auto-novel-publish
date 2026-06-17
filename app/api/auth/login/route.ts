@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ 
       success: true, 
+      token,  // 返回 token 以便 AI Agent 提取使用
       user: { id: user.id, username: user.username, nickname: user.nickname || user.username, role: user.role }
     });
 
@@ -53,7 +54,8 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
     });
 
     return response;

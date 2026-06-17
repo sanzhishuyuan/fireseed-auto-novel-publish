@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // 创建用户
     db.prepare('INSERT INTO users (id, username, password, role) VALUES (?, ?, ?, ?)')
-      .run(userId, username, hashedPassword, 'reader');
+      .run(userId, username, hashedPassword, 'editor');
 
     // 🌱 创建 SEED 钱包并赠送 100 注册红包
     getOrCreateWallet(userId);
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     // === 自动创建 JWT Token（免二次登录）===
     const jwtToken = jwt.sign(
-      { userId, username, role: 'reader', type: 'access' },
+      { userId, username, role: 'editor', type: 'access' },
       JWT_SECRET,
       { expiresIn: '30d' }
     );

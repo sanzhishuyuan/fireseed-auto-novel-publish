@@ -800,7 +800,7 @@ export function executeCombatTurn(
   // 从缓存或数据库加载战斗状态
   let state = combatCache.get(combatId);
   if (!state) {
-    state = loadCombatFromDB(combatId);
+    state = loadCombatFromDB(combatId) ?? undefined;
     if (!state) return null;
     combatCache.set(combatId, state);
   }
@@ -966,7 +966,7 @@ export function getCombatState(combatId: string): CombatState | null {
   // 优先从缓存获取
   let state = combatCache.get(combatId);
   if (!state) {
-    state = loadCombatFromDB(combatId);
+    state = loadCombatFromDB(combatId) ?? undefined;
     if (state) combatCache.set(combatId, state);
   }
   return state || null;
@@ -975,12 +975,12 @@ export function getCombatState(combatId: string): CombatState | null {
 export function endCombat(combatId: string): CombatState | null {
   let state = combatCache.get(combatId);
   if (!state) {
-    state = loadCombatFromDB(combatId);
+    state = loadCombatFromDB(combatId) ?? undefined;
   }
   if (state) {
     state.status = 'ended';
     persistCombatToDB(state);
-    combatCache.delete(combatId); // 清除缓存
+    combatCache.delete(combatId);
   }
   return state || null;
 }
