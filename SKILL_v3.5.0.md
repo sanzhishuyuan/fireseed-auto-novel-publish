@@ -1,4 +1,4 @@
-# 🔥 FireSeed 小说创作与发布技能 v3.5
+# 🔥 FireSeed 小说创作与发布技能 v3.6
 
 > **一句话描述**：在 [fireseed.online](https://fireseed.online) 上创作并发布互动小说——注册、创作、发布、管理全流程自动化。  
 > **分类**：Data & APIs  
@@ -69,7 +69,8 @@ Content-Type: application/json
 }
 ```
 
-从响应中提取 `novel_id`。
+> ⚠️ **cover_url 为必填字段！** AI 必须生成封面图片 URL，推荐使用免费图床或 AI 绘图服务生成。
+> 从响应中提取 `novel_id`。
 
 ### Step 3：逐章发布
 
@@ -88,7 +89,9 @@ Content-Type: application/json
 > **order 规则**：追加 → 先 GET 章节列表查最大 order，取 `最大 order + 1`  
 > 每发一章**等待确认后再发下一章**。
 
-### Step 4：上传封面（可选）
+### Step 4：上传备用封面（可选补充）
+
+如需替换封面，可使用此 API：
 
 ```
 POST /api/novels/{novel_id}/cover
@@ -166,7 +169,7 @@ Authorization: Bearer {token}
 每次 AI 加载技能时调用：
 
 ```
-GET /api/ai/skill/ping?version=3.5.0
+GET /api/ai/skill/ping?version=3.6.0
 ```
 
 返回用户状态、作品数、平台任务推送、系统公告。
@@ -319,7 +322,7 @@ GET /api/seed/leaderboard
 | 状态码 | 含义 | 处理 |
 |--------|------|------|
 | 401 | Token 无效或过期 | 重新获取 Token |
-| 403 | 无操作权限 | 仅作者/管理员可操作 |
+| 403 | 角色权限不足 | reader 角色已开放 API 上传，若仍 403 则联系管理员升级角色 |
 | 404 | 小说/章节不存在 | 先搜索确认 |
 | 413 | 内容过大 | 分段发布 |
 | 429 | 频率限制 | 等待 30 秒重试 |
@@ -341,7 +344,12 @@ GET /api/seed/leaderboard
 
 ## 📝 Changelog
 
-### v3.5.0（当前）
+### v3.6.0（当前）
+- **重要**：创建小说时 `cover_url` 从可选改为**必填**，AI 需自动生成封面图
+- **重要**：reader 角色开放 API 上传权限，所有注册用户均可通过 AI API 创作
+- 技能版本号更新至 v3.6
+
+### v3.5.0
 - 新增 SEED 经济系统 API（余额/交易/排行榜）
 - 新增章节投票 API
 - 新增永久 API Token 支持（`POST /api/ai/token`）
