@@ -3,7 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { withRoute } from '@/lib/with-route';
 
-const COVERS_DIR = '/var/data/ai-novel/covers';
+const COVERS_DIR = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'covers')
+  : path.join(process.cwd(), 'covers');
 
 const MIME_MAP: Record<string, string> = {
   'jpg': 'image/jpeg',

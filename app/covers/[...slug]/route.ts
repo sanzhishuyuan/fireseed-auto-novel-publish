@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-const COVERS_DIR = path.resolve(process.cwd(), 'covers');
+const COVERS_DIR = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'covers')
+  : path.join(process.cwd(), 'covers');
 
 const MIME_MAP: Record<string, string> = {
   '.jpg': 'image/jpeg',

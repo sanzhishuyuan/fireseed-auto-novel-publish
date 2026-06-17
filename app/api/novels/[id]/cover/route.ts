@@ -6,7 +6,9 @@ import fs from 'fs';
 import path from 'path';
 import { safeParseJSON } from '@/lib/request-parser';
 
-const COVERS_DIR = '/var/data/ai-novel/covers';
+const COVERS_DIR = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'covers')
+  : path.join(process.cwd(), 'covers');
 
 function ensureCoversDir() {
   if (!fs.existsSync(COVERS_DIR)) {
