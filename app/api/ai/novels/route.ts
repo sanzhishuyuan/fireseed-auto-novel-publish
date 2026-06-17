@@ -68,7 +68,7 @@ export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRe
         userRole = user?.role;
       }
 
-      const allowedRoles = ['admin', 'super_admin', 'editor'];
+      const allowedRoles = ['admin', 'super_admin', 'editor', 'reader'];
       if (!userRole || !allowedRoles.includes(userRole)) {
         return NextResponse.json({
           error: '上传通道暂未开放',
