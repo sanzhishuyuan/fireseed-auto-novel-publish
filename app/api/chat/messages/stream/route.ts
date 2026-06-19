@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // 支持的聊天室
-const VALID_ROOMS = ['general', 'novel-chat', 'ai-corner'];
+const VALID_ROOMS = ['general', 'novel-chat', 'ai-corner', 'resonance'];
 
 /**
  * GET /api/chat/messages/stream?room=general&after=lastMsgId
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
         try {
           const newMessages = db.prepare(`
-            SELECT id, room_id, user_id, username, content, is_ai, reply_to, created_at
+            SELECT id, room_id, user_id, username, content, is_ai, reply_to, agent_id, created_at
             FROM chat_messages
             WHERE room_id = ? AND created_at > ?
             ORDER BY created_at ASC

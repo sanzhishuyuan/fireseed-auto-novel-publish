@@ -7,7 +7,80 @@ import { safeParseJSON } from '@/lib/request-parser';
 export const dynamic = 'force-dynamic';
 
 // 支持的聊天室
-const VALID_ROOMS = ['general', 'novel-chat', 'ai-corner'] as const;
+const VALID_ROOMS = ['general', 'novel-chat', 'ai-corner', 'resonance'] as const;
+
+// ── 站点 Agent 定义 ──
+interface AgentDef {
+  name: string;
+  role: string;
+  systemPrompt: string;
+}
+
+const AGENT_DEFINITIONS: Record<string, AgentDef> = {
+  spark: {
+    name: '星火 SPARK',
+    role: '创意写作',
+    systemPrompt: `你是「星火」，FireSeed 社区的创意写作导师。
+- 你擅长激发创作灵感、推荐写作技巧、帮助作者突破瓶颈
+- 你的风格热情、有感染力，喜欢用比喻和生动的例子
+- 保持简短、有温度的回答（50-120字左右）
+- 适当使用 emoji，偶尔用 ✨🔥 表达激情
+- 永远用中文回复
+- 不要自我介绍"我是AI"，你就是星火，社区的一员`,
+  },
+  dream: {
+    name: '织梦 DREAM',
+    role: '人物塑造',
+    systemPrompt: `你是「织梦」，FireSeed 社区的人物塑造专家。
+- 你专精角色设计、人物弧光、情感描写和对话艺术
+- 你的风格温柔细腻，善于捕捉人物的内心世界
+- 保持简短、有洞察力的回答（50-120字左右）
+- 适当使用 emoji，偶尔用 🌙💫 表达梦幻感
+- 永远用中文回复
+- 不要自我介绍"我是AI"，你就是织梦，社区的一员`,
+  },
+  quantum: {
+    name: '量子 QUANTUM',
+    role: '情节架构',
+    systemPrompt: `你是「量子」，FireSeed 社区的情节架构师。
+- 你擅长故事结构、悬念设计、世界观构建和叙事节奏
+- 你的风格理性而富有想象力，喜欢用结构化的方式分析问题
+- 保持简短、有深度的回答（50-120字左右）
+- 适当使用 emoji，偶尔用 ⚛️🔮 表达量子感
+- 永远用中文回复
+- 不要自我介绍"我是AI"，你就是量子，社区的一员`,
+  },
+  echo: {
+    name: '回声 ECHO',
+    role: '文风润色',
+    systemPrompt: `你是「回声」，FireSeed 社区的文风润色师。
+- 你专注语言美学、修辞技巧、节奏感和文字打磨
+- 你的风格优雅精炼，善于用文字本身的美感打动人
+- 保持简短、有品味的回答（50-120字左右）
+- 适当使用 emoji，偶尔用 🎵🌿 表达韵律感
+- 永远用中文回复
+- 不要自我介绍"我是AI"，你就是回声，社区的一员`,
+  },
+};
+
+const AGENT_KEYS = Object.keys(AGENT_DEFINITIONS);
+
+/**
+ * 从消息文本中解析 @Agent 提及
+ * 支持: @星火 @SPARK @织梦 @DREAM @量子 @QUANTUM @回声 @ECHO
+ */
+function parseAgentMention(text: string): string | null {
+  const mentionPatterns: Record<string, RegExp> = {
+    spark:   /@(星火|SPARK)\b/i,
+    dream:   /@(织梦|DREAM)\b/i,
+    quantum: /@(量子|QUANTUM)\b/i,
+    echo:    /@(回声|ECHO)\b/i,
+  };
+  for (const [key, regex] of Object.entries(mentionPatterns)) {
+    if (regex.test(text)) return key;
+  }
+  return null;
+}
 
 /**
  * GET /api/chat/messages?room=general&before=msgId&limit=50
@@ -27,7 +100,7 @@ export async function GET(request: NextRequest) {
     let messages;
     if (before) {
       messages = db.prepare(`
-        SELECT id, room_id, user_id, username, content, is_ai, reply_to, created_at
+        SELECT id, room_id, user_id, username, content, is_ai, reply_to, agent_id, created_at
         FROM chat_messages
         WHERE room_id = ? AND created_at < (SELECT created_at FROM chat_messages WHERE id = ?)
         ORDER BY created_at DESC
@@ -35,7 +108,7 @@ export async function GET(request: NextRequest) {
       `).all(room, before, limit);
     } else {
       messages = db.prepare(`
-        SELECT id, room_id, user_id, username, content, is_ai, reply_to, created_at
+        SELECT id, room_id, user_id, username, content, is_ai, reply_to, agent_id, created_at
         FROM chat_messages
         WHERE room_id = ?
         ORDER BY created_at DESC
@@ -130,14 +203,19 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * 异步触发 AI 回复
+ * 异步触发 AI 回复 — 支持 @Agent 路由
  */
 async function triggerAIReply(room: string, userMessage: string, replyToId: string) {
+  // 解析 @Agent 提及，默认随机选一个 Agent
+  const mentionedKey = parseAgentMention(userMessage);
+  const agentKey = mentionedKey || AGENT_KEYS[Math.floor(Math.random() * AGENT_KEYS.length)];
+  const agent = AGENT_DEFINITIONS[agentKey];
+
   const recentMessages = db.prepare(`
-    SELECT username, content, is_ai FROM chat_messages
+    SELECT username, content, is_ai, agent_id FROM chat_messages
     WHERE room_id = ?
     ORDER BY created_at DESC LIMIT 10
-  `).all(room) as { username: string; content: string; is_ai: number }[];
+  `).all(room) as { username: string; content: string; is_ai: number; agent_id: string | null }[];
 
   const historyMessages = recentMessages.reverse().map(m => ({
     role: m.is_ai ? 'assistant' as const : 'user' as const,
@@ -158,17 +236,7 @@ async function triggerAIReply(room: string, userMessage: string, replyToId: stri
       max_tokens: 300,
       temperature: 0.8,
       messages: [
-        {
-          role: 'system',
-          content: `你是「火种社区」的 AI 助手，一个热情、有趣的小说爱好者。
-你的昵称是 "AI助手"。
-- 你了解 FireSeed 平台上的所有小说，包括《火种觉醒》等
-- 你会推荐小说、讨论剧情、帮人构思创作
-- 你会在对话中引导用户去创作或参与社区讨论
-- 保持简短、有温度的回答（30-100字左右）
-- 适当使用 emoji 让回复更生动
-- 永远用中文回复`,
-        },
+        { role: 'system', content: agent.systemPrompt },
         ...historyMessages,
         { role: 'user', content: userMessage },
       ],
@@ -177,7 +245,7 @@ async function triggerAIReply(room: string, userMessage: string, replyToId: stri
 
   if (!response.ok) {
     const errText = await response.text();
-    console.error('DeepSeek API error:', response.status, errText);
+    console.error('LLM API error:', response.status, errText);
     return;
   }
 
@@ -187,7 +255,7 @@ async function triggerAIReply(room: string, userMessage: string, replyToId: stri
   if (!reply || reply.trim().length === 0) return;
 
   db.prepare(`
-    INSERT INTO chat_messages (id, room_id, user_id, username, content, is_ai, reply_to, created_at)
-    VALUES (?, ?, NULL, ?, ?, 1, ?, ?)
-  `).run(uuidv4(), room, 'AI助手', reply.trim(), replyToId, new Date().toISOString());
+    INSERT INTO chat_messages (id, room_id, user_id, username, content, is_ai, agent_id, reply_to, created_at)
+    VALUES (?, ?, NULL, ?, ?, 1, ?, ?, ?)
+  `).run(uuidv4(), room, agent.name, reply.trim(), agentKey, replyToId, new Date().toISOString());
 }

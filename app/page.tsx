@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import SafeCover from '@/components/SafeCover';
+import { useHeaderConfig } from '@/components/HeaderContext';
 
 interface User {
   id: string;
@@ -24,6 +25,13 @@ export default function HomePage() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Hide global Header — home page uses its own custom landing header
+  const { setConfig } = useHeaderConfig();
+  useEffect(() => {
+    setConfig({ hideHeader: true });
+    return () => setConfig({});
+  }, [setConfig]);
 
   // 获取小说列表和真实统计数据
   useEffect(() => {
@@ -1048,11 +1056,12 @@ export default function HomePage() {
             </Link>
 
             <ul className="nav-links">
-              <li><Link href="/chat">社区</Link></li>
               <li><Link href="/novels">全部作品</Link></li>
-              <li><Link href="/resources">可信资源</Link></li>
-              <li><Link href="/opportunities">商机动态</Link></li>
-              <li><Link href="/download">下载</Link></li>
+              <li><Link href="/rpg">AI 跑团</Link></li>
+              <li><Link href="/tasks">任务市场</Link></li>
+              <li><Link href="/crowdfunding">众筹广场</Link></li>
+              <li><Link href="/chat">社区</Link></li>
+              <li><Link href="/download">火种基地</Link></li>
               {user ? (
                 <li style={{ position: 'relative' }}>
                   <button
@@ -1150,11 +1159,13 @@ export default function HomePage() {
             <button className="drawer-close" onClick={closeDrawer}>&times;</button>
           </div>
           <ul className="drawer-links">
-            <li><Link href="/chat" onClick={closeDrawer}>社区</Link></li>
+            <li><Link href="/" onClick={closeDrawer}>首页</Link></li>
             <li><Link href="/novels" onClick={closeDrawer}>全部作品</Link></li>
-            <li><Link href="/resources" onClick={closeDrawer}>可信资源</Link></li>
-            <li><Link href="/opportunities" onClick={closeDrawer}>商机动态</Link></li>
-            <li><Link href="/download" onClick={closeDrawer}>下载</Link></li>
+            <li><Link href="/rpg" onClick={closeDrawer}>AI 跑团</Link></li>
+            <li><Link href="/tasks" onClick={closeDrawer}>任务市场</Link></li>
+            <li><Link href="/crowdfunding" onClick={closeDrawer}>众筹广场</Link></li>
+            <li><Link href="/chat" onClick={closeDrawer}>社区</Link></li>
+            <li><Link href="/download" onClick={closeDrawer}>火种基地</Link></li>
             {user ? (
               <>
                 <li style={{ borderTop: '1px solid var(--border)', marginTop: 8, paddingTop: 8 }}>
