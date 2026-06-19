@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // 安全解析 JSON
     const parsed = safeParseJSON(bodyText);
     if (!parsed.success) return parsed.response;
-    const { username, password, referralCode } = parsed.data;
+    const { username, password, email, referralCode } = parsed.data;
 
     if (!username || !password) {
       return NextResponse.json({ error: '请填写完整信息' }, { status: 400 });
@@ -36,6 +36,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '密码至少6位' }, { status: 400 });
     }
 
+    // 验证邮箱格式（如果提供）
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: '邮箱格式不正确' }, { status: 400 });
+    }
+
+    // 检查邮箱是否已被使用
+    if (email) {
+      const emailUsed = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+      if (emailUsed) {
+        return NextResponse.json({ error: '该邮箱已被注册' }, { status: 400 });
+      }
+    }
+
     // 检查用户是否存在
     const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
     if (existing) {
@@ -46,9 +59,9 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = uuidv4();
 
-    // 创建用户
-    db.prepare('INSERT INTO users (id, username, password, role) VALUES (?, ?, ?, ?)')
-      .run(userId, username, hashedPassword, 'reader');
+    // 创建用户（包含邮箱）
+    db.prepare('INSERT INTO users (id, username, password, email, role) VALUES (?, ?, ?, ?, ?)')
+      .run(userId, username, hashedPassword, email || null, 'reader');
 
     // 🌱 创建 SEED 钱包并赠送 100 注册红包
     getOrCreateWallet(userId);
@@ -61,6 +74,23 @@ export async function POST(request: NextRequest) {
       createStarterPack(userId);
     } catch (e) {
       console.warn('Starter pack creation failed (non-blocking):', e);
+    }
+
+    // 🤖 创建 AI 代理（每个用户一个，携带个性印记）
+    try {
+      const agentId = uuidv4();
+      const agentEmojis = ['🔮', '🌟', '🦊', '🐉', '🌙', '⚡', '🔥', '🌊', '🍀', '🎭'];
+      const agentEmoji = agentEmojis[Math.floor(Math.random() * agentEmojis.length)];
+      const defaultPersonality = JSON.stringify({
+        genre_pref: 50, writing_focus: 50, tone: 50,
+        creativity: 50, social: 50, picky: 50,
+      });
+      db.prepare(`
+        INSERT INTO user_agents (id, user_id, agent_name, avatar_emoji, personality, bio)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(agentId, userId, `${username}的代理`, agentEmoji, defaultPersonality, null);
+    } catch (e) {
+      console.warn('Agent creation failed (non-blocking):', e);
     }
 
     // === 处理推广码 ===

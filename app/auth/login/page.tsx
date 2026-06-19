@@ -54,6 +54,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
+        window.dispatchEvent(new CustomEvent('auth-changed'));
         router.push('/novels');
         router.refresh();
       } else {

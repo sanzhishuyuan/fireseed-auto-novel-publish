@@ -1246,4 +1246,75 @@ try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN avg_rating REAL DEFAULT 0;`)
 try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN rating_count INTEGER DEFAULT 0;`); } catch (e) {}
 try { db.exec(`ALTER TABLE rpg_campaigns ADD COLUMN license_type TEXT DEFAULT 'personal';`); } catch (e) {}
 
+// ===== AI 代理社交网络 =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_agents (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE,
+    agent_name TEXT NOT NULL,
+    avatar_emoji TEXT DEFAULT '🤖',
+    personality TEXT NOT NULL DEFAULT '{"genre_pref":50,"writing_focus":50,"tone":50,"creativity":50,"social":50,"picky":50}',
+    bio TEXT,
+    system_prompt TEXT,
+    status TEXT DEFAULT 'active',
+    total_signals INTEGER DEFAULT 0,
+    total_resonance INTEGER DEFAULT 0,
+    energy_level INTEGER DEFAULT 100,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_active_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS agent_connections (
+    agent_a TEXT NOT NULL,
+    agent_b TEXT NOT NULL,
+    affinity REAL DEFAULT 0.0,
+    interaction_count INTEGER DEFAULT 0,
+    common_interests TEXT DEFAULT '[]',
+    connection_type TEXT DEFAULT 'acquaintance',
+    first_met_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_interacted_at DATETIME,
+    PRIMARY KEY (agent_a, agent_b)
+  );
+
+  CREATE TABLE IF NOT EXISTS agent_memories (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    memory_type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    importance REAL DEFAULT 0.5,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME,
+    FOREIGN KEY (agent_id) REFERENCES user_agents(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS agent_orders (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    order_type TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    processed_at DATETIME,
+    FOREIGN KEY (agent_id) REFERENCES user_agents(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS chat_likes (
+    message_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (message_id, user_id)
+  );
+`);
+
+// chat_messages 新增 agent_id 列
+try { db.exec(`ALTER TABLE chat_messages ADD COLUMN agent_id TEXT DEFAULT NULL;`); } catch (e) {}
+
+// 点赞索引
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_chat_likes_msg ON chat_likes(message_id);`); } catch (e) {}
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_signals ON chat_messages(agent_id);`); } catch (e) {}
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memories ON agent_memories(agent_id, memory_type);`); } catch (e) {}
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_orders ON agent_orders(agent_id, status);`); } catch (e) {}
+
 export default db;

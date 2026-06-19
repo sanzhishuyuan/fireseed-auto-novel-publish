@@ -168,7 +168,7 @@ export default function CrowdfundingDetailPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ textAlign: 'center' }}>
               <div className="codex-skeleton" style={{ width: 48, height: 48, borderRadius: '50%', margin: '0 auto 16px' }} />
-              <p className="codex-mono" style={{ fontSize: 13, color: '#9a9a8e' }}>加载中...</p>
+              <p className="codex-mono" style={{ fontSize: 13, color: 'var(--codex-text-dim)' }}>加载中...</p>
             </div>
           </div>
         </div>
@@ -184,10 +184,10 @@ export default function CrowdfundingDetailPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
-              <h2 className="codex-display" style={{ fontSize: 20, fontWeight: 700, color: '#f0ece4', marginBottom: 12 }}>
+              <h2 className="codex-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--codex-text)', marginBottom: 12 }}>
                 项目不存在
               </h2>
-              <Link href="/crowdfunding" style={{ color: '#c9a55c', textDecoration: 'underline', fontSize: 14 }}>
+              <Link href="/crowdfunding" style={{ color: 'var(--codex-gold)', textDecoration: 'underline', fontSize: 14 }}>
                 返回众筹广场
               </Link>
             </div>
@@ -207,7 +207,7 @@ export default function CrowdfundingDetailPage() {
       <div className="codex-bg" />
       <div className="codex-shell" style={{ paddingTop: 48, paddingBottom: 48 }}>
         {/* 返回按钮 */}
-        <Link href="/crowdfunding" className="codex-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9a9a8e', textDecoration: 'none', marginBottom: 24 }}>
+        <Link href="/crowdfunding" className="codex-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--codex-text-dim)', textDecoration: 'none', marginBottom: 24 }}>
           ← 返回众筹广场
         </Link>
 
@@ -215,7 +215,7 @@ export default function CrowdfundingDetailPage() {
         <div className="codex-card" style={{ padding: 28, marginBottom: 24 }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-              <h1 className="codex-display" style={{ fontSize: 28, fontWeight: 700, color: '#f0ece4' }}>
+              <h1 className="codex-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--codex-text)' }}>
                 {project.title}
               </h1>
               <span className={`codex-badge ${isSuccessful ? 'codex-badge-green' : isFailed ? 'codex-badge-red' : 'codex-badge-blue'}`}>
@@ -223,11 +223,11 @@ export default function CrowdfundingDetailPage() {
               </span>
             </div>
             
-            <div className="codex-mono" style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: '#9a9a8e' }}>
+            <div className="codex-mono" style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: 'var(--codex-text-dim)' }}>
               <span>👤 {project.author_name}</span>
               <span>📅 {formatDate(project.deadline)}</span>
               {project.days_left !== undefined && (
-                <span style={project.days_left <= 3 ? { color: '#ef4444', fontWeight: 600 } : {}}>
+                <span style={project.days_left <= 3 ? { color: 'var(--codex-red)', fontWeight: 600 } : {}}>
                   ⏰ 剩余 {project.days_left} 天
                 </span>
               )}
@@ -237,8 +237,8 @@ export default function CrowdfundingDetailPage() {
           {/* 进度条 */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 10 }}>
-              <span style={{ fontWeight: 500, color: '#f0ece4' }}>筹集进度</span>
-              <span className="codex-mono" style={{ fontWeight: 700, color: '#c9a55c' }}>
+              <span style={{ fontWeight: 500, color: 'var(--codex-text)' }}>筹集进度</span>
+              <span className="codex-mono" style={{ fontWeight: 700, color: 'var(--codex-gold)' }}>
                 {project.progress_percentage || 0}%
               </span>
             </div>
@@ -247,7 +247,7 @@ export default function CrowdfundingDetailPage() {
                 className={`codex-progress-bar ${isSuccessful ? 'codex-progress-bar-green' : ''}`}
                 style={{
                   width: `${Math.min(project.progress_percentage || 0, 100)}%`,
-                  background: isFailed ? '#ef4444' : undefined
+                  background: isFailed ? 'var(--codex-red)' : undefined
                 }}
               />
             </div>
@@ -273,7 +273,7 @@ export default function CrowdfundingDetailPage() {
         {/* 项目描述 */}
         <div className="codex-card" style={{ padding: 28, marginBottom: 24 }}>
           <h2 className="codex-section-title">📖 项目介绍</h2>
-          <div style={{ fontSize: 14, lineHeight: 1.8, color: '#f0ece4' }}>
+          <div style={{ fontSize: 14, lineHeight: 1.8, color: 'var(--codex-text)' }}>
             <p style={{ whiteSpace: 'pre-wrap' }}>{project.description}</p>
           </div>
         </div>
@@ -295,12 +295,12 @@ export default function CrowdfundingDetailPage() {
                       padding: 20,
                       opacity: isSoldOut ? 0.5 : 1,
                       cursor: isSoldOut ? 'not-allowed' : 'pointer',
-                      border: selectedReward === reward.tier_name ? '1px solid #c9a55c' : undefined
+                      border: selectedReward === reward.tier_name ? '1px solid var(--codex-gold)' : undefined
                     }}
                     onClick={() => !isSoldOut && setSelectedReward(reward.tier_name)}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f0ece4' }}>{reward.tier_name}</h3>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--codex-text)' }}>{reward.tier_name}</h3>
                       {isSoldOut && (
                         <span className="codex-badge codex-badge-gray" style={{ fontSize: 11 }}>
                           已售罄
@@ -308,21 +308,21 @@ export default function CrowdfundingDetailPage() {
                       )}
                     </div>
                     
-                    <div className="codex-mono" style={{ fontSize: 24, fontWeight: 700, color: '#c9a55c', marginBottom: 12 }}>
+                    <div className="codex-mono" style={{ fontSize: 24, fontWeight: 700, color: 'var(--codex-gold)', marginBottom: 12 }}>
                       {reward.min_amount} SEED
                     </div>
 
                     <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 12px 0' }}>
                       {benefits.map((benefit, idx) => (
-                        <li key={idx} style={{ fontSize: 13, color: '#9a9a8e', marginBottom: 6, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                          <span style={{ color: '#c9a55c' }}>✓</span>
+                        <li key={idx} style={{ fontSize: 13, color: 'var(--codex-text-dim)', marginBottom: 6, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <span style={{ color: 'var(--codex-gold)' }}>✓</span>
                           <span>{benefit}</span>
                         </li>
                       ))}
                     </ul>
 
                     {reward.limit_count > 0 && (
-                      <div className="codex-mono" style={{ fontSize: 11, color: '#5a5a52' }}>
+                      <div className="codex-mono" style={{ fontSize: 11, color: 'var(--codex-text-muted)' }}>
                         限量 {reward.limit_count} 份，已领取 {reward.claimed_count} 份
                       </div>
                     )}
@@ -336,7 +336,7 @@ export default function CrowdfundingDetailPage() {
         {/* 操作按钮 */}
         {!currentUser ? (
           <div className="codex-card" style={{ padding: 28, textAlign: 'center' }}>
-            <p style={{ fontSize: 14, color: '#9a9a8e', marginBottom: 16 }}>请先登录以支持此项目</p>
+            <p style={{ fontSize: 14, color: 'var(--codex-text-dim)', marginBottom: 16 }}>请先登录以支持此项目</p>
             <Link href="/auth/login" className="codex-btn codex-btn-gold" style={{ textDecoration: 'none' }}>
               登录
             </Link>
@@ -344,7 +344,7 @@ export default function CrowdfundingDetailPage() {
         ) : isAuthor ? (
           <div className="codex-card" style={{ padding: 28 }}>
             <h3 className="codex-section-title">👤 我的项目</h3>
-            <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.6 }}>
+            <p style={{ fontSize: 14, color: 'var(--codex-text-dim)', lineHeight: 1.6 }}>
               您是此项目的发起人。可以通过 API 发布更新来与支持者保持沟通。
             </p>
           </div>
@@ -354,14 +354,14 @@ export default function CrowdfundingDetailPage() {
             
             {selectedReward && (
               <div className="codex-tip codex-tip-info" style={{ marginBottom: 16 }}>
-                已选择档位：<strong style={{ color: '#f0ece4' }}>{selectedReward}</strong>
+                已选择档位：<strong style={{ color: 'var(--codex-text)' }}>{selectedReward}</strong>
                 （{rewards.find(r => r.tier_name === selectedReward)?.min_amount} SEED）
               </div>
             )}
 
             {!selectedReward && (
               <div style={{ marginBottom: 16 }}>
-                <label className="codex-mono" style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#9a9a8e', marginBottom: 8 }}>
+                <label className="codex-mono" style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--codex-text-dim)', marginBottom: 8 }}>
                   自定义金额（SEED）
                 </label>
                 <input
@@ -387,7 +387,7 @@ export default function CrowdfundingDetailPage() {
               {supportLoading ? '处理中...' : '确认支持'}
             </button>
 
-            <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 10, textAlign: 'center' }}>
+            <p className="codex-mono" style={{ fontSize: 11, color: 'var(--codex-text-muted)', marginTop: 10, textAlign: 'center' }}>
               如果众筹失败，您的SEED将全额退还
             </p>
           </div>
@@ -399,10 +399,10 @@ export default function CrowdfundingDetailPage() {
             borderColor: isSuccessful ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.15)'
           }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>{isSuccessful ? '✅' : '❌'}</div>
-            <h3 className="codex-display" style={{ fontSize: 18, fontWeight: 700, color: '#f0ece4', marginBottom: 8 }}>
+            <h3 className="codex-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--codex-text)', marginBottom: 8 }}>
               {isSuccessful ? '众筹已成功！' : '众筹已失败'}
             </h3>
-            <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.6 }}>
+            <p style={{ fontSize: 14, color: 'var(--codex-text-dim)', lineHeight: 1.6 }}>
               {isSuccessful 
                 ? '感谢所有支持者的支持，项目将继续推进'
                 : '未达到目标金额，所有支持者已获得全额退款'}
@@ -416,18 +416,18 @@ export default function CrowdfundingDetailPage() {
         <div className="codex-modal-overlay" onClick={() => setShowSupportModal(false)}>
           <div className="codex-modal" onClick={e => e.stopPropagation()}>
             <div className="codex-modal-header">
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f0ece4' }}>确认支持</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--codex-text)' }}>确认支持</h3>
             </div>
             
             <div className="codex-modal-body">
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ color: '#9a9a8e', fontSize: 14 }}>项目名称</span>
-                  <span style={{ fontWeight: 500, color: '#f0ece4', fontSize: 14 }}>{project.title}</span>
+                  <span style={{ color: 'var(--codex-text-dim)', fontSize: 14 }}>项目名称</span>
+                  <span style={{ fontWeight: 500, color: 'var(--codex-text)', fontSize: 14 }}>{project.title}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ color: '#9a9a8e', fontSize: 14 }}>支持金额</span>
-                  <span className="codex-mono" style={{ fontWeight: 700, color: '#c9a55c', fontSize: 14 }}>
+                  <span style={{ color: 'var(--codex-text-dim)', fontSize: 14 }}>支持金额</span>
+                  <span className="codex-mono" style={{ fontWeight: 700, color: 'var(--codex-gold)', fontSize: 14 }}>
                     {selectedReward 
                       ? `${rewards.find(r => r.tier_name === selectedReward)?.min_amount} SEED`
                       : `${customAmount} SEED`
@@ -436,8 +436,8 @@ export default function CrowdfundingDetailPage() {
                 </div>
                 {selectedReward && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#9a9a8e', fontSize: 14 }}>回报档位</span>
-                    <span style={{ color: '#f0ece4', fontSize: 14 }}>{selectedReward}</span>
+                    <span style={{ color: 'var(--codex-text-dim)', fontSize: 14 }}>回报档位</span>
+                    <span style={{ color: 'var(--codex-text)', fontSize: 14 }}>{selectedReward}</span>
                   </div>
                 )}
               </div>

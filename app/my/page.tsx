@@ -58,7 +58,9 @@ export default function MyDashboard() {
 
   // 设置页面状态
   const [nickname, setNickname] = useState('');
+  const [email, setEmail] = useState('');
   const [savingNickname, setSavingNickname] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [tokens, setTokens] = useState<{ id: string; token: string; name: string; created_at: string; last_used: string | null }[]>([]);
   const [copiedToken, setCopiedToken] = useState('');
@@ -122,9 +124,10 @@ export default function MyDashboard() {
         }
       } catch {}
 
-      // 初始化昵称
+      // 初始化昵称和邮箱
       if (authData?.data) {
         setNickname(authData.data.nickname || authData.data.username || '');
+        setEmail(authData.data.email || '');
       }
 
       // 加载推广数据
@@ -235,6 +238,36 @@ export default function MyDashboard() {
       setSettingsMsg({ type: 'error', text: '网络错误' });
     } finally {
       setSavingNickname(false);
+      setTimeout(() => setSettingsMsg(null), 3000);
+    }
+  };
+
+  // ========== 邮箱保存 ==========
+  const handleSaveEmail = async () => {
+    const trimmed = email.trim();
+    if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setSettingsMsg({ type: 'error', text: '邮箱格式不正确' });
+      return;
+    }
+    setSavingEmail(true);
+    setSettingsMsg(null);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSettingsMsg({ type: 'success', text: '邮箱修改成功' });
+        if (profile) setProfile({ ...profile, email: trimmed });
+      } else {
+        setSettingsMsg({ type: 'error', text: data.error?.message || data.error || '修改失败' });
+      }
+    } catch {
+      setSettingsMsg({ type: 'error', text: '网络错误' });
+    } finally {
+      setSavingEmail(false);
       setTimeout(() => setSettingsMsg(null), 3000);
     }
   };
@@ -764,6 +797,32 @@ export default function MyDashboard() {
             </p>
           </div>
 
+          {/* 邮箱编辑 */}
+          <div className="mt-5">
+            <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+              注册邮箱
+            </label>
+            <div className="flex gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input flex-1"
+                placeholder="输入你的邮箱地址"
+              />
+              <button
+                onClick={handleSaveEmail}
+                disabled={savingEmail}
+                className="btn-primary px-6 py-2 text-sm whitespace-nowrap"
+              >
+                {savingEmail ? '保存中...' : '保存'}
+              </button>
+            </div>
+            <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+              邮箱可用于登录验证和接收通知，选填
+            </p>
+          </div>
+
           {/* 消息提示 */}
           {settingsMsg && (
             <div
@@ -785,6 +844,10 @@ export default function MyDashboard() {
             <div className="flex justify-between">
               <span>用户名</span>
               <span style={{ color: 'var(--text-primary)' }}>{profile?.username}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>注册邮箱</span>
+              <span style={{ color: 'var(--text-primary)' }}>{profile?.email || '未设置'}</span>
             </div>
             <div className="flex justify-between">
               <span>角色</span>

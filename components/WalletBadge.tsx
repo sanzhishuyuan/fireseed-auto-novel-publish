@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -14,7 +14,7 @@ export default function WalletBadge() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
-  useEffect(() => {
+  const fetchUserAndBalance = useCallback(() => {
     fetch('/api/user/me', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
@@ -24,11 +24,24 @@ export default function WalletBadge() {
             .then(r => r.json())
             .then(d => { if (d.success) setBalance(d.data != null ? d.data.balance : d.balance); })
             .catch(() => {});
+        } else {
+          setUser(null);
+          setBalance(null);
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchUserAndBalance();
+  }, [fetchUserAndBalance]);
+
+  useEffect(() => {
+    const handleAuthChanged = () => fetchUserAndBalance();
+    window.addEventListener('auth-changed', handleAuthChanged);
+    return () => window.removeEventListener('auth-changed', handleAuthChanged);
+  }, [fetchUserAndBalance]);
 
   if (loading || !user) return null;
 

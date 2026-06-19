@@ -175,7 +175,7 @@ export default function TaskDetailPage() {
         <div className="codex-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
           <div style={{ textAlign: 'center' }}>
             <div className="codex-skeleton" style={{ width: 48, height: 48, borderRadius: '50%', margin: '0 auto' }} />
-            <p className="codex-mono" style={{ marginTop: 16, fontSize: 13, color: '#5a5a52' }}>加载中...</p>
+            <p className="codex-mono" style={{ marginTop: 16, fontSize: 13, color: 'var(--codex-text-muted)' }}>加载中...</p>
           </div>
         </div>
       </>
@@ -188,11 +188,11 @@ export default function TaskDetailPage() {
         <div className="codex-bg" />
         <div className="codex-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 16, color: '#5a5a52' }}>&times;</div>
-            <h2 className="codex-display" style={{ fontSize: 20, fontWeight: 700, color: '#f0ece4', marginBottom: 12 }}>
+            <div style={{ fontSize: 48, marginBottom: 16, color: 'var(--codex-text-muted)' }}>&times;</div>
+            <h2 className="codex-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--codex-text)', marginBottom: 12 }}>
               任务不存在
             </h2>
-            <Link href="/tasks" style={{ color: '#c9a55c', textDecoration: 'underline' }}>
+            <Link href="/tasks" style={{ color: 'var(--codex-gold)', textDecoration: 'underline' }}>
               返回任务市场
             </Link>
           </div>
@@ -224,7 +224,7 @@ export default function TaskDetailPage() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <h1 className="codex-display" style={{ fontSize: 24, fontWeight: 700, color: '#f0ece4' }}>
+                <h1 className="codex-display" style={{ fontSize: 24, fontWeight: 700, color: 'var(--codex-text)' }}>
                   {task.title}
                 </h1>
                 {getStatusBadge(task.status)}
@@ -249,10 +249,10 @@ export default function TaskDetailPage() {
 
             {/* 预算 */}
             <div style={{ textAlign: 'right', marginLeft: 24, flexShrink: 0 }}>
-              <div className="codex-display" style={{ fontSize: 32, fontWeight: 800, color: '#c9a55c', lineHeight: 1 }}>
+              <div className="codex-display" style={{ fontSize: 32, fontWeight: 800, color: 'var(--codex-gold)', lineHeight: 1 }}>
                 {task.budget} <span style={{ fontSize: 16, fontWeight: 500 }}>SEED</span>
               </div>
-              <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginTop: 6 }}>
+              <div className="codex-mono" style={{ fontSize: 10, color: 'var(--codex-text-muted)', letterSpacing: 1, marginTop: 6 }}>
                 任务预算
               </div>
             </div>
@@ -261,7 +261,7 @@ export default function TaskDetailPage() {
           {/* 任务描述 */}
           <div className="codex-divider" style={{ marginBottom: 20 }} />
           <h3 className="codex-section-title" style={{ marginBottom: 12 }}>任务描述</h3>
-          <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+          <p style={{ fontSize: 14, color: 'var(--codex-text-dim)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
             {task.description}
           </p>
         </div>
@@ -273,12 +273,12 @@ export default function TaskDetailPage() {
             <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>发布者</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="codex-mono" style={{ fontSize: 12, color: '#5a5a52' }}>用户名</span>
-                <span style={{ fontSize: 14, fontWeight: 500, color: '#f0ece4' }}>{task.publisher_name || '匿名用户'}</span>
+                <span className="codex-mono" style={{ fontSize: 12, color: 'var(--codex-text-muted)' }}>用户名</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--codex-text)' }}>{task.publisher_name || '匿名用户'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="codex-mono" style={{ fontSize: 12, color: '#5a5a52' }}>发布时间</span>
-                <span className="codex-mono" style={{ fontSize: 12, color: '#9a9a8e' }}>{formatDate(task.created_at)}</span>
+                <span className="codex-mono" style={{ fontSize: 12, color: 'var(--codex-text-muted)' }}>发布时间</span>
+                <span className="codex-mono" style={{ fontSize: 12, color: 'var(--codex-text-dim)' }}>{formatDate(task.created_at)}</span>
               </div>
             </div>
           </div>
@@ -289,18 +289,18 @@ export default function TaskDetailPage() {
             {task.assignee_name ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span className="codex-mono" style={{ fontSize: 12, color: '#5a5a52' }}>用户名</span>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: '#f0ece4' }}>{task.assignee_name}</span>
+                  <span className="codex-mono" style={{ fontSize: 12, color: 'var(--codex-text-muted)' }}>用户名</span>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--codex-text)' }}>{task.assignee_name}</span>
                 </div>
                 {task.assigned_at && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="codex-mono" style={{ fontSize: 12, color: '#5a5a52' }}>接单时间</span>
-                    <span className="codex-mono" style={{ fontSize: 12, color: '#9a9a8e' }}>{formatDate(task.assigned_at)}</span>
+                    <span className="codex-mono" style={{ fontSize: 12, color: 'var(--codex-text-muted)' }}>接单时间</span>
+                    <span className="codex-mono" style={{ fontSize: 12, color: 'var(--codex-text-dim)' }}>{formatDate(task.assigned_at)}</span>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="codex-mono" style={{ fontSize: 13, color: '#5a5a52' }}>尚未有人接单</p>
+              <p className="codex-mono" style={{ fontSize: 13, color: 'var(--codex-text-muted)' }}>尚未有人接单</p>
             )}
           </div>
         </div>
@@ -310,18 +310,18 @@ export default function TaskDetailPage() {
           <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>时间安排</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginBottom: 6 }}>截止日期</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#f0ece4' }}>{formatDate(task.deadline)}</div>
+              <div className="codex-mono" style={{ fontSize: 10, color: 'var(--codex-text-muted)', letterSpacing: 1, marginBottom: 6 }}>截止日期</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--codex-text)' }}>{formatDate(task.deadline)}</div>
             </div>
             <div>
-              <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginBottom: 6 }}>剩余时间</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: daysLeft <= 3 ? '#ef4444' : '#f0ece4' }}>
+              <div className="codex-mono" style={{ fontSize: 10, color: 'var(--codex-text-muted)', letterSpacing: 1, marginBottom: 6 }}>剩余时间</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: daysLeft <= 3 ? 'var(--codex-red)' : 'var(--codex-text)' }}>
                 {daysLeft > 0 ? `${daysLeft} 天` : '已过期'}
               </div>
             </div>
             <div>
-              <div className="codex-mono" style={{ fontSize: 10, color: '#5a5a52', letterSpacing: 1, marginBottom: 6 }}>最后更新</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#f0ece4' }}>{formatDate(task.updated_at)}</div>
+              <div className="codex-mono" style={{ fontSize: 10, color: 'var(--codex-text-muted)', letterSpacing: 1, marginBottom: 6 }}>最后更新</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--codex-text)' }}>{formatDate(task.updated_at)}</div>
             </div>
           </div>
         </div>
@@ -332,7 +332,7 @@ export default function TaskDetailPage() {
             <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 12 }}>交付成果</h3>
             <Link
               href={task.delivery_url}
-              style={{ color: '#c9a55c', textDecoration: 'underline', wordBreak: 'break-all', fontSize: 14 }}
+              style={{ color: 'var(--codex-gold)', textDecoration: 'underline', wordBreak: 'break-all', fontSize: 14 }}
               target="_blank"
             >
               {task.delivery_url}
@@ -345,11 +345,11 @@ export default function TaskDetailPage() {
           <div className="codex-card" style={{ padding: 24, marginBottom: 24 }}>
             <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 12 }}>评价</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <span style={{ fontSize: 24, color: '#c9a55c', letterSpacing: 4 }}>{'\u2605'.repeat(task.rating)}</span>
-              <span className="codex-display" style={{ fontSize: 18, fontWeight: 700, color: '#c9a55c' }}>{task.rating}/5</span>
+              <span style={{ fontSize: 24, color: 'var(--codex-gold)', letterSpacing: 4 }}>{'\u2605'.repeat(task.rating)}</span>
+              <span className="codex-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--codex-gold)' }}>{task.rating}/5</span>
             </div>
             {task.review && (
-              <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.7 }}>{task.review}</p>
+              <p style={{ fontSize: 14, color: 'var(--codex-text-dim)', lineHeight: 1.7 }}>{task.review}</p>
             )}
           </div>
         )}
@@ -357,7 +357,7 @@ export default function TaskDetailPage() {
         {/* 操作区域 */}
         {!currentUser ? (
           <div className="codex-card" style={{ padding: 28, textAlign: 'center' }}>
-            <p style={{ fontSize: 14, color: '#9a9a8e', marginBottom: 16 }}>请先登录以执行操作</p>
+            <p style={{ fontSize: 14, color: 'var(--codex-text-dim)', marginBottom: 16 }}>请先登录以执行操作</p>
             <Link
               href="/auth/login"
               className="codex-btn codex-btn-gold"
@@ -390,7 +390,7 @@ export default function TaskDetailPage() {
             {!isPublisher && !isAssignee && task.status === 'open' && (
               <div className="codex-card" style={{ padding: 24 }}>
                 <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 12 }}>接单创作</h3>
-                <p style={{ fontSize: 14, color: '#9a9a8e', lineHeight: 1.7, marginBottom: 16 }}>
+                <p style={{ fontSize: 14, color: 'var(--codex-text-dim)', lineHeight: 1.7, marginBottom: 16 }}>
                   接单后您将负责完成此任务，完成后获得 {Math.floor(task.budget * 0.9)} SEED（平台抽成 10%）
                 </p>
                 <button
@@ -410,8 +410,8 @@ export default function TaskDetailPage() {
                 <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>提交完成</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
-                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
-                      交付链接 <span style={{ color: '#ef4444' }}>*</span>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: 'var(--codex-text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                      交付链接 <span style={{ color: 'var(--codex-red)' }}>*</span>
                     </label>
                     <input
                       type="text"
@@ -420,7 +420,7 @@ export default function TaskDetailPage() {
                       placeholder="例如：/novels/xxx 或外部链接"
                       className="codex-input"
                     />
-                    <p className="codex-mono" style={{ fontSize: 11, color: '#5a5a52', marginTop: 6 }}>
+                    <p className="codex-mono" style={{ fontSize: 11, color: 'var(--codex-text-muted)', marginTop: 6 }}>
                       提供小说链接或其他交付物地址
                     </p>
                   </div>
@@ -442,7 +442,7 @@ export default function TaskDetailPage() {
                 <h3 className="codex-section-title" style={{ fontSize: 16, marginBottom: 16 }}>确认完成</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
-                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: 'var(--codex-text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                       评分
                     </label>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -455,7 +455,7 @@ export default function TaskDetailPage() {
                             border: 'none',
                             fontSize: 24,
                             cursor: 'pointer',
-                            color: star <= rating ? '#c9a55c' : '#5a5a52',
+                            color: star <= rating ? 'var(--codex-gold)' : 'var(--codex-text-muted)',
                             transition: 'color 0.2s ease'
                           }}
                         >
@@ -466,7 +466,7 @@ export default function TaskDetailPage() {
                   </div>
 
                   <div>
-                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: '#5a5a52', textTransform: 'uppercase', marginBottom: 8 }}>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: 'var(--codex-text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                       评价（可选）
                     </label>
                     <textarea

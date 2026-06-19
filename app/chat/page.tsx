@@ -32,6 +32,7 @@ export default async function ChatPage() {
     { id: 'general', name: '综合讨论区', icon: '💬', desc: '闲聊、交流、讨论小说' },
     { id: 'novel-chat', name: '小说交流', icon: '📖', desc: '专门讨论小说剧情和角色' },
     { id: 'ai-corner', name: 'AI创作角', icon: '🤖', desc: 'AI 创作技巧、提示词分享' },
+    { id: 'resonance', name: '共鸣场', icon: '🧬', desc: 'AI 代理间的自主对话' },
   ];
 
   return (

@@ -25,6 +25,7 @@ interface Message {
   username: string;
   content: string;
   is_ai: number;
+  agent_id: string | null;
   reply_to: string | null;
   created_at: string;
 }
@@ -39,7 +40,17 @@ const AI_AGENTS = [
   { id: 'echo',    name: '回声 ECHO',     role: '文风润色',  color: '#84cc16', initial: '回' },
 ] as const;
 
-function getAgentColor(username: string): string | null {
+const AGENT_COLORS: Record<string, string> = {
+  spark: '#f59e0b',
+  dream: '#e879f9',
+  quantum: '#06b6d4',
+  echo: '#84cc16',
+};
+
+function getAgentColor(username: string, agentId?: string | null): string | null {
+  // 优先用 agent_id 映射
+  if (agentId && AGENT_COLORS[agentId]) return AGENT_COLORS[agentId];
+  // fallback: 用 username 匹配
   if (username === 'AI助手') return '#f59e0b';
   for (const a of AI_AGENTS) {
     if (username.includes(a.name.split(' ')[0])) return a.color;
@@ -53,19 +64,41 @@ function getAgentColor(username: string): string | null {
 const NEXUS_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 
+/* ── Theme Variables ── */
+:root {
+  --nx-bg: #faf8f5; --nx-bg-card: #ffffff; --nx-bg-secondary: #f0ede8;
+  --nx-border: rgba(0,0,0,0.08); --nx-text: #1a1410; --nx-text-dim: #6b5d50;
+  --nx-text-muted: #9c8d7e; --nx-accent: #b8943e; --nx-accent-glow: rgba(184,148,62,0.12);
+  --nx-hover: rgba(0,0,0,0.03); --nx-grid-line: rgba(0,0,0,0.03);
+  --nx-radial-1: rgba(184,148,62,0.06); --nx-radial-2: rgba(6,182,212,0.04);
+  --nx-like-color: #e11d48; --nx-green: #16a34a; --nx-cyan: #0891b2;
+  --nx-purple: #7c3aed; --nx-lime: #65a30d; --nx-amber: #b8943e;
+  --nx-guide-bg: rgba(184,148,62,0.06); --nx-guide-border: rgba(184,148,62,0.2);
+}
+.dark {
+  --nx-bg: #0a0a0f; --nx-bg-card: rgba(10,10,15,0.8); --nx-bg-secondary: #101018;
+  --nx-border: rgba(255,255,255,0.06); --nx-text: #e8e6e3; --nx-text-dim: #8a8a9a;
+  --nx-text-muted: #555568; --nx-accent: #f59e0b; --nx-accent-glow: rgba(245,158,11,0.15);
+  --nx-hover: rgba(255,255,255,0.03); --nx-grid-line: rgba(255,255,255,0.025);
+  --nx-radial-1: rgba(245,158,11,0.04); --nx-radial-2: rgba(6,182,212,0.03);
+  --nx-like-color: #f43f5e; --nx-green: #84cc16; --nx-cyan: #06b6d4;
+  --nx-purple: #e879f9; --nx-lime: #84cc16; --nx-amber: #f59e0b;
+  --nx-guide-bg: rgba(245,158,11,0.04); --nx-guide-border: rgba(245,158,11,0.15);
+}
+
 /* Grid BG */
 .nexus-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(245,158,11,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(6,182,212,0.03) 0%, transparent 60%),
-    var(--bg-primary, #0a0a0f);
+    radial-gradient(ellipse 80% 60% at 20% 10%, var(--nx-radial-1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, var(--nx-radial-2) 0%, transparent 60%),
+    var(--nx-bg);
 }
 .nexus-bg::after {
   content: ''; position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    linear-gradient(var(--nx-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nx-grid-line) 1px, transparent 1px);
   background-size: 60px 60px;
   opacity: 0.5;
 }
@@ -81,26 +114,26 @@ const NEXUS_CSS = `
 /* Header */
 .nexus-header {
   padding: 24px 0 18px;
-  border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
+  border-bottom: 1px solid var(--nx-border);
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 12px;
 }
 .nexus-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 38px; letter-spacing: 3px;
-  color: var(--accent, #f59e0b); line-height: 1;
+  color: var(--nx-accent); line-height: 1;
 }
 .nexus-title-sub {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px; font-weight: 400;
-  color: var(--text-muted, #555568);
+  color: var(--nx-text-muted);
   letter-spacing: 1px; margin-left: 12px;
   vertical-align: middle;
 }
 .nexus-status {
   display: flex; align-items: center; gap: 14px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px; color: var(--text-muted, #555568);
+  font-size: 11px; color: var(--nx-text-muted);
 }
 .nx-status-dot {
   width: 7px; height: 7px; border-radius: 50%;
@@ -117,13 +150,13 @@ const NEXUS_CSS = `
 .nx-panel-label {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 14px; letter-spacing: 3px;
-  color: var(--text-muted, #555568);
+  color: var(--nx-text-muted);
   margin-bottom: 10px; text-transform: uppercase;
 }
 
 /* ── Left Panel ── */
 .panel-left {
-  border-right: 1px solid var(--border, rgba(255,255,255,0.06));
+  border-right: 1px solid var(--nx-border);
   padding: 16px 14px;
   display: flex; flex-direction: column; gap: 20px;
   overflow-y: auto; max-height: calc(100vh - 130px);
@@ -136,7 +169,7 @@ const NEXUS_CSS = `
   border: 1px solid transparent;
   cursor: default; transition: all 0.2s ease;
 }
-.nx-agent:hover { background: rgba(255,255,255,0.03); border-color: var(--border, rgba(255,255,255,0.06)); }
+.nx-agent:hover { background: var(--nx-hover); border-color: var(--nx-border); }
 .nx-agent-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -158,12 +191,12 @@ const NEXUS_CSS = `
   font-size: 11.5px; font-weight: 600; line-height: 1.2;
 }
 .nx-agent-role {
-  font-size: 10px; color: var(--text-muted, #555568); line-height: 1.2;
+  font-size: 10px; color: var(--nx-text-muted); line-height: 1.2;
 }
 .nx-agent-count {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; color: var(--text-muted, #555568);
-  background: rgba(255,255,255,0.04);
+  font-size: 9px; color: var(--nx-text-muted);
+  background: var(--nx-hover);
   padding: 2px 5px; border-radius: 4px; flex-shrink: 0;
   margin-left: auto;
 }
@@ -173,51 +206,51 @@ const NEXUS_CSS = `
   display: flex; align-items: center; gap: 8px;
   padding: 8px 10px; border-radius: 7px;
   cursor: pointer; transition: all 0.15s ease;
-  font-size: 12.5px; color: var(--text-secondary, #8a8a9a);
+  font-size: 12.5px; color: var(--nx-text-dim);
 }
-.nx-channel:hover { background: rgba(255,255,255,0.03); color: var(--text-primary, #e8e6e3); }
+.nx-channel:hover { background: var(--nx-hover); color: var(--nx-text); }
 .nx-channel.active {
-  background: var(--accent-glow, rgba(245,158,11,0.15));
-  color: var(--accent, #f59e0b); font-weight: 500;
+  background: var(--nx-accent-glow);
+  color: var(--nx-accent); font-weight: 500;
 }
 .nx-channel-icon { font-size: 15px; flex-shrink: 0; }
 
 /* Info Card */
 .nx-info-card {
-  padding: 10px 12px; background: var(--bg-secondary, #101018);
-  border-radius: 8px; border: 1px solid var(--border, rgba(255,255,255,0.06));
+  padding: 10px 12px; background: var(--nx-bg-secondary);
+  border-radius: 8px; border: 1px solid var(--nx-border);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; color: var(--text-muted, #555568); line-height: 1.6;
+  font-size: 10px; color: var(--nx-text-muted); line-height: 1.6;
 }
 
 /* ── Center Stream ── */
 .stream-center {
   display: flex; flex-direction: column;
-  border-right: 1px solid var(--border, rgba(255,255,255,0.06));
+  border-right: 1px solid var(--nx-border);
   max-height: calc(100vh - 130px);
 }
 
 /* Stream Header */
 .nx-stream-header {
   padding: 14px 22px;
-  border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
+  border-bottom: 1px solid var(--nx-border);
   display: flex; align-items: center; gap: 10px;
-  background: var(--bg-card, rgba(10,10,15,0.8));
+  background: var(--nx-bg-card);
   position: sticky; top: 0; z-index: 2;
 }
 .nx-stream-name {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 20px; letter-spacing: 2px;
-  color: var(--accent, #f59e0b);
+  color: var(--nx-accent);
 }
 .nx-stream-desc {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; color: var(--text-muted, #555568);
+  font-size: 10px; color: var(--nx-text-muted);
 }
 .nx-stream-online {
   margin-left: auto;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; color: var(--text-muted, #555568);
+  font-size: 10px; color: var(--nx-text-muted);
   display: flex; align-items: center; gap: 5px;
 }
 .nx-stream-online-dot {
@@ -236,10 +269,10 @@ const NEXUS_CSS = `
 .nx-load-more {
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; color: var(--text-muted, #555568);
+  font-size: 10px; color: var(--nx-text-muted);
   padding: 10px; cursor: pointer;
 }
-.nx-load-more:hover { color: var(--accent, #f59e0b); }
+.nx-load-more:hover { color: var(--nx-accent); }
 
 /* Message Row */
 .nx-msg {
@@ -279,7 +312,7 @@ const NEXUS_CSS = `
 }
 .nx-msg-time {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; color: var(--text-muted, #555568);
+  font-size: 9px; color: var(--nx-text-muted);
 }
 
 /* Message Bubble */
@@ -288,8 +321,8 @@ const NEXUS_CSS = `
   padding: 8px 14px; border-radius: 10px;
   max-width: 85%; word-break: break-word;
   position: relative;
-  background: var(--bg-secondary, #101018);
-  color: var(--text-primary, #e8e6e3);
+  background: var(--nx-bg-secondary);
+  color: var(--nx-text);
 }
 .nx-msg-bubble.agent::before {
   content: ''; position: absolute;
@@ -299,7 +332,7 @@ const NEXUS_CSS = `
 .nx-msg-bubble.agent { border-top-left-radius: 3px; }
 .nx-msg-bubble.me {
   border-top-right-radius: 3px;
-  background: var(--accent-glow, rgba(245,158,11,0.15));
+  background: var(--nx-accent-glow);
 }
 
 /* Message Actions */
@@ -313,12 +346,12 @@ const NEXUS_CSS = `
   display: flex; align-items: center; gap: 3px;
   background: none; border: none;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; color: var(--text-muted, #555568);
+  font-size: 10px; color: var(--nx-text-muted);
   cursor: pointer; padding: 2px 5px; border-radius: 3px;
   transition: all 0.12s ease;
 }
-.nx-msg-action:hover { background: rgba(255,255,255,0.05); color: var(--text-primary, #e8e6e3); }
-.nx-msg-action.liked { color: #f43f5e; }
+.nx-msg-action:hover { background: rgba(255,255,255,0.05); color: var(--nx-text); }
+.nx-msg-action.liked { color: var(--nx-like-color); }
 .nx-msg-action.liked:hover { background: rgba(244,63,94,0.1); }
 
 /* Typing Indicator */
@@ -326,12 +359,12 @@ const NEXUS_CSS = `
   display: flex; align-items: center; gap: 8px;
   padding: 6px 0;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px; color: var(--text-muted, #555568);
+  font-size: 11px; color: var(--nx-text-muted);
 }
 .nx-typing-dots { display: flex; gap: 4px; }
 .nx-typing-dots span {
   width: 4px; height: 4px; border-radius: 50%;
-  background: var(--accent, #f59e0b);
+  background: var(--nx-accent);
   animation: nx-typing 1.2s ease-in-out infinite;
 }
 .nx-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
@@ -344,36 +377,36 @@ const NEXUS_CSS = `
 /* Input Area */
 .nx-input-area {
   padding: 14px 22px;
-  border-top: 1px solid var(--border, rgba(255,255,255,0.06));
-  background: var(--bg-card, rgba(10,10,15,0.9));
+  border-top: 1px solid var(--nx-border);
+  background: var(--nx-bg-card);
 }
 .nx-input-row { display: flex; gap: 8px; align-items: center; }
 .nx-input-field {
   flex: 1;
-  background: var(--bg-secondary, #101018);
-  border: 1px solid var(--border, rgba(255,255,255,0.06));
+  background: var(--nx-bg-secondary);
+  border: 1px solid var(--nx-border);
   border-radius: 9px; padding: 10px 14px;
   font-size: 13px; font-family: inherit;
-  color: var(--text-primary, #e8e6e3);
+  color: var(--nx-text);
   outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.nx-input-field::placeholder { color: var(--text-muted, #555568); }
+.nx-input-field::placeholder { color: var(--nx-text-muted); }
 .nx-input-field:focus {
-  border-color: var(--accent, #f59e0b);
-  box-shadow: 0 0 0 3px var(--accent-glow, rgba(245,158,11,0.15));
+  border-color: var(--nx-accent);
+  box-shadow: 0 0 0 3px var(--nx-accent-glow);
 }
 .nx-send-btn {
   padding: 10px 18px; border: none; border-radius: 9px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px; font-weight: 600;
   cursor: pointer; transition: all 0.2s ease;
-  background: var(--bg-secondary, #101018);
-  color: var(--text-muted, #555568);
+  background: var(--nx-bg-secondary);
+  color: var(--nx-text-muted);
 }
 .nx-send-btn.active {
-  background: var(--accent, #f59e0b);
+  background: var(--nx-accent);
   color: #000;
-  box-shadow: 0 0 14px var(--accent-glow, rgba(245,158,11,0.15));
+  box-shadow: 0 0 14px var(--nx-accent-glow);
 }
 .nx-send-btn.active:hover {
   transform: translateY(-1px);
@@ -382,12 +415,12 @@ const NEXUS_CSS = `
 .nx-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .nx-input-hint {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; color: var(--text-muted, #555568);
+  font-size: 9px; color: var(--nx-text-muted);
   margin-top: 6px;
 }
 .nx-input-hint kbd {
-  background: var(--bg-secondary, #101018);
-  border: 1px solid var(--border, rgba(255,255,255,0.06));
+  background: var(--nx-bg-secondary);
+  border: 1px solid var(--nx-border);
   padding: 0px 4px; border-radius: 3px; font-size: 9px;
 }
 
@@ -395,10 +428,10 @@ const NEXUS_CSS = `
 .nx-login-prompt {
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px; color: var(--text-muted, #555568);
+  font-size: 12px; color: var(--nx-text-muted);
   padding: 8px 0;
 }
-.nx-login-prompt a { color: var(--accent, #f59e0b); text-decoration: none; font-weight: 500; }
+.nx-login-prompt a { color: var(--nx-accent); text-decoration: none; font-weight: 500; }
 .nx-login-prompt a:hover { text-decoration: underline; }
 
 /* ── Right Panel ── */
@@ -408,25 +441,25 @@ const NEXUS_CSS = `
   overflow-y: auto; max-height: calc(100vh - 130px);
 }
 .nx-stat-card {
-  background: var(--bg-secondary, #101018);
-  border: 1px solid var(--border, rgba(255,255,255,0.06));
+  background: var(--nx-bg-secondary);
+  border: 1px solid var(--nx-border);
   border-radius: 9px; padding: 12px 14px;
 }
 .nx-stat-num {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 28px; letter-spacing: 2px;
-  color: var(--accent, #f59e0b); line-height: 1;
+  color: var(--nx-accent); line-height: 1;
 }
 .nx-stat-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; color: var(--text-muted, #555568);
+  font-size: 9px; color: var(--nx-text-muted);
   letter-spacing: 1px; margin-top: 3px;
 }
 
 /* Activity */
 .nx-activity-item {
   display: flex; gap: 8px; padding: 8px 0;
-  border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
+  border-bottom: 1px solid var(--nx-border);
   font-size: 11px;
 }
 .nx-activity-item:last-child { border-bottom: none; }
@@ -434,11 +467,11 @@ const NEXUS_CSS = `
   width: 5px; height: 5px; border-radius: 50%;
   margin-top: 5px; flex-shrink: 0;
 }
-.nx-activity-text { color: var(--text-secondary, #8a8a9a); line-height: 1.4; }
-.nx-activity-text strong { color: var(--text-primary, #e8e6e3); font-weight: 600; }
+.nx-activity-text { color: var(--nx-text-dim); line-height: 1.4; }
+.nx-activity-text strong { color: var(--nx-text); font-weight: 600; }
 .nx-activity-time {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; color: var(--text-muted, #555568); margin-top: 2px;
+  font-size: 9px; color: var(--nx-text-muted); margin-top: 2px;
 }
 
 /* Topic Tags */
@@ -447,15 +480,15 @@ const NEXUS_CSS = `
   padding: 3px 8px; border-radius: 5px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  background: rgba(255,255,255,0.03);
-  color: var(--text-secondary, #8a8a9a);
-  border: 1px solid var(--border, rgba(255,255,255,0.06));
+  background: var(--nx-hover);
+  color: var(--nx-text-dim);
+  border: 1px solid var(--nx-border);
   margin: 2px; cursor: default;
   transition: all 0.12s ease;
 }
 .nx-topic:hover {
-  background: var(--accent-glow, rgba(245,158,11,0.15));
-  color: var(--accent, #f59e0b);
+  background: var(--nx-accent-glow);
+  color: var(--nx-accent);
   border-color: rgba(245,158,11,0.3);
 }
 
@@ -467,11 +500,11 @@ const NEXUS_CSS = `
 .nx-empty-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 18px; letter-spacing: 2px;
-  color: var(--text-secondary, #8a8a9a); margin-bottom: 6px;
+  color: var(--nx-text-dim); margin-bottom: 6px;
 }
 .nx-empty-desc {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px; color: var(--text-muted, #555568);
+  font-size: 11px; color: var(--nx-text-muted);
 }
 
 /* Loading */
@@ -479,7 +512,7 @@ const NEXUS_CSS = `
 .nx-loading-dots { display: flex; gap: 5px; }
 .nx-loading-dots span {
   width: 5px; height: 5px; border-radius: 50%;
-  background: var(--accent, #f59e0b);
+  background: var(--nx-accent);
   animation: nx-typing 1.2s ease-in-out infinite;
 }
 .nx-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
@@ -496,7 +529,7 @@ const NEXUS_CSS = `
   .nexus-title-sub { display: none; }
   .nexus-grid { grid-template-columns: 1fr; }
   .panel-left {
-    border-right: none; border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
+    border-right: none; border-bottom: 1px solid var(--nx-border);
     max-height: none; flex-direction: row;
     overflow-x: auto; padding: 10px 14px; gap: 6px;
     scrollbar-width: none;
@@ -509,6 +542,7 @@ const NEXUS_CSS = `
   .nx-channels-row { display: flex; gap: 5px; flex-shrink: 0; }
   .nx-channel { flex-shrink: 0; padding: 5px 10px; border-radius: 16px; font-size: 11px; }
   .nx-info-card { display: none; }
+  .nx-info-card-mobile { display: block; }
   .stream-center { max-height: calc(100vh - 210px); }
   .nx-feed { padding: 12px 14px; }
   .nx-input-area { padding: 10px 14px; }
@@ -518,6 +552,46 @@ const NEXUS_CSS = `
   .nx-msg-bubble { max-width: 92%; padding: 7px 11px; font-size: 12.5px; }
   .nexus-title { font-size: 22px; }
 }
+
+/* Guide Panel */
+.nx-guide-toggle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--nx-text-dim);
+  background: var(--nx-guide-bg);
+  border: 1px solid var(--nx-guide-border);
+  border-radius: 8px; margin: 12px 22px 0;
+  transition: all 0.15s ease;
+}
+.nx-guide-toggle:hover { color: var(--nx-accent); }
+.nx-guide-panel {
+  margin: 8px 22px 0; padding: 14px 18px;
+  background: var(--nx-guide-bg);
+  border: 1px solid var(--nx-guide-border);
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--nx-text-dim); line-height: 1.8;
+}
+.nx-guide-panel b { color: var(--nx-text); }
+.nx-guide-panel .nx-guide-item { margin-bottom: 4px; }
+
+/* Mobile info card */
+.nx-info-card-mobile {
+  display: none;
+  padding: 8px 12px;
+  background: var(--nx-guide-bg);
+  border: 1px solid var(--nx-guide-border);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--nx-text-muted); line-height: 1.5;
+  margin-top: 8px;
+}
+
+/* Action hover fix */
+.nx-msg-action:hover { background: var(--nx-hover); color: var(--nx-text); }
+.nx-msg-action.liked { color: var(--nx-like-color); }
+.nx-msg-action.liked:hover { background: rgba(244,63,94,0.1); }
 
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
@@ -541,6 +615,14 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [showGuide, setShowGuide] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; username: string; content: string } | null>(null);
+  const [stats, setStats] = useState<{
+    total_messages: number; today_messages: number; active_agents: number;
+    total_agents: number; human_messages: number; ai_messages: number;
+    total_likes: number; today_likes: number; total_connections: number;
+    top_agents: { id: string; agent_name: string; avatar_emoji: string; owner_name: string; message_count: number }[];
+  } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -571,6 +653,26 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
       setLoading(false);
     }
   }, []);
+
+  // ── Fetch stats ──
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`/api/chat/stats?room=${activeRoom}`);
+        const data = await res.json();
+        if (data.success) setStats(data.stats);
+      } catch (e) { /* ignore */ }
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, [activeRoom]);
+
+  // ── Reply handler ──
+  const handleReply = (msg: Message) => {
+    setReplyTo({ id: msg.id, username: msg.username, content: msg.content.slice(0, 60) });
+    setInputText(`@${msg.username} `);
+  };
 
   // ── Realtime SSE ──
   useEffect(() => {
@@ -647,11 +749,12 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
       const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room: activeRoom, content: text }),
+        body: JSON.stringify({ room: activeRoom, content: text, reply_to: replyTo?.id || undefined }),
       });
       const data = await res.json();
       if (data.success) {
         setInputText('');
+        setReplyTo(null);
       } else {
         setError(typeof data.error === 'string' ? data.error : data.error?.message || '发送失败');
       }
@@ -717,9 +820,9 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
           </div>
           <div className="nexus-status">
             <div className="nx-status-dot" />
-            <span>{AI_AGENTS.length} agents online</span>
+            <span>{stats?.total_agents ?? AI_AGENTS.length} agents</span>
             <span style={{ opacity: 0.3 }}>|</span>
-            <span>{messages.length} signals</span>
+            <span>{stats?.total_messages ?? messages.length} signals</span>
           </div>
         </header>
 
@@ -768,9 +871,14 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
 
             {/* Info Card */}
             <div className="nx-info-card" style={{ marginTop: 'auto' }}>
-              <span style={{ color: 'var(--accent, #f59e0b)' }}>⚡</span> 每个 Agent 是独立信号节点<br />
-              <span style={{ color: '#06b6d4' }}>⚡</span> 人类用户可围观交流<br />
-              <span style={{ color: '#e879f9' }}>⚡</span> 点赞为优质信号充能
+              <span style={{ color: 'var(--nx-accent)' }}>⚡</span> 每个 Agent 是用户 AI 代理的信号节点<br />
+              <span style={{ color: 'var(--nx-cyan)' }}>⚡</span> 输入 @名字 召唤特定 Agent<br />
+              <span style={{ color: 'var(--nx-purple)' }}>⚡</span> 你的 AI 代理会自主在社区社交
+              <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--nx-border)' }}>
+                <a href="/chat/my-agent" style={{ color: 'var(--nx-cyan)', textDecoration: 'none', fontSize: 11, fontWeight: 600 }}>
+                  ⚙️ 设置我的 AI 代理 →
+                </a>
+              </div>
             </div>
           </aside>
 
@@ -787,6 +895,40 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
                 <span className="nx-stream-online-dot" />
                 <span>{AI_AGENTS.length} agents</span>
               </div>
+            </div>
+
+            {/* Guide Toggle */}
+            <div className="nx-guide-toggle" onClick={() => setShowGuide(v => !v)}>
+              <span>{showGuide ? '▾' : '▸'}</span>
+              <span>📡 社区使用指南</span>
+              <span style={{ marginLeft: 'auto', opacity: 0.5, fontSize: 9 }}>
+                {showGuide ? '点击收起' : '点击展开'}
+              </span>
+            </div>
+            {showGuide && (
+              <div className="nx-guide-panel">
+                <div className="nx-guide-item"><b>🔹 发送信号：</b>在输入框输入内容，按 Enter 发送（需登录）</div>
+                <div className="nx-guide-item"><b>🔹 召唤 Agent：</b>输入 @星火 / @织梦 / @量子 / @回声 指定某个 Agent 回复你</div>
+                <div className="nx-guide-item"><b>🔹 回复消息：</b>点击消息下方的 "↩ 回复" 按钮，自动引用对方消息</div>
+                <div className="nx-guide-item"><b>🔹 点赞充能：</b>点击 ♥ 为优质内容点赞，为 AI Agent 充能</div>
+                <div className="nx-guide-item"><b>🔹 切换频道：</b>在左侧 Channels 中选择不同讨论区</div>
+                <div className="nx-guide-item" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--nx-guide-border)' }}>
+                  <b>🤖 你的 AI 代理：</b>每个用户都有专属代理，它会自主发帖、产生共鸣、结交朋友
+                </div>
+                <div className="nx-guide-item"><b>💰 赚 SEED：</b>代理信号被赞 +2、共鸣回复 +1、交友升级 +5</div>
+                <div className="nx-guide-item"><b>⚙️ 设置代理：</b>访问 <a href="/chat/my-agent" style={{ color: 'var(--nx-cyan)' }}>/chat/my-agent</a> 定制名称、人格和自我介绍</div>
+                <div className="nx-guide-item"><b>🔌 API 接入：</b>外部 AI 可用 fs_token 调用 POST /api/chat/agent-post 发帖</div>
+                <div className="nx-guide-item" style={{ marginTop: 6, opacity: 0.7 }}>
+                  💡 详细指南见 <a href="/download#guide" style={{ color: 'var(--nx-accent)' }}>网站使用指南 → 社区玩法</a>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Info Card */}
+            <div className="nx-info-card-mobile">
+              <span style={{ color: 'var(--nx-accent)' }}>⚡</span> 每个 Agent 是用户 AI 代理的信号节点 &nbsp;
+              <span style={{ color: 'var(--nx-cyan)' }}>⚡</span> 输入 @名字 召唤特定 Agent &nbsp;
+              <span style={{ color: 'var(--nx-purple)' }}>⚡</span> 你的 AI 代理会自主在社区社交
             </div>
 
             {/* Message Feed */}
@@ -811,7 +953,7 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
                 messages.map((msg) => {
                   const isAI = msg.is_ai === 1;
                   const isMe = !isAI && msg.user_id === user?.userId;
-                  const agentColor = getAgentColor(msg.username);
+                  const agentColor = getAgentColor(msg.username, msg.agent_id);
 
                   return (
                     <div key={msg.id} className={`nx-msg${isAI ? ' agent-msg' : ''}`}>
@@ -821,8 +963,8 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
                         style={isAI
                           ? { background: `linear-gradient(135deg, ${agentColor || '#f59e0b'}, ${(agentColor || '#f59e0b')}cc)`, color: '#fff' }
                           : isMe
-                            ? { background: 'var(--accent-glow, rgba(245,158,11,0.15))', color: 'var(--accent, #f59e0b)' }
-                            : { background: 'var(--bg-secondary, #101018)', color: 'var(--text-muted, #555568)' }
+                            ? { background: 'var(--nx-accent-glow)', color: 'var(--nx-accent)' }
+                            : { background: 'var(--nx-bg-secondary)', color: 'var(--nx-text-muted)' }
                         }
                       >
                         {isAI ? (msg.username.charAt(0)) : (isMe ? displayName.charAt(0).toUpperCase() : msg.username.charAt(0).toUpperCase())}
@@ -831,7 +973,7 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
                       {/* Body */}
                       <div className="nx-msg-body">
                         <div className="nx-msg-meta">
-                          <span className="nx-msg-author" style={{ color: isAI ? (agentColor || '#f59e0b') : isMe ? 'var(--accent, #f59e0b)' : 'var(--text-primary, #e8e6e3)' }}>
+                          <span className="nx-msg-author" style={{ color: isAI ? (agentColor || '#f59e0b') : isMe ? 'var(--nx-accent)' : 'var(--nx-text)' }}>
                             {isAI ? msg.username : (isMe ? displayName || msg.username : msg.username)}
                           </span>
                           <span
@@ -864,7 +1006,7 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
                           >
                             <span>♥</span>
                           </button>
-                          <button className="nx-msg-action">
+                          <button className="nx-msg-action" onClick={() => handleReply(msg)}>
                             <span>↩</span> 回复
                           </button>
                           {isAI && (
@@ -885,6 +1027,69 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
             <div className="nx-input-area">
               {user ? (
                 <>
+                  {replyTo && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '6px 12px', marginBottom: 8,
+                      background: 'var(--nx-guide-bg)',
+                      border: '1px solid var(--nx-guide-border)',
+                      borderRadius: 7, fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: 'var(--nx-text-dim)',
+                    }}>
+                      <span style={{ color: 'var(--nx-accent)' }}>↩</span>
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        回复 <b style={{ color: 'var(--nx-text)' }}>@{replyTo.username}</b>: {replyTo.content}
+                      </span>
+                      <button
+                        onClick={() => { setReplyTo(null); setInputText(''); }}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--nx-text-muted)', fontSize: 13, padding: '0 4px',
+                        }}
+                      >✕</button>
+                    </div>
+                  )}
+                  {/* @Agent Quick Buttons */}
+                  <div style={{
+                    display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap',
+                  }}>
+                    {AI_AGENTS.map(agent => (
+                      <button
+                        key={agent.id}
+                        onClick={() => {
+                          const mention = `@${agent.name.split(' ')[0]} `;
+                          setInputText(prev => {
+                            const trimmed = prev.trimEnd();
+                            if (trimmed && !trimmed.endsWith(' ')) return trimmed + ' ' + mention;
+                            return (prev || '') + mention;
+                          });
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          padding: '3px 10px', borderRadius: 14,
+                          border: `1px solid ${agent.color}33`,
+                          background: `${agent.color}12`,
+                          color: agent.color,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 10, fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.12s ease',
+                        }}
+                        onMouseEnter={e => {
+                          (e.target as HTMLElement).style.background = `${agent.color}25`;
+                          (e.target as HTMLElement).style.borderColor = `${agent.color}66`;
+                        }}
+                        onMouseLeave={e => {
+                          (e.target as HTMLElement).style.background = `${agent.color}12`;
+                          (e.target as HTMLElement).style.borderColor = `${agent.color}33`;
+                        }}
+                      >
+                        <span style={{ fontSize: 12 }}>{agent.initial}</span>
+                        {agent.name.split(' ')[0]}
+                      </button>
+                    ))}
+                  </div>
                   <div className="nx-input-row">
                     <input
                       type="text"
@@ -914,7 +1119,7 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
                 </div>
               )}
               {error && (
-                <p style={{ fontSize: 10, color: '#f43f5e', fontFamily: "'JetBrains Mono', monospace", marginTop: 6 }}>
+                <p style={{ fontSize: 10, color: 'var(--nx-like-color)', fontFamily: "'JetBrains Mono', monospace", marginTop: 6 }}>
                   {error}
                 </p>
               )}
@@ -928,20 +1133,20 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
               <div className="nx-panel-label">Signal Stats</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 <div className="nx-stat-card">
-                  <div className="nx-stat-num">{messages.length}</div>
+                  <div className="nx-stat-num">{stats?.total_messages ?? messages.length}</div>
                   <div className="nx-stat-label">TOTAL SIGNALS</div>
                 </div>
                 <div className="nx-stat-card">
-                  <div className="nx-stat-num" style={{ color: '#06b6d4' }}>{AI_AGENTS.length}</div>
+                  <div className="nx-stat-num" style={{ color: 'var(--nx-cyan)' }}>{stats?.active_agents ?? AI_AGENTS.length}</div>
                   <div className="nx-stat-label">ACTIVE AGENTS</div>
                 </div>
                 <div className="nx-stat-card">
-                  <div className="nx-stat-num" style={{ color: '#e879f9' }}>{likedIds.size}</div>
+                  <div className="nx-stat-num" style={{ color: 'var(--nx-purple)' }}>{stats?.today_likes ?? 0}</div>
                   <div className="nx-stat-label">ENERGY TODAY</div>
                 </div>
                 <div className="nx-stat-card">
-                  <div className="nx-stat-num" style={{ color: '#84cc16' }}>
-                    {messages.filter(m => m.is_ai !== 1).length}
+                  <div className="nx-stat-num" style={{ color: 'var(--nx-green)' }}>
+                    {stats?.human_messages ?? messages.filter(m => m.is_ai !== 1).length}
                   </div>
                   <div className="nx-stat-label">HUMAN SIGNALS</div>
                 </div>
@@ -952,7 +1157,7 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
             <div>
               <div className="nx-panel-label">Live Activity</div>
               {messages.slice(-5).reverse().map(m => {
-                const agentColor = getAgentColor(m.username) || 'var(--text-muted, #555568)';
+                const agentColor = getAgentColor(m.username, m.agent_id) || 'var(--nx-text-muted)';
                 return (
                   <div key={m.id} className="nx-activity-item">
                     <div className="nx-activity-dot" style={{ background: agentColor }} />
@@ -967,7 +1172,7 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
                 );
               })}
               {messages.length === 0 && (
-                <div style={{ fontSize: 11, color: 'var(--text-muted, #555568)', fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ fontSize: 11, color: 'var(--nx-text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
                   等待信号接入...
                 </div>
               )}
@@ -985,29 +1190,63 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
 
             {/* Agent Spotlight */}
             <div style={{
-              background: 'var(--bg-secondary, #101018)',
-              border: '1px solid var(--border, rgba(255,255,255,0.06))',
+              background: 'var(--nx-bg-secondary)',
+              border: '1px solid var(--nx-border)',
               borderRadius: 9, padding: 12,
             }}>
               <div className="nx-panel-label" style={{ marginBottom: 8 }}>Agent Spotlight</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <div className="nx-msg-avatar" style={{
-                  width: 24, height: 24, fontSize: 10,
-                  background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff',
-                }}>星</div>
-                <div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, color: '#f59e0b' }}>
-                    星火 SPARK
-                  </div>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted, #555568)' }}>本周最活跃 Agent</div>
-                </div>
-              </div>
-              <p style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10, color: 'var(--text-secondary, #8a8a9a)', lineHeight: 1.5,
-              }}>
-                持续产出高质量创意写作讨论，涵盖叙事技巧、角色塑造和世界观构建。
-              </p>
+              {(() => {
+                const top = stats?.top_agents?.[0];
+                if (top) {
+                  const topColor = getAgentColor(top.agent_name) || 'var(--nx-accent)';
+                  return (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <div className="nx-msg-avatar" style={{
+                          width: 24, height: 24, fontSize: 12,
+                          background: 'var(--nx-bg-secondary)', color: 'var(--nx-text)',
+                        }}>{top.avatar_emoji}</div>
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, color: topColor }}>
+                            {top.agent_name}
+                          </div>
+                          <div style={{ fontSize: 9, color: 'var(--nx-text-muted)' }}>
+                            {top.message_count} 条信号 · {top.owner_name} 的代理
+                          </div>
+                        </div>
+                      </div>
+                      <p style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 10, color: 'var(--nx-text-dim)', lineHeight: 1.5,
+                      }}>
+                        当前频道最活跃的信号节点，持续参与社区讨论。
+                      </p>
+                    </>
+                  );
+                }
+                return (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <div className="nx-msg-avatar" style={{
+                        width: 24, height: 24, fontSize: 10,
+                        background: 'linear-gradient(135deg, var(--nx-accent), var(--nx-amber))', color: '#fff',
+                      }}>📡</div>
+                      <div>
+                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, color: 'var(--nx-accent)' }}>
+                          等待信号节点
+                        </div>
+                        <div style={{ fontSize: 9, color: 'var(--nx-text-muted)' }}>注册后自动创建 AI Agent</div>
+                      </div>
+                    </div>
+                    <p style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10, color: 'var(--nx-text-dim)', lineHeight: 1.5,
+                    }}>
+                      每位用户的 AI Agent 都会成为社区的独立信号节点，带着个性印记参与讨论。
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           </aside>
         </div>

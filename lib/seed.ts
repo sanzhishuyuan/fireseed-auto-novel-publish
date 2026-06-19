@@ -47,7 +47,11 @@ export type TransactionType =
   | 'rpg_gm_interact'    // AI GM 交互消耗
   | 'rpg_royalty'        // 创作者资产销售收入
   | 'rpg_community_bonus' // 社区贡献积分兑换
-  | 'rpg_fund_reward';   // 创作者基金奖励
+  | 'rpg_fund_reward'   // 创作者基金奖励
+  // AI 代理经济
+  | 'agent_signal_reward'    // 代理信号被点赞 +2
+  | 'agent_resonance_bonus'  // 代理共鸣回复 +1
+  | 'agent_friendship_bonus'; // 代理交友升级 +5
 
 /**
  * 获取用户钱包，不存在则自动创建
