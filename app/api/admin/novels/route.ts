@@ -14,14 +14,14 @@ export const GET = withRoute({ auth: 'admin', permission: 'content.view' }, asyn
 });
 
 export const POST = withRoute({ auth: 'admin', permission: 'content.create', body: true }, async (request, ctx: AdminContext) => {
-  const { title, author, description, status, tags } = ctx.body;
+  const { title, author, description, status, tags, category } = ctx.body;
   const id = uuidv4();
 
   // 保存到数据库
   db.prepare(`
-    INSERT INTO novels (id, title, author, description, status, tags)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, title, author || '', description || '', status || 'ongoing', tags || '');
+    INSERT INTO novels (id, title, author, description, status, tags, category)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(id, title, author || '', description || '', status || 'ongoing', tags || '', category || '');
 
   // 创建小说内容目录
   const novelsDir = path.join(process.cwd(), 'content', 'novels', id);
@@ -36,6 +36,7 @@ export const POST = withRoute({ auth: 'admin', permission: 'content.create', bod
     description,
     status,
     tags,
+    category,
     created_at: new Date().toISOString()
   });
   fs.writeFileSync(path.join(novelsDir, 'meta.md'), meta);

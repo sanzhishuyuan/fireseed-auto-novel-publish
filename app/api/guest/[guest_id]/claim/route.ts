@@ -36,15 +36,16 @@ export async function POST(request: NextRequest) {
       const newNovelId = uuidv4();
       
       db.prepare(`
-        INSERT INTO novels (id, title, author, description, status, tags)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO novels (id, title, author, description, status, tags, category)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `).run(
         newNovelId,
         guestNovel.title,
         guestNovel.author || '',
         guestNovel.description || '',
         guestNovel.status || 'draft',
-        guestNovel.tags || ''
+        guestNovel.tags || '',
+        (guestNovel as any).category || ''
       );
       
       // 创建内容目录

@@ -27,6 +27,7 @@ interface Novel {
   author: string;
   description: string;
   tags: string;
+  category?: string;
   status: string;
 }
 
@@ -276,6 +277,7 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
+  const category = novel.category || (novel.tags || '').split(',')[0]?.trim() || '';
   const tags = (novel.tags || '').split(',').filter(Boolean);
 
   return (
@@ -319,7 +321,7 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                     letterSpacing: 3, textTransform: 'uppercase', marginTop: 10,
                     fontFamily: fontMono,
                   }}>
-                    {tags[0] || 'STORY'}
+                    {category || tags[0] || 'STORY'}
                   </span>
                 </div>
 

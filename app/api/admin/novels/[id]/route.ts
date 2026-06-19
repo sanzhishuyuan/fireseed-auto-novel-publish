@@ -18,7 +18,7 @@ export const PUT = withRoute({ auth: 'admin', permission: 'content.edit', body: 
     return apiError('NOT_FOUND', '小说不存在', 404);
   }
 
-  const { title, author, description, tags, status, cover_image } = ctx.body;
+  const { title, author, description, tags, category, status, cover_image } = ctx.body;
 
   // 构建更新字段
   const updates: string[] = [];
@@ -39,6 +39,10 @@ export const PUT = withRoute({ auth: 'admin', permission: 'content.edit', body: 
   if (tags !== undefined) {
     updates.push('tags = ?');
     values.push(tags);
+  }
+  if (category !== undefined) {
+    updates.push('category = ?');
+    values.push(category);
   }
   if (status !== undefined) {
     updates.push('status = ?');

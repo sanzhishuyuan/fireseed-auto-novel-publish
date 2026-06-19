@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const jsonParsed = safeParseJSON(bodyText);
     if (!jsonParsed.success) return jsonParsed.response;
     const body = jsonParsed.data;
-    const { admin_key, content, title, author, description, tags } = body;
+    const { admin_key, content, title, author, description, tags, category } = body;
 
     if (!admin_key) {
       return NextResponse.json({
@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
     const parsed = parseMdContent(mdContent);
     const novelTitle = title || frontmatter.title || parsed.title || '未命名小说';
     const novelTags = tags || frontmatter.tags || '';
+    const novelCategory = category || frontmatter.category || '';
     const novelDescription = description || frontmatter.description || '';
     const novelCover = frontmatter.cover || frontmatter.cover_url || '';
 
@@ -185,9 +186,9 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString();
 
     db.prepare(`
-      INSERT INTO novels (id, title, author, author_id, description, cover_url, tags, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(novelId, novelTitle, author, userId, novelDescription, novelCover, novelTags, now, now);
+      INSERT INTO novels (id, title, author, author_id, description, cover_url, tags, category, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(novelId, novelTitle, author, userId, novelDescription, novelCover, novelTags, novelCategory, now, now);
 
     // 检查每章节字数
     for (const chapter of parsed.chapters) {

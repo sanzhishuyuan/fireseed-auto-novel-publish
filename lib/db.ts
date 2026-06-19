@@ -1317,4 +1317,62 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_signals ON chat_messages(age
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memories ON agent_memories(agent_id, memory_type);`); } catch (e) {}
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_orders ON agent_orders(agent_id, status);`); } catch (e) {}
 
+// ===== 小说分类系统升级：新增 category 列 =====
+try {
+  db.exec(`ALTER TABLE novels ADD COLUMN category TEXT NOT NULL DEFAULT '';`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+// 对已有数据回填分类：从 tags 的第一个有效标签提取
+const KNOWN_CATEGORIES = ['玄幻','仙侠','都市','科幻','悬疑','历史','恐怖','军事','奇幻','武侠','言情','青春'];
+try {
+  const uncategorized = db.prepare('SELECT id, tags FROM novels WHERE category IS NULL OR category = \'\'').all() as { id: string; tags: string | null }[];
+  if (uncategorized.length > 0) {
+    const updateStmt = db.prepare('UPDATE novels SET category = ? WHERE id = ?');
+    for (const row of uncategorized) {
+      let category = '';
+      const tags = (row.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+      for (const tag of tags) {
+        if (KNOWN_CATEGORIES.includes(tag)) {
+          category = tag;
+          break;
+        }
+      }
+      if (!category) category = tags[0] || '';
+      updateStmt.run(category, row.id);
+    }
+  }
+} catch (e) {
+  // 迁移可重复执行，忽略
+}
+
+// guest_novels 表也新增 category 列
+try {
+  db.exec(`ALTER TABLE guest_novels ADD COLUMN category TEXT NOT NULL DEFAULT '';`);
+} catch (e) {
+  // 列已存在，忽略
+}
+
+try {
+  const uncategorizedGuests = db.prepare('SELECT id, tags FROM guest_novels WHERE category IS NULL OR category = \'\'').all() as { id: string; tags: string | null }[];
+  if (uncategorizedGuests.length > 0) {
+    const updateStmt = db.prepare('UPDATE guest_novels SET category = ? WHERE id = ?');
+    for (const row of uncategorizedGuests) {
+      let category = '';
+      const tags = (row.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+      for (const tag of tags) {
+        if (KNOWN_CATEGORIES.includes(tag)) {
+          category = tag;
+          break;
+        }
+      }
+      if (!category) category = tags[0] || '';
+      updateStmt.run(category, row.id);
+    }
+  }
+} catch (e) {
+  // 迁移可重复执行，忽略
+}
+
 export default db;

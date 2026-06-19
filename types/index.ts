@@ -23,6 +23,7 @@ export interface Novel {
   cover_url?: string;
   status: 'ongoing' | 'completed' | 'paused';
   tags: string;
+  category: string;
   deleted_at?: string | null;
   retention_days?: number;
   chapterCount?: number;

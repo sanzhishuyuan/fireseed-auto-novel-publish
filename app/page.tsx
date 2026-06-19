@@ -229,9 +229,9 @@ export default function HomePage() {
   };
 
   const tagEmojis: Record<string, string> = {
-    '玄幻': '⚡', '都市': '🏙', '仙侠': '🏯', '言情': '💕',
-    '科幻': '🚀', '悬疑': '🔮', '历史': '📜', '恐怖': '👻',
-    '军事': '⚔️', '奇幻': '🔮', '武侠': '⚡'
+    '玄幻': '⚡', '仙侠': '🏯', '都市': '🏙', '科幻': '🚀',
+    '悬疑': '🔮', '历史': '📜', '恐怖': '👻', '军事': '⚔️',
+    '奇幻': '🐉', '武侠': '⚡', '言情': '💕', '青春': '🌱'
   };
 
   return (
@@ -1329,7 +1329,7 @@ export default function HomePage() {
             {!loading && novels.length > 0 && (
               <div className="novel-grid stagger" id="novel-grid">
                 {novels.map((novel, i) => {
-                  const primaryTag = novel.tags?.split(',')[0]?.trim() || '故事';
+                  const primaryTag = novel.category || novel.tags?.split(',')[0]?.trim() || '故事';
                   const emoji = tagEmojis[primaryTag] || '✨';
                   const totalChs = 30;
                   const currentChs = novel.chapterCount || 0;
@@ -1338,7 +1338,7 @@ export default function HomePage() {
                   return (
                     <Link key={novel.id} href={`/novels/${novel.id}`} className="novel-card" style={{ textDecoration: 'none' }}>
                       <div className="novel-cover-wrap">
-                        <SafeCover src={novel.cover_url} alt={novel.title} tag={novel.tags} />
+                        <SafeCover src={novel.cover_url} alt={novel.title} tag={novel.tags} category={novel.category} />
                         <div className="novel-cover-overlay"><span>READ →</span></div>
                       </div>
                       <div className="novel-info">

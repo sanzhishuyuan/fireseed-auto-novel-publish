@@ -77,7 +77,7 @@ export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRe
       }
     }
     // ai_token 类型直接放行（AI 系统自动创作）
-    const { id: customId, title, author, description, status, tags, cover_url } = ctx.body;
+    const { id: customId, title, author, description, status, tags, category, cover_url } = ctx.body;
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
 
     // 查重：同标题+同作者的小说是否已存在
@@ -103,12 +103,12 @@ export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRe
     const existing = db.prepare('SELECT id FROM novels WHERE id = ?').get(novelId);
     if (existing) return NextResponse.json({ error: 'novel ID exists', id: novelId }, { status: 409 });
 
-    const sqlParams = [novelId, title, author || 'AI', ctx.ai.userId || null, description || '', cover_url || '', status || 'ongoing', tags || ''];
-    if (sqlParams.length !== 8) {
+    const sqlParams = [novelId, title, author || 'AI', ctx.ai.userId || null, description || '', cover_url || '', status || 'ongoing', tags || '', category || ''];
+    if (sqlParams.length !== 9) {
       console.error('AI create novel param count mismatch:', sqlParams.length);
       return NextResponse.json({ error: 'Internal error' }, { status: 500 });
     }
-    db.prepare('INSERT INTO novels (id, title, author, author_id, description, cover_url, status, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(...sqlParams);
+    db.prepare('INSERT INTO novels (id, title, author, author_id, description, cover_url, status, tags, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(...sqlParams);
 
     // 🌱 发布小说奖励
     if (ctx.ai.userId) {
@@ -126,7 +126,7 @@ export const POST = withRoute({ auth: 'ai', body: true }, async (request: NextRe
     const metaContent = matter.stringify('', {
       title, author: author || 'AI', description: description || '',
       cover_url: cover_url || '', status: status || 'ongoing', tags: tags || '',
-      created_at: new Date().toISOString()
+      category: category || '', created_at: new Date().toISOString()
     });
     fs.writeFileSync(path.join(novelsDir, 'meta.md'), metaContent, 'utf-8');
 

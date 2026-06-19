@@ -517,9 +517,9 @@ function NovelsContent() {
   }, [searchParams]);
 
   const tagEmojis: Record<string, string> = {
-    '全部': '📚', '玄幻': '⚡', '都市': '🏙', '仙侠': '🏯', '言情': '💕',
-    '科幻': '🚀', '悬疑': '🔮', '历史': '📜', '恐怖': '👻',
-    '军事': '⚔️', '奇幻': '🔮', '武侠': '⚡'
+    '全部': '📚', '玄幻': '⚡', '仙侠': '🏯', '都市': '🏙', '科幻': '🚀',
+    '悬疑': '🔮', '历史': '📜', '恐怖': '👻', '军事': '⚔️',
+    '奇幻': '🐉', '武侠': '⚡', '言情': '💕', '青春': '🌱'
   };
 
   const sortOptions = [
@@ -528,19 +528,11 @@ function NovelsContent() {
     { key: '新书上架', label: '✨ 新书上架' }
   ];
 
-  // 获取所有可用分类
-  const categories = useMemo(() => {
-    const tags = new Set<string>(['全部']);
-    novels.forEach(novel => {
-      if (novel.tags) {
-        novel.tags.split(',').forEach(tag => {
-          const trimmed = tag.trim();
-          if (trimmed) tags.add(trimmed);
-        });
-      }
-    });
-    return Array.from(tags);
-  }, [novels]);
+  // 固定分类列表
+  const FIXED_CATEGORIES = [
+    '全部', '玄幻', '仙侠', '都市', '科幻', '悬疑',
+    '历史', '恐怖', '军事', '奇幻', '武侠', '言情', '青春'
+  ];
 
   // 过滤和排序
   const filteredNovels = useMemo(() => {
@@ -551,6 +543,7 @@ function NovelsContent() {
       filtered = filtered.filter(novel =>
         novel.title?.toLowerCase().includes(query) ||
         novel.author?.toLowerCase().includes(query) ||
+        novel.category?.toLowerCase().includes(query) ||
         novel.tags?.toLowerCase().includes(query) ||
         novel.description?.toLowerCase().includes(query)
       );
@@ -561,9 +554,7 @@ function NovelsContent() {
     }
 
     if (activeFilter !== '全部') {
-      filtered = filtered.filter(novel =>
-        novel.tags?.split(',').map((t: string) => t.trim()).includes(activeFilter)
-      );
+      filtered = filtered.filter(novel => novel.category === activeFilter);
     }
 
     switch (activeSort) {
@@ -652,6 +643,7 @@ function NovelsContent() {
                   src={heroNovel.cover_url}
                   alt={heroNovel.title}
                   tag={heroNovel.tags}
+                  category={heroNovel.category}
                   aspectRatio="aspect-[3/4]"
                 />
                 {heroNovel.status !== 'completed' && (
@@ -677,7 +669,7 @@ function NovelsContent() {
                   </div>
                   <div className="codex-hero-stat">
                     <span className="codex-hero-stat-value">
-                      {heroNovel.tags?.split(',')[0]?.trim() || '—'}
+                      {heroNovel.category || heroNovel.tags?.split(',')[0]?.trim() || '—'}
                     </span>
                     <span className="codex-hero-stat-label">GENRE</span>
                   </div>
@@ -751,7 +743,7 @@ function NovelsContent() {
 
             {/* Tag Pills */}
             <div className="codex-tag-row">
-              {categories.slice(0, 10).map((category) => (
+              {FIXED_CATEGORIES.map((category) => (
                 <button
                   key={category}
                   className={`codex-tag-pill ${activeFilter === category ? 'active' : ''}`}
@@ -811,7 +803,7 @@ function NovelsContent() {
         {!loading && filteredNovels.length > 0 && (
           <div className="codex-novel-grid">
             {filteredNovels.map((novel, i) => {
-              const primaryTag = novel.tags?.split(',')[0]?.trim() || '故事';
+              const primaryTag = novel.category || novel.tags?.split(',')[0]?.trim() || '故事';
               const emoji = tagEmojis[primaryTag] || '✨';
               const totalChapters = 30;
               const progress = Math.min(((novel.chapterCount || 0) / totalChapters) * 100, 100);
@@ -828,6 +820,7 @@ function NovelsContent() {
                       src={novel.cover_url}
                       alt={novel.title}
                       tag={novel.tags}
+                      category={novel.category}
                     />
 
                     {/* 左上角类型标签 */}

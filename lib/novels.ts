@@ -11,6 +11,7 @@ export interface NovelMeta {
   cover_url?: string;
   status?: 'ongoing' | 'completed' | 'archived';
   tags?: string; // 逗号分隔的字符串，如 "科幻,冒险"
+  category?: string;
   created_at?: string;
   updated_at?: string;
 }

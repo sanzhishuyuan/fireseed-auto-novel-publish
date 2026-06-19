@@ -35,6 +35,7 @@ export const GET = withRoute({ auth: 'none' }, async (request, ctx) => {
         status: dbNovel.status || 'ongoing',
         // 保持逗号分隔字符串格式，兼容前端 split(',') 处理
         tags: dbNovel.tags || '',
+        category: dbNovel.category || '',
         created_at: dbNovel.created_at,
         updated_at: dbNovel.updated_at,
         chapter_count: chaptersInfo.chapter_count,

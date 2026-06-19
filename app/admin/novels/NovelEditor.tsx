@@ -3,6 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const FIXED_CATEGORIES = [
+  { value: '', label: '未分类' },
+  { value: '玄幻', label: '⚡ 玄幻' },
+  { value: '仙侠', label: '🏯 仙侠' },
+  { value: '都市', label: '🏙 都市' },
+  { value: '科幻', label: '🚀 科幻' },
+  { value: '悬疑', label: '🔮 悬疑' },
+  { value: '历史', label: '📜 历史' },
+  { value: '恐怖', label: '👻 恐怖' },
+  { value: '军事', label: '⚔️ 军事' },
+  { value: '奇幻', label: '🐉 奇幻' },
+  { value: '武侠', label: '⚡ 武侠' },
+  { value: '言情', label: '💕 言情' },
+  { value: '青春', label: '🌱 青春' },
+];
+
 interface Novel {
   id: string;
   title: string;
@@ -11,6 +27,7 @@ interface Novel {
   cover_url?: string;
   status?: string;
   tags?: string;
+  category?: string;
   chapter_count: number;
   total_words: number;
   orphan?: boolean;
@@ -29,7 +46,8 @@ export default function NovelEditor({ novels, adminRole }: Props) {
     author: '',
     description: '',
     status: 'ongoing',
-    tags: ''
+    tags: '',
+    category: ''
   });
 
   // 编辑状态
@@ -39,6 +57,7 @@ export default function NovelEditor({ novels, adminRole }: Props) {
     author: '',
     description: '',
     status: '',
+    category: '',
     tags: '',
     cover_image: '' as string,
     coverPreview: '' as string
@@ -79,7 +98,7 @@ export default function NovelEditor({ novels, adminRole }: Props) {
     if (res.ok) {
       alert('小说创建成功！');
       setShowForm(false);
-      setForm({ title: '', author: '', description: '', status: 'ongoing', tags: '' });
+      setForm({ title: '', author: '', description: '', status: 'ongoing', tags: '', category: '' });
       router.refresh();
     } else {
       alert('创建失败');
@@ -94,6 +113,7 @@ export default function NovelEditor({ novels, adminRole }: Props) {
       author: novel.author || '',
       description: novel.description || '',
       status: novel.status || 'ongoing',
+      category: novel.category || '',
       tags: novel.tags || '',
       cover_image: '',
       coverPreview: novel.cover_url || ''
@@ -141,7 +161,8 @@ export default function NovelEditor({ novels, adminRole }: Props) {
         author: editForm.author.trim(),
         description: editForm.description.trim(),
         status: editForm.status,
-        tags: editForm.tags.trim()
+        tags: editForm.tags.trim(),
+        category: editForm.category
       };
 
       if (editForm.cover_image) {
@@ -221,6 +242,18 @@ export default function NovelEditor({ novels, adminRole }: Props) {
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">分类 *</label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    {FIXED_CATEGORIES.map((cat) => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">状态</label>
                   <select
                     value={form.status}
@@ -231,16 +264,16 @@ export default function NovelEditor({ novels, adminRole }: Props) {
                     <option value="completed">已完结</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">标签</label>
-                  <input
-                    type="text"
-                    value={form.tags}
-                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="科幻,穿越,热血 (逗号分隔)"
-                  />
-                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">标签（可选）</label>
+                <input
+                  type="text"
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="科幻,穿越,热血 (逗号分隔，用于细化描述)"
+                />
               </div>
               <button
                 onClick={handleSubmit}
@@ -414,8 +447,20 @@ export default function NovelEditor({ novels, adminRole }: Props) {
                 />
               </div>
 
-              {/* 状态 + 标签 */}
+              {/* 分类 + 状态 */}
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分类</label>
+                  <select
+                    value={editForm.category}
+                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    {FIXED_CATEGORIES.map((cat) => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">状态</label>
                   <select
@@ -428,16 +473,16 @@ export default function NovelEditor({ novels, adminRole }: Props) {
                     <option value="draft">草稿</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标签</label>
-                  <input
-                    type="text"
-                    value={editForm.tags}
-                    onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="科幻,穿越 (逗号分隔)"
-                  />
-                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标签（可选）</label>
+                <input
+                  type="text"
+                  value={editForm.tags}
+                  onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="科幻,穿越,热血 (逗号分隔，用于细化描述)"
+                />
               </div>
 
               {/* 错误提示 */}

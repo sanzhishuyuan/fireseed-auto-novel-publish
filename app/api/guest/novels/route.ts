@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const bodyText = await request.text();
     const parsed = safeParseJSON(bodyText);
     if (!parsed.success) return parsed.response;
-    const { guest_id, title, author, description, status, tags } = parsed.data;
+    const { guest_id, title, author, description, status, tags, category } = parsed.data;
     
     if (!guest_id || !title) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
     const novelId = uuidv4();
     
     db.prepare(`
-      INSERT INTO guest_novels (id, guest_id, title, author, description, status, tags)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(novelId, guest_id, title, author || '', description || '', status || 'draft', tags || '');
+      INSERT INTO guest_novels (id, guest_id, title, author, description, status, tags, category)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(novelId, guest_id, title, author || '', description || '', status || 'draft', tags || '', category || '');
     
     return NextResponse.json({
       success: true,
@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
       author: author || '',
       description: description || '',
       status: status || 'draft',
-      tags: tags || ''
+      tags: tags || '',
+      category: category || ''
     });
   } catch (error) {
     console.error('Create guest novel error:', error);

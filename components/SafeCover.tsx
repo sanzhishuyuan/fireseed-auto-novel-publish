@@ -7,6 +7,7 @@ interface SafeCoverProps {
   src: string | null | undefined;
   alt: string;
   tag?: string;
+  category?: string;
   className?: string;
   aspectRatio?: string;
 }
@@ -16,14 +17,14 @@ interface SafeCoverProps {
  * - 图片加载成功 → 显示封面
  * - 图片加载失败 / 无图片 → 显示渐变色默认封面
  */
-export default function SafeCover({ src, alt, tag, className = '', aspectRatio = 'aspect-[3/4]' }: SafeCoverProps) {
+export default function SafeCover({ src, alt, tag, category, className = '', aspectRatio = 'aspect-[3/4]' }: SafeCoverProps) {
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const handleError = useCallback(() => setImgError(true), []);
   const handleLoad = useCallback(() => setImgLoaded(true), []);
 
-  const primaryTag = tag?.split(',')[0]?.trim() || '故事';
+  const primaryTag = category || tag?.split(',')[0]?.trim() || '故事';
   const tagEmojis: Record<string, string> = {
     '玄幻': '⚡', '都市': '🏙', '仙侠': '🏯', '言情': '💕',
     '科幻': '🚀', '悬疑': '🔮', '历史': '📜', '恐怖': '👻',

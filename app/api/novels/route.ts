@@ -31,7 +31,7 @@ export const GET = withRoute({ auth: 'none' }, async () => {
     // 1. 从数据库读取所有未删除的小说
     const dbNovels = db.prepare(`
       SELECT 
-        n.id, n.title, n.author, n.description, n.cover_url, n.status, n.tags, 
+        n.id, n.title, n.author, n.description, n.cover_url, n.status, n.tags, n.category,
         n.created_at, n.updated_at,
         COUNT(c.id) as chapter_count
       FROM novels n
@@ -60,6 +60,7 @@ export const GET = withRoute({ auth: 'none' }, async () => {
         description: novel.description || '',
         cover_url: novel.cover_url || '',
         tags: novel.tags || '',
+        category: novel.category || '',
         status: novel.status || 'ongoing',
         chapterCount: novel.chapter_count || 0,
         createdAt: novel.created_at,
@@ -81,6 +82,7 @@ export const GET = withRoute({ auth: 'none' }, async () => {
           description: novel.description || '',
           cover_url: '',
           tags: novel.tags || '',
+          category: novel.category || '',
           status: novel.status || 'ongoing',
           chapterCount: chapters?.count || 0,
           updatedAt: novel.updated_at || new Date().toISOString()
