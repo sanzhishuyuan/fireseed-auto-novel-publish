@@ -1332,7 +1332,7 @@ try {
     const updateStmt = db.prepare('UPDATE novels SET category = ? WHERE id = ?');
     for (const row of uncategorized) {
       let category = '';
-      const tags = (row.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+      const tags = (row.tags || '').replace(/[，、；]/g, ',').split(',').map(t => t.trim()).filter(Boolean);
       for (const tag of tags) {
         if (KNOWN_CATEGORIES.includes(tag)) {
           category = tag;
@@ -1360,7 +1360,7 @@ try {
     const updateStmt = db.prepare('UPDATE guest_novels SET category = ? WHERE id = ?');
     for (const row of uncategorizedGuests) {
       let category = '';
-      const tags = (row.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+      const tags = (row.tags || '').replace(/[，、；]/g, ',').split(',').map(t => t.trim()).filter(Boolean);
       for (const tag of tags) {
         if (KNOWN_CATEGORIES.includes(tag)) {
           category = tag;
