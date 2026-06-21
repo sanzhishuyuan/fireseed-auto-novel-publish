@@ -15,8 +15,8 @@ interface Task {
   status: string;
   publisher_id: string;
   publisher_name?: string;
-  assignee_id?: string;
-  assignee_name?: string;
+  assignee_count?: number;
+  max_assignees?: number;
   created_at: string;
   updated_at: string;
 }
@@ -47,8 +47,7 @@ const getDaysLeft = (deadline: string) => {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   open:          { label: '开放中', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
-  assigned:      { label: '已接单', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-  pending_review:{ label: '待审核', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+  reviewing:     { label: '审核中', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
   completed:     { label: '已完成', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
   cancelled:     { label: '已取消', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
 };
@@ -62,8 +61,7 @@ const TABS: { key: string; label: string }[] = [
 const STATUS_FILTERS = [
   { key: '', label: '全部状态' },
   { key: 'open', label: '开放中' },
-  { key: 'assigned', label: '已接单' },
-  { key: 'pending_review', label: '待审核' },
+  { key: 'reviewing', label: '审核中' },
   { key: 'completed', label: '已完成' },
   { key: 'cancelled', label: '已取消' },
 ];
@@ -78,6 +76,16 @@ export default function MyTasksPage() {
   const [role, setRole] = useState('all');
   const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState('');
+
+  // 提交弹窗状态
+  const [submitModalTask, setSubmitModalTask] = useState<Task | null>(null);
+  const [submitTitle, setSubmitTitle] = useState('');
+  const [submitContent, setSubmitContent] = useState('');
+  const [submitLink, setSubmitLink] = useState('');
+  const [submitMode, setSubmitMode] = useState<'content' | 'file' | 'link'>('content');
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<{ url: string; fileName: string; fileSize: number } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const loadTasks = async () => {
     setLoading(true);
@@ -121,6 +129,123 @@ export default function MyTasksPage() {
   const switchStatus = (newStatus: string) => {
     setStatusFilter(newStatus);
     setPage(1);
+  };
+
+  // ===== 提交相关函数 =====
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  // 上传文件
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('文件大小不能超过 10MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload/task', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const payload = (data as any).data || data;
+        setUploadedFile({
+          url: payload.url,
+          fileName: payload.fileName,
+          fileSize: payload.fileSize,
+        });
+      } else {
+        const errMsg = typeof data.error === 'string' ? data.error : data.error?.message || '上传失败';
+        alert(`上传失败: ${errMsg}`);
+      }
+    } catch (error) {
+      console.error('上传失败:', error);
+      alert('上传失败，请重试');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  // 提交任务
+  const handleSubmitTask = async () => {
+    if (!submitModalTask) return;
+
+    if (submitMode === 'content' && !submitContent) {
+      alert('请填写交付内容');
+      return;
+    }
+    if (submitMode === 'file' && !uploadedFile) {
+      alert('请上传文件');
+      return;
+    }
+    if (submitMode === 'link' && !submitLink) {
+      alert('请提交链接');
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const res = await fetch(`/api/tasks/novel/${submitModalTask.id}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: submitTitle,
+          content: submitMode === 'content' ? submitContent || undefined : undefined,
+          link_url: submitMode === 'link' ? submitLink || undefined : undefined,
+          file_path: submitMode === 'file' ? uploadedFile?.url : undefined,
+          file_name: submitMode === 'file' ? uploadedFile?.fileName : undefined,
+          file_size: submitMode === 'file' ? uploadedFile?.fileSize : undefined,
+        }),
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('提交成功，等待发布者审核');
+        setSubmitModalTask(null);
+        setSubmitTitle('');
+        setSubmitContent('');
+        setSubmitLink('');
+        setUploadedFile(null);
+        setSubmitMode('content');
+        loadTasks();
+      } else {
+        const errMsg = typeof data.error === 'string' ? data.error : data.error?.message || '提交失败';
+        alert(`提交失败: ${errMsg}`);
+      }
+    } catch (error) {
+      console.error('提交失败:', error);
+      alert('提交失败，请重试');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // 打开提交弹窗
+  const openSubmitModal = (task: Task, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSubmitModalTask(task);
+    setSubmitTitle('');
+    setSubmitContent('');
+    setSubmitLink('');
+    setUploadedFile(null);
+    setSubmitMode('content');
   };
 
   return (
@@ -214,8 +339,7 @@ export default function MyTasksPage() {
             <div className="space-y-3">
               {tasks.map(task => {
                 const statusCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.open;
-                const isPublisher = task.publisher_id === task.publisher_id; // 将在渲染时用 userId 判断
-                const daysLeft = task.status === 'open' ? getDaysLeft(task.deadline) : 0;
+                const daysLeft = (task.status === 'open' || task.status === 'reviewing') ? getDaysLeft(task.deadline) : 0;
 
                 return (
                   <Link
@@ -260,10 +384,12 @@ export default function MyTasksPage() {
                             </span>
                           )}
 
-                          {/* 角色标签 */}
-                          <span className="inline-block px-2.5 py-0.5 rounded text-xs" style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
-                            {task.publisher_id ? '发布者' : ''}
-                          </span>
+                          {/* 接单进度 */}
+                          {task.assignee_count !== undefined && (
+                            <span className="inline-block px-2.5 py-0.5 rounded text-xs" style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
+                              {task.assignee_count}/{task.max_assignees || 9}人
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -287,12 +413,31 @@ export default function MyTasksPage() {
                         {task.publisher_name && (
                           <span>发布者: {task.publisher_name}</span>
                         )}
-                        {task.assignee_name && (
-                          <span className="ml-4">接单者: {task.assignee_name}</span>
-                        )}
                       </div>
-                      <div style={{ color: '#5a5a52' }}>
-                        {formatDateTime(task.created_at)}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {role === 'assigned' && task.status === 'open' && (
+                          <button
+                            onClick={(e) => openSubmitModal(task, e)}
+                            style={{
+                              padding: '4px 12px',
+                              borderRadius: 6,
+                              border: '1px solid rgba(201,165,92,0.4)',
+                              background: 'rgba(201,165,92,0.1)',
+                              color: '#c9a55c',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'rgba(201,165,92,0.2)'; }}
+                            onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'rgba(201,165,92,0.1)'; }}
+                          >
+                            提交成果
+                          </button>
+                        )}
+                        <div style={{ color: '#5a5a52' }}>
+                          {formatDateTime(task.created_at)}
+                        </div>
                       </div>
                     </div>
                   </Link>
@@ -327,6 +472,347 @@ export default function MyTasksPage() {
           </>
         )}
       </div>
+
+      {/* ====== 提交弹窗 ====== */}
+      {submitModalTask && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            padding: 16,
+          }}
+          onClick={() => setSubmitModalTask(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 560,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              background: '#151515',
+              borderRadius: 16,
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+            }}
+            className="codex-scrollbar"
+          >
+            {/* 弹窗头部 */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '20px 24px 0',
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    fontSize: 17,
+                    fontWeight: 700,
+                    color: '#f0ece4',
+                    fontFamily: "'Fraunces', Georgia, serif",
+                    marginBottom: 4,
+                  }}
+                >
+                  提交成果
+                </h3>
+                <p style={{ fontSize: 12, color: '#5a5a52' }}>
+                  任务：{submitModalTask.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setSubmitModalTask(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#5a5a52',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                  lineHeight: 1,
+                  padding: '4px 8px',
+                }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* 提交标题 */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: 11,
+                    letterSpacing: 1,
+                    color: '#5a5a52',
+                    textTransform: 'uppercase',
+                    marginBottom: 8,
+                    fontFamily: "'SF Mono', 'Fira Code', monospace",
+                  }}
+                >
+                  提交标题（可选）
+                </label>
+                <input
+                  type="text"
+                  value={submitTitle}
+                  onChange={(e) => setSubmitTitle(e.target.value)}
+                  placeholder="例如：最终稿 v1.0"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.03)',
+                    color: '#f0ece4',
+                    fontSize: 14,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* 提交方式切换 */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { key: 'content' as const, label: '直接写作' },
+                  { key: 'file' as const, label: '上传文件' },
+                  { key: 'link' as const, label: '提交链接' },
+                ]).map((mode) => (
+                  <button
+                    key={mode.key}
+                    onClick={() => setSubmitMode(mode.key)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: submitMode === mode.key ? '1px solid #c9a55c' : '1px solid rgba(255,255,255,0.08)',
+                      background: submitMode === mode.key ? 'rgba(201,165,92,0.1)' : 'rgba(255,255,255,0.03)',
+                      color: submitMode === mode.key ? '#c9a55c' : '#9a9a8e',
+                      fontSize: 13,
+                      fontWeight: submitMode === mode.key ? 600 : 400,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {mode.key === 'content' ? '直接写作' : mode.key === 'file' ? '上传文件' : '提交链接'}
+                  </button>
+                ))}
+              </div>
+
+              {/* 直接写作模式 */}
+              {submitMode === 'content' && (
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: 11,
+                      letterSpacing: 1,
+                      color: '#5a5a52',
+                      textTransform: 'uppercase',
+                      marginBottom: 8,
+                      fontFamily: "'SF Mono', 'Fira Code', monospace",
+                    }}
+                  >
+                    交付内容 <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <textarea
+                    value={submitContent}
+                    onChange={(e) => setSubmitContent(e.target.value)}
+                    placeholder="在此输入小说内容 / Markdown 格式..."
+                    style={{
+                      width: '100%',
+                      minHeight: 200,
+                      padding: '12px 14px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(0,0,0,0.2)',
+                      color: '#f0ece4',
+                      fontSize: 13,
+                      fontFamily: 'monospace',
+                      lineHeight: 1.6,
+                      outline: 'none',
+                      resize: 'vertical',
+                    }}
+                  />
+                  <p style={{ fontSize: 11, color: '#5a5a52', marginTop: 6, fontFamily: "'SF Mono', 'Fira Code', monospace" }}>
+                    支持 Markdown 格式，可直接粘贴小说章节内容
+                  </p>
+                </div>
+              )}
+
+              {/* 上传文件模式 */}
+              {submitMode === 'file' && (
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: 11,
+                      letterSpacing: 1,
+                      color: '#5a5a52',
+                      textTransform: 'uppercase',
+                      marginBottom: 8,
+                      fontFamily: "'SF Mono', 'Fira Code', monospace",
+                    }}
+                  >
+                    附件 <span style={{ color: '#ef4444' }}>*</span>（最大 10MB）
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <label
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        color: '#f0ece4',
+                        background: 'rgba(255,255,255,0.03)',
+                      }}
+                    >
+                      {uploading ? '上传中...' : '选择文件'}
+                      <input
+                        type="file"
+                        onChange={handleFileUpload}
+                        style={{ display: 'none' }}
+                        disabled={uploading}
+                      />
+                    </label>
+                    {uploadedFile && (
+                      <span style={{ fontSize: 12, color: '#c9a55c' }}>
+                        {uploadedFile.fileName} ({formatFileSize(uploadedFile.fileSize)})
+                      </span>
+                    )}
+                  </div>
+                  {uploadedFile && (
+                    <div style={{ marginTop: 8 }}>
+                      <button
+                        onClick={() => setUploadedFile(null)}
+                        style={{
+                          fontSize: 11,
+                          color: '#ef4444',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 0,
+                          fontFamily: "'SF Mono', 'Fira Code', monospace",
+                        }}
+                      >
+                        移除文件
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 提交链接模式 */}
+              {submitMode === 'link' && (
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: 11,
+                      letterSpacing: 1,
+                      color: '#5a5a52',
+                      textTransform: 'uppercase',
+                      marginBottom: 8,
+                      fontFamily: "'SF Mono', 'Fira Code', monospace",
+                    }}
+                  >
+                    小说链接 <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={submitLink}
+                    onChange={(e) => setSubmitLink(e.target.value)}
+                    placeholder="https://fireseed.online/novels/xxx"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                      color: '#f0ece4',
+                      fontSize: 14,
+                      outline: 'none',
+                    }}
+                  />
+                  <p style={{ fontSize: 11, color: '#5a5a52', marginTop: 6, fontFamily: "'SF Mono', 'Fira Code', monospace" }}>
+                    提交已发布到网站的小说链接，管理员可直接查看
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 弹窗底部 */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+                padding: '16px 24px 24px',
+              }}
+            >
+              <button
+                onClick={() => setSubmitModalTask(null)}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.03)',
+                  color: '#9a9a8e',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSubmitTask}
+                disabled={
+                  actionLoading ||
+                  (submitMode === 'content' && !submitContent) ||
+                  (submitMode === 'file' && !uploadedFile) ||
+                  (submitMode === 'link' && !submitLink)
+                }
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background:
+                    actionLoading ||
+                    (submitMode === 'content' && !submitContent) ||
+                    (submitMode === 'file' && !uploadedFile) ||
+                    (submitMode === 'link' && !submitLink)
+                      ? 'rgba(201,165,92,0.3)'
+                      : 'linear-gradient(135deg, #c9a55c, #b8943e)',
+                  color: '#0b0b0f',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor:
+                    actionLoading ||
+                    (submitMode === 'content' && !submitContent) ||
+                    (submitMode === 'file' && !uploadedFile) ||
+                    (submitMode === 'link' && !submitLink)
+                      ? 'not-allowed'
+                      : 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {actionLoading ? '提交中...' : '提交完成'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
