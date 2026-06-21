@@ -374,10 +374,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // 下架市场中的副本 listings
-    db.prepare("UPDATE rpg_market_listings SET status = 'cancelled' WHERE asset_id = ? AND asset_type = 'campaign'").run(id);
+    db.prepare("UPDATE rpg_market_listings SET status = 'cancelled' WHERE asset_id = ? AND asset_type = 'module'").run(id);
 
     // 清理资产库关联
-    db.prepare('DELETE FROM rpg_asset_library WHERE asset_id = ? AND asset_type = "campaign"').run(id);
+    db.prepare('DELETE FROM rpg_asset_library WHERE asset_id = ? AND asset_type = "module"').run(id);
 
     // 级联删除相关数据（按依赖顺序）
     // 1. 删除骰子记录

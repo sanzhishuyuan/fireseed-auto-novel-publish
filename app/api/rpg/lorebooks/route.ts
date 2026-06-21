@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
                    JSON_ARRAY_LENGTH(l.entries) as entry_count, l.user_id
             FROM rpg_lorebooks l
             INNER JOIN rpg_asset_library al ON al.asset_id = l.id AND al.asset_type = 'lorebook'
-            WHERE al.user_id = ? AND al.source = 'purchased'
+            WHERE al.user_id = ? AND al.source IN ('purchased', 'free_claim')
             ORDER BY al.acquired_at DESC
           `).all(user.userId) as any[]
         : [];

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
                    c.user_id, 1 as _purchased
             FROM rpg_characters c
             INNER JOIN rpg_asset_library al ON al.asset_id = c.id AND al.asset_type = 'character'
-            WHERE al.user_id = ? AND al.source = 'purchased'
+            WHERE al.user_id = ? AND al.source IN ('purchased', 'free_claim')
             ORDER BY al.acquired_at DESC
           `).all(user.userId) as any[]
         : [];

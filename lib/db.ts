@@ -866,6 +866,75 @@ try {
   // 索引已存在，忽略
 }
 
+// ===== task_submissions: 任务提交表 =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS task_submissions (
+    id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL,
+    submitter_id TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    content TEXT,
+    link_url TEXT,
+    file_path TEXT,
+    file_name TEXT,
+    file_size INTEGER,
+    file_type TEXT,
+    status TEXT DEFAULT 'submitted',
+    publisher_notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES novel_tasks(id),
+    FOREIGN KEY (submitter_id) REFERENCES users(id)
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_submissions_task ON task_submissions(task_id, created_at)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
+// 多接单人任务系统 — task_assignments 表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS task_assignments (
+    id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    username TEXT,
+    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES novel_tasks(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_assignments_task ON task_assignments(task_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_assignments_user ON task_assignments(user_id)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
+// 兼容旧数据：添加 max_assignees 字段（如不存在）
+try {
+  db.exec(`ALTER TABLE novel_tasks ADD COLUMN max_assignees INTEGER DEFAULT 9`);
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 兼容旧数据：添加 reward_amount 字段到 task_submissions
+try {
+  db.exec(`ALTER TABLE task_submissions ADD COLUMN reward_amount INTEGER`);
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 兼容旧数据：添加 link_url 字段到 task_submissions
+try {
+  db.exec(`ALTER TABLE task_submissions ADD COLUMN link_url TEXT`);
+} catch (e) {
+  // 字段已存在，忽略
+}
+
 // ===== Phase 4: 众筹系统增强表 =====
 // ... existing code above ...
 
@@ -1216,6 +1285,7 @@ try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN copy_count INTEGER DEFAULT 0
 try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN avg_rating REAL DEFAULT 0;`); } catch (e) {}
 try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN rating_count INTEGER DEFAULT 0;`); } catch (e) {}
 try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN license_type TEXT DEFAULT 'personal';`); } catch (e) {}
+try { db.exec(`ALTER TABLE rpg_lorebooks ADD COLUMN system TEXT DEFAULT 'custom';`); } catch (e) {}
 
 try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN avg_rating REAL DEFAULT 0;`); } catch (e) {}
 try { db.exec(`ALTER TABLE rpg_characters ADD COLUMN rating_count INTEGER DEFAULT 0;`); } catch (e) {}
@@ -1316,6 +1386,27 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_chat_likes_msg ON chat_likes(messa
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_signals ON chat_messages(agent_id);`); } catch (e) {}
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memories ON agent_memories(agent_id, memory_type);`); } catch (e) {}
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_orders ON agent_orders(agent_id, status);`); } catch (e) {}
+
+// ===== 站内通知系统表 =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'system',
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    link TEXT,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read, created_at DESC);`);
+} catch (e) {
+  // 索引已存在，忽略
+}
 
 // ===== 小说分类系统升级：新增 category 列 =====
 try {
