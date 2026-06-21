@@ -198,11 +198,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // 获取规则预设
     const preset = RULE_PRESETS[campaign.system as keyof typeof RULE_PRESETS] || RULE_PRESETS.custom;
 
-    // 构建 AI GM 提示（含命运公式结果）
+    // 获取关联的世界书条目（用于注入 AI GM 上下文）
+    let lorebookEntries: LorebookEntry[] = [];
+    if (campaign.lorebook_id) {
+      const lbRow = db.prepare('SELECT entries FROM rpg_lorebooks WHERE id = ?').get(campaign.lorebook_id) as any;
+      if (lbRow) {
+        try {
+          const parsed = JSON.parse(lbRow.entries || '[]');
+          lorebookEntries = parsed.filter((e: any) => e.enabled !== false);
+        } catch {}
+      }
+    }
+
+    // 构建 AI GM 提示（含命运公式结果 + 世界书上下文）
     const systemPrompt = buildSystemPrompt({
       preset,
       campaign: { world_brief: campaign.world_brief, system: campaign.system },
       characterCard,
+      lorebookEntries,
+      playerMessage: action,
       fateResult,
       stateUpdate,
     });

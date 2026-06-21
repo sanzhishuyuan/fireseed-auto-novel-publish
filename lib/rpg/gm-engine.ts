@@ -8,7 +8,7 @@
  * - 支持长期记忆上下文（预留扩展）
  */
 
-import { RULE_PRESETS, type CharacterCardData } from './types';
+import { RULE_PRESETS, type CharacterCardData, type LorebookEntry } from './types';
 
 // ===== 系统提示词构建 =====
 
@@ -19,6 +19,8 @@ export interface GMPromptOptions {
     system?: string;
   };
   characterCard: CharacterCardData | null;
+  lorebookEntries?: LorebookEntry[];
+  playerMessage?: string;
   fateResult?: any;
   stateUpdate?: any;
 }
@@ -34,6 +36,14 @@ export function buildSystemPrompt(options: GMPromptOptions): string {
   // 世界设定
   if (campaign.world_brief) {
     prompt += `\n\n## 世界设定\n${campaign.world_brief}`;
+  }
+
+  // 世界书上下文注入
+  if (lorebookEntries && lorebookEntries.length > 0) {
+    const injected = injectLorebookContext(lorebookEntries, playerMessage || '');
+    if (injected) {
+      prompt += `\n\n## 世界百科（来自世界书，请在叙事中自然引用这些设定）\n${injected}`;
+    }
   }
 
   // 玩家角色信息
@@ -111,6 +121,59 @@ export function buildSystemPrompt(options: GMPromptOptions): string {
 - 推动剧情发展，但不要替玩家做决定`;
 
   return prompt;
+}
+
+/**
+ * 世界书上下文注入引擎
+ * 根据玩家消息关键词匹配世界书条目，注入到 AI GM 系统提示中
+ * 常驻条目始终注入，其余按关键词匹配，总量限制 2000 字符
+ */
+function injectLorebookContext(entries: LorebookEntry[], playerMessage: string): string {
+  const MAX_CHARS = 2000;
+  const msgLower = playerMessage.toLowerCase();
+
+  // 1. 收集常驻条目
+  const constantEntries = entries
+    .filter(e => e.enabled && e.constant)
+    .filter(e => !e.type || e.type !== 'fate_modifier'); // 排除纯机制条目
+
+  // 2. 关键词匹配条目
+  const matchedEntries: LorebookEntry[] = [];
+  for (const entry of entries) {
+    if (!entry.enabled || entry.constant) continue;
+    if ((entry as any).type === 'fate_modifier') continue;
+
+    // 主关键词匹配
+    const keyMatch = entry.keys.some(k => k && msgLower.includes(k.toLowerCase()));
+    if (!keyMatch) continue;
+
+    // selective 条目需要副关键词也匹配
+    if (entry.selective && entry.secondary_keys?.length) {
+      const secMatch = entry.secondary_keys.some(k => k && msgLower.includes(k.toLowerCase()));
+      if (!secMatch) continue;
+    }
+
+    matchedEntries.push(entry);
+  }
+
+  // 3. 合并并按优先级排序（高优先）
+  const allEntries = [...constantEntries, ...matchedEntries]
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+  // 4. 拼接，限制总字符数
+  let result = '';
+  let charCount = 0;
+  for (const entry of allEntries) {
+    const text = entry.content.trim();
+    if (!text) continue;
+    const keysLabel = entry.keys.slice(0, 3).join('/');
+    const line = `[${keysLabel}] ${text}\n`;
+    if (charCount + line.length > MAX_CHARS) break;
+    result += line;
+    charCount += line.length;
+  }
+
+  return result.trim();
 }
 
 /**

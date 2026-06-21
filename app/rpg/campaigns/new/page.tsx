@@ -22,6 +22,7 @@ function NewCampaignForm() {
 
   const [name, setName] = useState('');
   const [system, setSystem] = useState('custom');
+  const [mode, setMode] = useState<'solo' | 'coop' | 'human_gm' | 'hybrid'>('solo');
   const [worldBrief, setWorldBrief] = useState('');
   const [characterId, setCharacterId] = useState(preselectedChar);
   const [lorebookId, setLorebookId] = useState('');
@@ -95,7 +96,7 @@ function NewCampaignForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          mode: 'solo',
+          mode,
           system,
           world_brief: worldBrief.trim(),
           character_id: characterId || undefined,
@@ -263,6 +264,35 @@ function NewCampaignForm() {
           </select>
         </div>
 
+        {/* Step 4: 战役模式 */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', fontSize: 13, color: C.textSec, marginBottom: 6 }}>
+            <span style={{ color: C.gold, marginRight: 6 }}>4.</span>战役模式
+            <span style={{ fontSize: 11, color: C.textDim, marginLeft: 8 }}>选择你的冒险方式</span>
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
+            {([
+              { value: 'solo', label: '单人冒险', icon: '🧙', desc: '独自探索，AI 担任 GM' },
+              { value: 'coop', label: '多人合作', icon: '👥', desc: '多人组队，AI 担任 GM' },
+              { value: 'human_gm', label: '人类 GM', icon: '🎭', desc: '由玩家主持游戏' },
+              { value: 'hybrid', label: '混合模式', icon: '⚡', desc: '人类 GM + AI 辅助' },
+            ] as const).map(opt => (
+              <button key={opt.value} onClick={() => setMode(opt.value)}
+                style={{
+                  padding: '12px 14px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                  background: mode === opt.value ? C.gold + '18' : C.card,
+                  border: `1px solid ${mode === opt.value ? C.gold : C.border}`,
+                  color: mode === opt.value ? C.gold : C.text,
+                  transition: 'all 0.15s',
+                }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{opt.icon}</div>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{opt.label}</div>
+                <div style={{ fontSize: 11, color: C.textDim, marginTop: 2 }}>{opt.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* 世界设定（当不使用世界书时显示，使用世界书时自动填充） */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontSize: 13, color: C.textSec, marginBottom: 6 }}>
@@ -279,10 +309,10 @@ function NewCampaignForm() {
             }} />
         </div>
 
-        {/* Step 4: 选择角色 */}
+        {/* Step 5: 选择角色 */}
         <div style={{ marginBottom: 24 }}>
           <label style={{ display: 'block', fontSize: 13, color: C.textSec, marginBottom: 6 }}>
-            <span style={{ color: C.gold, marginRight: 6 }}>4.</span>选择角色（可选）
+            <span style={{ color: C.gold, marginRight: 6 }}>5.</span>选择角色（可选）
           </label>
           {characters.length === 0 ? (
             <p style={{ color: C.textDim, fontSize: 13 }}>还没有角色，可以在冒险开始后创建</p>
