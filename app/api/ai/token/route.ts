@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '@/lib/db';
 import crypto from 'crypto';
 import { safeParseJSON } from '@/lib/request-parser';
+import { getUserIdFromRequest } from '@/lib/auth';
 
 // Token 验证中间件（仅供内部使用）
 function verifyUserToken(request: NextRequest): { valid: boolean; userId?: string; token?: string } {
@@ -54,15 +55,11 @@ export async function GET(request: NextRequest) {
     }
   }
   
-  // 如果都没有，尝试从 Cookie 获取
+  // 如果都没有，尝试从 JWT Cookie 获取
   if (!targetUserId) {
-    const cookies = request.cookies;
-    const sessionToken = cookies.get('session')?.value;
-    if (sessionToken) {
-      const user = db.prepare('SELECT id FROM users WHERE username = ?').get(sessionToken) as { id: string } | undefined;
-      if (user) {
-        targetUserId = user.id;
-      }
+    const jwtUserId = getUserIdFromRequest(request);
+    if (jwtUserId) {
+      targetUserId = jwtUserId;
     }
   }
   
@@ -82,15 +79,14 @@ export async function GET(request: NextRequest) {
 
 // 创建新的 Token（需要用户登录）
 export async function POST(request: NextRequest) {
-  // 获取用户认证
-  const cookies = request.cookies;
-  const sessionToken = cookies.get('session')?.value;
+  // 获取用户认证 - 使用 JWT cookie
+  const userId = getUserIdFromRequest(request);
   
-  if (!sessionToken) {
+  if (!userId) {
     return NextResponse.json({ error: '请先登录' }, { status: 401 });
   }
   
-  const user = db.prepare('SELECT id, username FROM users WHERE username = ?').get(sessionToken) as { id: string; username: string } | undefined;
+  const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId) as { id: string; username: string } | undefined;
   
   if (!user) {
     return NextResponse.json({ error: '用户不存在' }, { status: 404 });
@@ -130,14 +126,13 @@ export async function POST(request: NextRequest) {
 
 // 删除 Token
 export async function DELETE(request: NextRequest) {
-  const cookies = request.cookies;
-  const sessionToken = cookies.get('session')?.value;
+  const userId = getUserIdFromRequest(request);
   
-  if (!sessionToken) {
+  if (!userId) {
     return NextResponse.json({ error: '请先登录' }, { status: 401 });
   }
   
-  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(sessionToken) as { id: string } | undefined;
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId) as { id: string } | undefined;
   
   if (!user) {
     return NextResponse.json({ error: '用户不存在' }, { status: 404 });
