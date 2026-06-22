@@ -74,7 +74,15 @@ export async function GET(request: NextRequest) {
     ORDER BY created_at DESC
   `).all(targetUserId);
   
-  return NextResponse.json({ tokens });
+  // 解析 permissions 字段（数据库存的是 JSON 字符串）
+  const parsed = (tokens as any[]).map(t => ({
+    ...t,
+    permissions: typeof t.permissions === 'string'
+      ? (() => { try { return JSON.parse(t.permissions); } catch { return []; } })()
+      : t.permissions
+  }));
+  
+  return NextResponse.json({ tokens: parsed });
 }
 
 // 创建新的 Token（需要用户登录）
