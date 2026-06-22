@@ -73,7 +73,9 @@ export default function CrowdfundingDetailPage() {
       const res = await fetch('/api/auth/me');
       const data = await res.json();
       if (data.success) {
-        setCurrentUser(data.user);
+        // apiSuccess 包装在 data.data 中
+        const payload = (data as any).data || data;
+        setCurrentUser(payload.user || payload);
       }
     } catch (error) {
       console.error('加载用户失败:', error);
