@@ -29,7 +29,7 @@ export interface GMPromptOptions {
  * 构建 AI GM 系统提示词
  */
 export function buildSystemPrompt(options: GMPromptOptions): string {
-  const { preset, campaign, characterCard, fateResult, stateUpdate } = options;
+  const { preset, campaign, characterCard, lorebookEntries, playerMessage, fateResult, stateUpdate } = options;
   
   let prompt = preset.systemPrompt;
 
@@ -135,7 +135,7 @@ function injectLorebookContext(entries: LorebookEntry[], playerMessage: string):
   // 1. 收集常驻条目
   const constantEntries = entries
     .filter(e => e.enabled && e.constant)
-    .filter(e => !e.type || e.type !== 'fate_modifier'); // 排除纯机制条目
+    .filter(e => !(e as any).type || (e as any).type !== 'fate_modifier'); // 排除纯机制条目
 
   // 2. 关键词匹配条目
   const matchedEntries: LorebookEntry[] = [];
