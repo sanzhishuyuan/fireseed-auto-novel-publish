@@ -17,6 +17,8 @@ interface Task {
   status: string;
   publisher_name?: string;
   assignee_name?: string;
+  assignee_count?: number;
+  max_assignees?: number;
   created_at: string;
 }
 
@@ -35,7 +37,7 @@ export default function TasksPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<string>('open');
+  const [statusFilter, setStatusFilter] = useState<string>('active');
   const [genreFilter, setGenreFilter] = useState<string>('');
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -47,7 +49,8 @@ export default function TasksPage() {
     genre: '',
     target_words: '100000',
     budget: '500',
-    deadline: ''
+    deadline: '',
+    max_assignees: '9'
   });
 
   // 默认截止日期：30 天后
@@ -122,7 +125,8 @@ export default function TasksPage() {
           genre: '',
           target_words: '100000',
           budget: '500',
-          deadline: ''
+          deadline: '',
+          max_assignees: '9'
         });
         loadTasks(); // 刷新列表
       } else {
@@ -159,8 +163,7 @@ export default function TasksPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'open': return 'codex-badge codex-badge-green';
-      case 'assigned': return 'codex-badge codex-badge-blue';
-      case 'pending_review': return 'codex-badge codex-badge-yellow';
+      case 'reviewing': return 'codex-badge codex-badge-yellow';
       case 'completed': return 'codex-badge codex-badge-gray';
       case 'cancelled': return 'codex-badge codex-badge-red';
       default: return 'codex-badge codex-badge-gray';
@@ -171,8 +174,7 @@ export default function TasksPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'open': return '开放中';
-      case 'assigned': return '已接单';
-      case 'pending_review': return '待审核';
+      case 'reviewing': return '审核中';
       case 'completed': return '已完成';
       case 'cancelled': return '已取消';
       default: return status;
@@ -236,9 +238,9 @@ export default function TasksPage() {
                   }}
                   className="codex-select"
                 >
+                  <option value="active">进行中</option>
                   <option value="open">开放中</option>
-                  <option value="assigned">已接单</option>
-                  <option value="pending_review">待审核</option>
+                  <option value="reviewing">审核中</option>
                   <option value="completed">已完成</option>
                   <option value="all">全部</option>
                 </select>
@@ -349,9 +351,9 @@ export default function TasksPage() {
                       <span className="codex-mono" style={{ color: 'var(--codex-text-dim)' }}>
                         {task.publisher_name || '匿名用户'}
                       </span>
-                      {task.assignee_name && (
+                      {(task.assignee_count !== undefined) && (
                         <span className="codex-mono" style={{ color: 'var(--codex-text-dim)' }}>
-                          {task.assignee_name}
+                          接单进度: {task.assignee_count}/{task.max_assignees || 9}人
                         </span>
                       )}
                     </div>
@@ -359,7 +361,7 @@ export default function TasksPage() {
                       <span className="codex-mono" style={{ color: 'var(--codex-text-muted)' }}>
                         {formatDate(task.created_at)}
                       </span>
-                      {task.status === 'open' && (
+                      {(task.status === 'open' || task.status === 'reviewing') && (
                         <span className="codex-mono" style={{ color: getDaysLeft(task.deadline) <= 3 ? 'var(--codex-red)' : 'var(--codex-text-muted)', fontWeight: getDaysLeft(task.deadline) <= 3 ? 600 : 400 }}>
                           剩余 {getDaysLeft(task.deadline)} 天
                         </span>
@@ -495,6 +497,21 @@ export default function TasksPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: 'var(--codex-text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                      接单人数上限
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.max_assignees}
+                      onChange={(e) => setFormData({...formData, max_assignees: e.target.value})}
+                      className="codex-input"
+                      min={1}
+                      max={9}
+                    />
+                    <p className="codex-mono" style={{ fontSize: 11, color: 'var(--codex-text-muted)', marginTop: 6 }}>最多 9 人同时接单，1 人为独占模式</p>
+                  </div>
+
+                  <div>
+                    <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: 'var(--codex-text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                       预算 (SEED) <span style={{ color: 'var(--codex-red)' }}>*</span>
                     </label>
                     <input
@@ -509,7 +526,9 @@ export default function TasksPage() {
                     />
                     <p className="codex-mono" style={{ fontSize: 11, color: 'var(--codex-text-muted)', marginTop: 6 }}>50 - 50,000 SEED</p>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="codex-mono" style={{ display: 'block', fontSize: 11, letterSpacing: 1, color: 'var(--codex-text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                       截止日期 <span style={{ color: 'var(--codex-red)' }}>*</span>

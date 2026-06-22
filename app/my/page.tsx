@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useHeaderConfig } from '@/components/HeaderContext';
 
 // ============ 类型定义 ============
@@ -29,10 +30,11 @@ interface ReferralData {
 }
 
 // ============ 主组件 ============
-type TabKey = 'overview' | 'vip' | 'wallet' | 'referral' | 'tokens' | 'settings';
+type TabKey = 'overview' | 'vip' | 'wallet' | 'referral' | 'tokens' | 'settings' | 'tasks';
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'overview', label: '个人概览', icon: '📊' },
+  { key: 'tasks', label: '我的任务', icon: '📋' },
   { key: 'vip', label: 'VIP 会员', icon: '💎' },
   { key: 'wallet', label: 'SEED 钱包', icon: '🌱' },
   { key: 'referral', label: '推广中心', icon: '🔗' },
@@ -47,6 +49,7 @@ const PLANS = [
 ];
 
 export default function MyDashboard() {
+  const router = useRouter();
   const [tab, setTab] = useState<TabKey>('overview');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -306,6 +309,9 @@ export default function MyDashboard() {
   const renderContent = () => {
     switch (tab) {
       case 'overview': return renderOverview();
+      case 'tasks':
+        router.push('/my/tasks');
+        return null;
       case 'vip': return renderVIP();
       case 'wallet': return renderWallet();
       case 'referral': return renderReferral();
@@ -344,37 +350,66 @@ export default function MyDashboard() {
         {/* 侧边栏 */}
         <aside className="hidden md:block w-56 shrink-0">
           <nav className="sticky top-20 space-y-1">
-            {TABS.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  tab === t.key
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                    : 'hover:bg-white/5 text-gray-400 hover:text-white'
-                }`}
-              >
-                <span>{t.icon}</span>
-                <span>{t.label}</span>
-              </button>
-            ))}
+            {TABS.map(t => {
+              if (t.key === 'tasks') {
+                return (
+                  <Link
+                    key={t.key}
+                    href="/my/tasks"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-white/5 text-gray-400 hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <span>{t.icon}</span>
+                    <span>{t.label}</span>
+                  </Link>
+                );
+              }
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    tab === t.key
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                      : 'hover:bg-white/5 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <span>{t.icon}</span>
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
           </nav>
         </aside>
 
         {/* 移动端标签切换 */}
         <div className="md:hidden w-full overflow-x-auto mb-4">
           <div className="flex gap-2 pb-2">
-            {TABS.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`shrink-0 px-4 py-2 rounded-lg text-xs font-medium ${
-                  tab === t.key ? 'bg-indigo-600 text-white' : 'bg-white/5 text-gray-400'
-                }`}
-              >
-                {t.icon} {t.label}
-              </button>
-            ))}
+            {TABS.map(t => {
+              if (t.key === 'tasks') {
+                return (
+                  <Link
+                    key={t.key}
+                    href="/my/tasks"
+                    className={`shrink-0 px-4 py-2 rounded-lg text-xs font-medium bg-white/5 text-gray-400`}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    {t.icon} {t.label}
+                  </Link>
+                );
+              }
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`shrink-0 px-4 py-2 rounded-lg text-xs font-medium ${
+                    tab === t.key ? 'bg-indigo-600 text-white' : 'bg-white/5 text-gray-400'
+                  }`}
+                >
+                  {t.icon} {t.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

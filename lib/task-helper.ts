@@ -1,9 +1,11 @@
 /**
- * 任务系统辅助函数
+ * 任务系统辅助函数（多接单人版本）
+ * 支持最多9人同时接单并提交，发布者审核每个提交并决定支付
  */
 
-import db from './db';
-import { getOrCreateWallet } from './seed';
+import db from '@/lib/db';
+import { getOrCreateWallet } from '@/lib/seed';
+import { createNotification } from '@/lib/notification';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface CreateTaskInput {
@@ -13,6 +15,7 @@ export interface CreateTaskInput {
   target_words?: number;
   budget: number;
   deadline: string; // ISO date string
+  max_assignees?: number; // 最多接单人数，默认9
 }
 
 export interface TaskResponse {
@@ -25,7 +28,7 @@ export interface TaskResponse {
   budget: number;
   deadline: string;
   status: string;
-  assignee_id?: string;
+  assignee_id?: string; // 保留兼容旧数据
   assigned_at?: string;
   completed_at?: string;
   delivery_url?: string;
@@ -34,7 +37,13 @@ export interface TaskResponse {
   created_at: string;
   updated_at: string;
   publisher_name?: string;
-  assignee_name?: string;
+  assignee_name?: string; // 保留兼容旧数据
+  // 新增字段
+  max_assignees?: number;
+  assignee_count?: number;
+  remaining_budget?: number;
+  is_assigned?: boolean;
+  assignees?: { id: string; username: string; assigned_at: string }[];
 }
 
 /**
@@ -103,6 +112,8 @@ export function createTask(publisherId: string, input: CreateTaskInput): { succe
       return { success: false, error: validation.error };
     }
 
+    const maxAssignees = input.max_assignees || 9;
+
     // 检查用户余额（自动创建钱包）
     const wallet = getOrCreateWallet(publisherId);
     if (wallet.balance < input.budget) {
@@ -130,12 +141,12 @@ export function createTask(publisherId: string, input: CreateTaskInput): { succe
         `发布任务: ${input.title}`,
       );
 
-      // 3. 创建任务记录
+      // 3. 创建任务记录（增加 max_assignees）
       db.prepare(`
         INSERT INTO novel_tasks (
           id, publisher_id, title, description, genre, target_words, 
-          budget, deadline, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          budget, deadline, max_assignees, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `).run(
         taskId,
         publisherId,
@@ -144,7 +155,8 @@ export function createTask(publisherId: string, input: CreateTaskInput): { succe
         input.genre || null,
         input.target_words || null,
         input.budget,
-        input.deadline
+        input.deadline,
+        maxAssignees,
       );
 
       return taskId;
@@ -159,7 +171,7 @@ export function createTask(publisherId: string, input: CreateTaskInput): { succe
 }
 
 /**
- * 获取任务列表
+ * 获取任务列表（多接单人版本）
  */
 export function getTasks(filters: {
   status?: string;
@@ -176,8 +188,16 @@ export function getTasks(filters: {
   const params: any[] = [];
 
   if (filters.status) {
-    conditions.push('t.status = ?');
-    params.push(filters.status);
+    if (filters.status === 'active') {
+      // 'active' 表示进行中：显示 open + reviewing
+      conditions.push("t.status IN ('open', 'reviewing')");
+    } else {
+      conditions.push('t.status = ?');
+      params.push(filters.status);
+    }
+  } else {
+    // 默认显示 open + reviewing
+    conditions.push("t.status IN ('open', 'reviewing')");
   }
 
   if (filters.genre) {
@@ -192,15 +212,14 @@ export function getTasks(filters: {
   const totalResult = db.prepare(countQuery).get(...params) as { total: number };
   const total = totalResult.total;
 
-  // 查询任务列表
+  // 查询任务列表（左连接统计接单人数）
   const query = `
     SELECT 
       t.*,
       u1.username as publisher_name,
-      u2.username as assignee_name
+      (SELECT COUNT(*) FROM task_assignments WHERE task_id = t.id) as assignee_count
     FROM novel_tasks t
     LEFT JOIN users u1 ON t.publisher_id = u1.id
-    LEFT JOIN users u2 ON t.assignee_id = u2.id
     ${whereClause}
     ORDER BY t.created_at DESC
     LIMIT ? OFFSET ?
@@ -217,43 +236,90 @@ export function getTasks(filters: {
 }
 
 /**
- * 获取任务详情
+ * 获取任务详情（多接单人版本）
  */
-export function getTaskById(taskId: string): TaskResponse | null {
+export function getTaskById(taskId: string, currentUserId?: string): TaskResponse | null {
   const task = db.prepare(`
     SELECT 
       t.*,
       u1.username as publisher_name,
-      u2.username as assignee_name
+      (SELECT COUNT(*) FROM task_assignments WHERE task_id = t.id) as assignee_count
     FROM novel_tasks t
     LEFT JOIN users u1 ON t.publisher_id = u1.id
-    LEFT JOIN users u2 ON t.assignee_id = u2.id
     WHERE t.id = ?
-  `).get(taskId) as TaskResponse | undefined;
+  `).get(taskId) as any;
 
-  return task || null;
+  if (!task) return null;
+
+  // 获取接单人列表
+  const assignees = db.prepare(`
+    SELECT a.user_id as id, a.username, a.assigned_at
+    FROM task_assignments a
+    WHERE a.task_id = ?
+    ORDER BY a.assigned_at ASC
+  `).all(taskId) as { id: string; username: string; assigned_at: string }[];
+
+  // 计算剩余预算（总预算 - 已批准的奖励）
+  const approvedTotal = db.prepare(`
+    SELECT COALESCE(SUM(reward_amount), 0) as total
+    FROM task_submissions
+    WHERE task_id = ? AND status = 'approved'
+  `).get(taskId) as { total: number };
+
+  task.assignees = assignees;
+  task.assignee_count = assignees.length;
+  task.max_assignees = task.max_assignees || 9;
+  task.remaining_budget = task.budget - approvedTotal.total;
+
+  // 当前用户是否已接单
+  if (currentUserId) {
+    const assignment = db.prepare(`
+      SELECT id FROM task_assignments WHERE task_id = ? AND user_id = ?
+    `).get(taskId, currentUserId);
+    task.is_assigned = !!assignment;
+  }
+
+  return task as TaskResponse;
 }
 
 /**
- * 接单
+ * 接单（多接单人版本）
  */
 export function assignTask(taskId: string, assigneeId: string): { success: boolean; error?: string } {
   try {
-    // 检查任务状态
-    const task = db.prepare('SELECT status, budget FROM novel_tasks WHERE id = ?').get(taskId) as { status: string; budget: number } | undefined;
+    // 检查任务状态和接单上限
+    const task = db.prepare('SELECT status, max_assignees FROM novel_tasks WHERE id = ?').get(taskId) as {
+      status: string;
+      max_assignees: number;
+    } | undefined;
+
     if (!task) {
       return { success: false, error: '任务不存在' };
     }
     if (task.status !== 'open') {
-      return { success: false, error: '任务已被接单或已完成' };
+      return { success: false, error: '任务未在开放状态，无法接单' };
     }
 
-    // 更新任务状态
+    // 检查是否已满
+    const count = db.prepare('SELECT COUNT(*) as cnt FROM task_assignments WHERE task_id = ?').get(taskId) as { cnt: number };
+    if (count.cnt >= (task.max_assignees || 9)) {
+      return { success: false, error: `接单人数已满（${task.max_assignees || 9}人）` };
+    }
+
+    // 检查是否已重复接单
+    const existing = db.prepare('SELECT id FROM task_assignments WHERE task_id = ? AND user_id = ?').get(taskId, assigneeId);
+    if (existing) {
+      return { success: false, error: '您已接此单，请勿重复接单' };
+    }
+
+    // 查询用户名
+    const user = db.prepare('SELECT username FROM users WHERE id = ?').get(assigneeId) as { username: string } | undefined;
+
+    // 插入接单记录
     db.prepare(`
-      UPDATE novel_tasks 
-      SET status = 'assigned', assignee_id = ?, assigned_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND status = 'open'
-    `).run(assigneeId, taskId);
+      INSERT INTO task_assignments (id, task_id, user_id, username, assigned_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(uuidv4(), taskId, assigneeId, user?.username || null);
 
     return { success: true };
   } catch (error) {
@@ -263,116 +329,404 @@ export function assignTask(taskId: string, assigneeId: string): { success: boole
 }
 
 /**
- * 提交完成
+ * 提交任务交付物（多接单人版本）
  */
-export function completeTask(taskId: string, assigneeId: string, deliveryUrl: string): { success: boolean; error?: string } {
+export function addSubmission(
+  taskId: string,
+  submitterId: string,
+  data: {
+    title?: string;
+    content?: string;
+    link_url?: string;
+    file_path?: string;
+    file_name?: string;
+    file_size?: number;
+    file_type?: string;
+  }
+): { success: boolean; submissionId?: string; error?: string } {
   try {
-    // 检查任务状态和权限
-    const task = db.prepare('SELECT status, assignee_id FROM novel_tasks WHERE id = ?').get(taskId) as { status: string; assignee_id: string } | undefined;
+    // 检查任务状态
+    const task = db.prepare('SELECT status, publisher_id, title FROM novel_tasks WHERE id = ?').get(taskId) as {
+      status: string;
+      publisher_id: string;
+      title: string;
+    } | undefined;
+
     if (!task) {
       return { success: false, error: '任务不存在' };
     }
-    if (task.status !== 'assigned') {
-      return { success: false, error: '任务状态不正确' };
-    }
-    if (task.assignee_id !== assigneeId) {
-      return { success: false, error: '无权操作此任务' };
+    if (task.status !== 'open') {
+      return { success: false, error: '任务未在开放状态，无法提交' };
     }
 
-    // 更新任务状态
+    // 检查是否已接单
+    const assignment = db.prepare('SELECT id FROM task_assignments WHERE task_id = ? AND user_id = ?').get(taskId, submitterId);
+    if (!assignment) {
+      return { success: false, error: '您未接此任务，无法提交' };
+    }
+
+    // 写入提交记录
+    const submissionId = uuidv4();
     db.prepare(`
-      UPDATE novel_tasks 
-      SET status = 'pending_review', delivery_url = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(deliveryUrl, taskId);
+      INSERT INTO task_submissions (id, task_id, submitter_id, title, content, link_url, file_path, file_name, file_size, file_type, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `).run(
+      submissionId,
+      taskId,
+      submitterId,
+      data.title || '',
+      data.content || null,
+      data.link_url || null,
+      data.file_path || null,
+      data.file_name || null,
+      data.file_size || null,
+      data.file_type || null
+    );
 
-    return { success: true };
+    // 发送通知给发布者
+    try {
+      createNotification({
+        userId: task.publisher_id,
+        type: 'task',
+        title: '任务提交通知',
+        content: `您的任务「${task.title}」收到新的提交`,
+        link: `/tasks/${taskId}`
+      });
+    } catch (e) {
+      console.warn('[Task] 发送通知失败:', e);
+    }
+
+    return { success: true, submissionId };
   } catch (error) {
-    console.error('提交完成失败:', error);
+    console.error('提交任务失败:', error);
     return { success: false, error: error instanceof Error ? error.message : '未知错误' };
   }
 }
 
 /**
- * 确认完成并支付
+ * 获取任务提交列表（多接单人版本）
  */
-export function confirmTask(taskId: string, publisherId: string, rating?: number, review?: string): { success: boolean; error?: string } {
+export function getSubmissions(
+  taskId: string,
+  userId: string,
+  fetchAll = false
+): { submissions: any[]; isPublisher: boolean; isSubmitter: boolean } {
+  // 检查用户身份
+  const task = db.prepare('SELECT publisher_id FROM novel_tasks WHERE id = ?').get(taskId) as {
+    publisher_id: string;
+  } | undefined;
+
+  if (!task) {
+    return { submissions: [], isPublisher: false, isSubmitter: false };
+  }
+
+  const isPublisher = task.publisher_id === userId;
+
+  // 检查用户是否在 task_assignments 中
+  const assignment = db.prepare('SELECT id FROM task_assignments WHERE task_id = ? AND user_id = ?').get(taskId, userId);
+  const isSubmitter = !!assignment;
+
+  let submissions: any[];
+  if (isPublisher || isSubmitter || fetchAll) {
+    // 发布者和提交者可以看到完整内容
+    submissions = db.prepare(`
+      SELECT s.*, u.username as submitter_name
+      FROM task_submissions s
+      LEFT JOIN users u ON s.submitter_id = u.id
+      WHERE s.task_id = ?
+      ORDER BY s.created_at DESC
+    `).all(taskId) as any[];
+  } else {
+    // 其他人只能看到标题
+    submissions = db.prepare(`
+      SELECT s.id, s.title, s.status, s.created_at, u.username as submitter_name
+      FROM task_submissions s
+      LEFT JOIN users u ON s.submitter_id = u.id
+      WHERE s.task_id = ?
+      ORDER BY s.created_at DESC
+    `).all(taskId) as any[];
+  }
+
+  return { submissions, isPublisher, isSubmitter };
+}
+
+/**
+ * 批准单个提交并支付奖励（新增）
+ */
+export function approveSubmission(
+  submissionId: string,
+  publisherId: string,
+  rewardAmount: number
+): { success: boolean; error?: string } {
   try {
-    // 检查任务状态和权限
-    const task = db.prepare('SELECT status, publisher_id, budget, assignee_id FROM novel_tasks WHERE id = ?').get(taskId) as { 
-      status: string; 
-      publisher_id: string; 
-      budget: number;
-      assignee_id: string;
-    } | undefined;
-    
-    if (!task) {
-      return { success: false, error: '任务不存在' };
+    const submission = db.prepare(`
+      SELECT s.*, t.publisher_id, t.budget as task_budget, t.title as task_title
+      FROM task_submissions s
+      JOIN novel_tasks t ON s.task_id = t.id
+      WHERE s.id = ?
+    `).get(submissionId) as any;
+
+    if (!submission) {
+      return { success: false, error: '提交记录不存在' };
     }
-    if (task.status !== 'pending_review') {
-      return { success: false, error: '任务状态不正确' };
+    if (submission.publisher_id !== publisherId) {
+      return { success: false, error: '无权操作此提交' };
     }
-    if (task.publisher_id !== publisherId) {
-      return { success: false, error: '无权操作此任务' };
+    if (submission.status !== 'submitted') {
+      return { success: false, error: '该提交已被处理' };
     }
 
-    // 计算佣金（90%给作者，10%平台抽成）
-    const authorAmount = Math.floor(task.budget * 0.9);
-    const platformCommission = task.budget - authorAmount;
+    // 检查剩余预算
+    const approvedTotal = db.prepare(`
+      SELECT COALESCE(SUM(reward_amount), 0) as total
+      FROM task_submissions
+      WHERE task_id = ? AND status = 'approved'
+    `).get(submission.task_id) as { total: number };
+
+    const remainingBudget = submission.task_budget - approvedTotal.total;
+    if (rewardAmount > remainingBudget) {
+      return { success: false, error: `奖励金额超出剩余预算。剩余预算：${remainingBudget} SEED` };
+    }
 
     // 使用事务执行支付
-    const confirmTransaction = db.transaction(() => {
-      // 1. 给作者转账
-      // 给作者转账（自动创建钱包）
-      const authorWalletBefore = getOrCreateWallet(task.assignee_id!);
+    const approveTx = db.transaction(() => {
+      // 1. 更新提交状态
+      db.prepare(`
+        UPDATE task_submissions SET status = 'approved', reward_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+      `).run(rewardAmount, submissionId);
+
+      // 2. 给提交者转账（90%，平台抽成10%）
+      const submitterAmount = Math.floor(rewardAmount * 0.9);
+      const platformCommission = rewardAmount - submitterAmount;
+
+      // 提交者钱包
+      const submitterWallet = getOrCreateWallet(submission.submitter_id);
       db.prepare(
         'UPDATE wallets SET balance = balance + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
-      ).run(authorAmount, authorAmount, task.assignee_id);
+      ).run(submitterAmount, submitterAmount, submission.submitter_id);
 
       db.prepare(
-        'INSERT INTO transactions (id, user_id, target_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+        'INSERT INTO transactions (id, user_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
       ).run(
         uuidv4(),
-        task.assignee_id,
-        null,
+        submission.submitter_id,
         'task_reward',
-        taskId,
-        authorAmount,
-        authorWalletBefore.balance + authorAmount,
-        '完成任务获得奖励',
+        submission.task_id,
+        submitterAmount,
+        submitterWallet.balance + submitterAmount,
+        '任务提交获得奖励',
       );
 
-      // 2. 平台抽成
-      const platformWalletBefore = getOrCreateWallet('platform');
+      // 平台钱包
+      const platformWallet = getOrCreateWallet('platform');
       db.prepare(
         'UPDATE wallets SET balance = balance + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
       ).run(platformCommission, platformCommission, 'platform');
 
       db.prepare(
-        'INSERT INTO transactions (id, user_id, target_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+        'INSERT INTO transactions (id, user_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
       ).run(
         uuidv4(),
         'platform',
-        null,
         'task_reward',
-        taskId,
+        submission.task_id,
         platformCommission,
-        platformWalletBefore.balance + platformCommission,
+        platformWallet.balance + platformCommission,
         '任务平台抽成 10%',
       );
-
-      // 3. 更新任务状态
-      db.prepare(`
-        UPDATE novel_tasks 
-        SET status = 'completed', completed_at = CURRENT_TIMESTAMP, rating = ?, review = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(rating || null, review || null, taskId);
     });
 
-    confirmTransaction();
+    approveTx();
+
+    // 通知提交者
+    try {
+      const submitter = db.prepare('SELECT username FROM users WHERE id = ?').get(submission.submitter_id) as any;
+      createNotification({
+        userId: submission.submitter_id,
+        type: 'task',
+        title: '提交已通过',
+        content: `您的提交已被发布者批准，获得 ${rewardAmount} SEED 奖励（实际到账 ${Math.floor(rewardAmount * 0.9)} SEED）`,
+        link: `/tasks/${submission.task_id}`
+      });
+    } catch (e) {
+      console.warn('[Task] 发送批准通知失败:', e);
+    }
+
     return { success: true };
   } catch (error) {
-    console.error('确认完成失败:', error);
+    console.error('批准提交失败:', error);
+    return { success: false, error: error instanceof Error ? error.message : '未知错误' };
+  }
+}
+
+/**
+ * 驳回提交（不再退回 assigned）
+ */
+export function rejectSubmission(
+  submissionId: string,
+  publisherId: string,
+  notes?: string
+): { success: boolean; error?: string } {
+  try {
+    const submission = db.prepare(`
+      SELECT s.*, t.publisher_id, t.title as task_title
+      FROM task_submissions s
+      JOIN novel_tasks t ON s.task_id = t.id
+      WHERE s.id = ?
+    `).get(submissionId) as any;
+
+    if (!submission) {
+      return { success: false, error: '提交记录不存在' };
+    }
+    if (submission.publisher_id !== publisherId) {
+      return { success: false, error: '无权操作此提交' };
+    }
+    if (submission.status !== 'submitted') {
+      return { success: false, error: '该提交已被处理' };
+    }
+
+    // 更新提交状态（不移回 assigned）
+    db.prepare(`
+      UPDATE task_submissions SET status = 'rejected', publisher_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).run(notes || null, submissionId);
+
+    // 通知提交者
+    try {
+      createNotification({
+        userId: submission.submitter_id,
+        type: 'task',
+        title: '提交被驳回',
+        content: `您的提交「${submission.title || submission.task_title}」被发布者驳回${notes ? '：' + notes : ''}`,
+        link: `/tasks/${submission.task_id}`
+      });
+    } catch (e) {
+      console.warn('[Task] 发送驳回通知失败:', e);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('驳回提交失败:', error);
+    return { success: false, error: error instanceof Error ? error.message : '未知错误' };
+  }
+}
+
+/**
+ * 关闭接单（新增）
+ */
+export function closeTask(taskId: string, publisherId: string): { success: boolean; error?: string } {
+  try {
+    const task = db.prepare('SELECT status, publisher_id FROM novel_tasks WHERE id = ?').get(taskId) as {
+      status: string;
+      publisher_id: string;
+    } | undefined;
+
+    if (!task) {
+      return { success: false, error: '任务不存在' };
+    }
+    if (task.publisher_id !== publisherId) {
+      return { success: false, error: '无权操作此任务' };
+    }
+    if (task.status !== 'open') {
+      return { success: false, error: '任务未在开放状态' };
+    }
+
+    db.prepare(`
+      UPDATE novel_tasks SET status = 'reviewing', updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).run(taskId);
+
+    return { success: true };
+  } catch (error) {
+    console.error('关闭接单失败:', error);
+    return { success: false, error: error instanceof Error ? error.message : '未知错误' };
+  }
+}
+
+/**
+ * 完成审核（发布者完成审核，退回剩余预算）
+ */
+export function completeTask(taskId: string, publisherId: string): { success: boolean; error?: string } {
+  try {
+    const task = db.prepare('SELECT status, publisher_id, budget FROM novel_tasks WHERE id = ?').get(taskId) as {
+      status: string;
+      publisher_id: string;
+      budget: number;
+    } | undefined;
+
+    if (!task) {
+      return { success: false, error: '任务不存在' };
+    }
+    if (task.publisher_id !== publisherId) {
+      return { success: false, error: '无权操作此任务' };
+    }
+    if (task.status !== 'reviewing') {
+      return { success: false, error: '任务未在审核中状态' };
+    }
+
+    // 计算剩余预算（总预算 - 已批准的奖励）
+    const approvedTotal = db.prepare(`
+      SELECT COALESCE(SUM(reward_amount), 0) as total
+      FROM task_submissions
+      WHERE task_id = ? AND status = 'approved'
+    `).get(taskId) as { total: number };
+
+    const refundAmount = task.budget - approvedTotal.total;
+
+    // 使用事务
+    const completeTx = db.transaction(() => {
+      // 1. 退回剩余预算给发布者
+      if (refundAmount > 0) {
+        const publisherWallet = getOrCreateWallet(publisherId);
+        db.prepare(
+          'UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
+        ).run(refundAmount, publisherId);
+
+        db.prepare(
+          'INSERT INTO transactions (id, user_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+        ).run(
+          uuidv4(),
+          publisherId,
+          'compensate',
+          taskId,
+          refundAmount,
+          publisherWallet.balance + refundAmount,
+          '任务审核完成，剩余预算退回',
+        );
+      }
+
+      // 2. 更新任务状态
+      db.prepare(`
+        UPDATE novel_tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+      `).run(taskId);
+    });
+
+    completeTx();
+
+    // 通知所有已接单但未被批准的用户
+    try {
+      const unapprovedAssignees = db.prepare(`
+        SELECT DISTINCT a.user_id
+        FROM task_assignments a
+        WHERE a.task_id = ? AND a.user_id NOT IN (
+          SELECT submitter_id FROM task_submissions WHERE task_id = ? AND status = 'approved'
+        )
+      `).all(taskId, taskId) as { user_id: string }[];
+
+      for (const u of unapprovedAssignees) {
+        createNotification({
+          userId: u.user_id,
+          type: 'task',
+          title: '任务已完成',
+          content: `任务已由发布者完成审核，感谢您的参与`,
+          link: `/tasks/${taskId}`
+        });
+      }
+    } catch (e) {
+      console.warn('[Task] 发送完成通知失败:', e);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('完成审核失败:', error);
     return { success: false, error: error instanceof Error ? error.message : '未知错误' };
   }
 }
@@ -382,13 +736,12 @@ export function confirmTask(taskId: string, publisherId: string, rating?: number
  */
 export function cancelTask(taskId: string, userId: string): { success: boolean; refundAmount?: number; error?: string } {
   try {
-    // 检查任务状态和权限
-    const task = db.prepare('SELECT status, publisher_id, budget FROM novel_tasks WHERE id = ?').get(taskId) as { 
-      status: string; 
-      publisher_id: string; 
+    const task = db.prepare('SELECT status, publisher_id, budget FROM novel_tasks WHERE id = ?').get(taskId) as {
+      status: string;
+      publisher_id: string;
       budget: number;
     } | undefined;
-    
+
     if (!task) {
       return { success: false, error: '任务不存在' };
     }
@@ -399,42 +752,45 @@ export function cancelTask(taskId: string, userId: string): { success: boolean; 
       return { success: false, error: '已完成的任务不能取消' };
     }
 
-    // 如果已分配，需要先解除分配
-    if (task.status === 'assigned' || task.status === 'pending_review') {
-      db.prepare('UPDATE novel_tasks SET status = \'open\', assignee_id = NULL, assigned_at = NULL WHERE id = ?').run(taskId);
-    }
+    // 计算剩余预算
+    const approvedTotal = db.prepare(`
+      SELECT COALESCE(SUM(reward_amount), 0) as total
+      FROM task_submissions
+      WHERE task_id = ? AND status = 'approved'
+    `).get(taskId) as { total: number };
 
-    // 退款
+    const refundAmount = task.budget - approvedTotal.total;
+
+    // 使用事务
     const cancelTransaction = db.transaction(() => {
-      // 1. 退还SEED给用户（自动创建钱包）
-      const userWalletBefore = getOrCreateWallet(userId);
-      db.prepare(
-        'UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
-      ).run(task.budget, userId);
+      // 1. 退还剩余SEED
+      if (refundAmount > 0) {
+        const userWalletBefore = getOrCreateWallet(userId);
+        db.prepare(
+          'UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?'
+        ).run(refundAmount, userId);
 
-      db.prepare(
-        'INSERT INTO transactions (id, user_id, target_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
-      ).run(
-        uuidv4(),
-        userId,
-        null,
-        'compensate',
-        taskId,
-        task.budget,
-        userWalletBefore.balance + task.budget,
-        '任务取消退款',
-      );
+        db.prepare(
+          'INSERT INTO transactions (id, user_id, type, ref_id, amount, balance_after, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+        ).run(
+          uuidv4(),
+          userId,
+          'compensate',
+          taskId,
+          refundAmount,
+          userWalletBefore.balance + refundAmount,
+          '任务取消退款',
+        );
+      }
 
       // 2. 更新任务状态
       db.prepare(`
-        UPDATE novel_tasks 
-        SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
+        UPDATE novel_tasks SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?
       `).run(taskId);
     });
 
     cancelTransaction();
-    return { success: true, refundAmount: task.budget };
+    return { success: true, refundAmount };
   } catch (error) {
     console.error('取消任务失败:', error);
     return { success: false, error: error instanceof Error ? error.message : '未知错误' };

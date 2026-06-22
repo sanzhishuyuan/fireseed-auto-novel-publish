@@ -183,7 +183,7 @@ export default function RpgLobbyPage() {
             border: '1px solid #ef444440', marginBottom: 20, textAlign: 'center',
           }}>
             <p style={{ color: '#ef4444', fontSize: 14, margin: 0 }}>
-              请先 <Link href="/login" style={{ color: C.gold }}>登录</Link> 或 <Link href="/register" style={{ color: C.gold }}>注册</Link> 以使用跑团功能
+              请先 <Link href="/auth/login" style={{ color: C.gold }}>登录</Link> 或 <Link href="/auth/register" style={{ color: C.gold }}>注册</Link> 以使用跑团功能
             </p>
           </div>
         )}

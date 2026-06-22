@@ -13,7 +13,8 @@ export const GET = withRoute({ auth: 'none' }, async (request, ctx) => {
   const { searchParams } = new URL(request.url);
   
   // 获取查询参数
-  const status = searchParams.get('status') || undefined;
+  // 默认 status='active' 表示显示 open + reviewing（进行中）
+  const status = searchParams.get('status') || 'active';
   const genre = searchParams.get('genre') || undefined;
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
@@ -24,13 +25,13 @@ export const GET = withRoute({ auth: 'none' }, async (request, ctx) => {
   }
 
   // 获取任务列表
-  const result = getTasks({ status, genre, page, limit });
+  const result = getTasks({ status: status === 'all' ? undefined : status, genre, page, limit });
 
   return apiSuccess(result);
 });
 
 export const POST = withRoute({ auth: 'user', body: true }, async (request, ctx) => {
-  const { title, description, genre, target_words, budget, deadline } = ctx.body;
+  const { title, description, genre, target_words, budget, deadline, max_assignees } = ctx.body;
 
   // 验证必填字段
   if (!title || !description || !budget || !deadline) {
@@ -44,7 +45,8 @@ export const POST = withRoute({ auth: 'user', body: true }, async (request, ctx)
     genre,
     target_words,
     budget: parseInt(budget),
-    deadline
+    deadline,
+    max_assignees: max_assignees ? parseInt(max_assignees) : 9,
   });
 
   if (!result.success) {

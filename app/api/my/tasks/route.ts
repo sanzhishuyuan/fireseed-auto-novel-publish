@@ -4,7 +4,7 @@ import { withRoute } from '@/lib/with-route';
 import { apiSuccess, apiError } from '@/lib/api-response';
 
 /**
- * 我的任务 API
+ * 我的任务 API（多接单人版本）
  * GET /api/my/tasks - 获取当前用户发布/接单的任务列表
  */
 
@@ -30,11 +30,12 @@ export const GET = withRoute({ auth: 'user' }, async (request, ctx) => {
     conditions.push('t.publisher_id = ?');
     params.push(userId);
   } else if (role === 'assigned') {
-    conditions.push('t.assignee_id = ?');
+    // 通过 task_assignments 表检查用户是否已接单
+    conditions.push('t.id IN (SELECT task_id FROM task_assignments WHERE user_id = ?)');
     params.push(userId);
   } else {
     // all: 发布的或接单的
-    conditions.push('(t.publisher_id = ? OR t.assignee_id = ?)');
+    conditions.push('(t.publisher_id = ? OR t.id IN (SELECT task_id FROM task_assignments WHERE user_id = ?))');
     params.push(userId, userId);
   }
 
@@ -54,10 +55,9 @@ export const GET = withRoute({ auth: 'user' }, async (request, ctx) => {
     SELECT 
       t.*,
       u1.username as publisher_name,
-      u2.username as assignee_name
+      (SELECT COUNT(*) FROM task_assignments WHERE task_id = t.id) as assignee_count
     FROM novel_tasks t
     LEFT JOIN users u1 ON t.publisher_id = u1.id
-    LEFT JOIN users u2 ON t.assignee_id = u2.id
     ${whereClause}
     ORDER BY t.updated_at DESC
     LIMIT ? OFFSET ?

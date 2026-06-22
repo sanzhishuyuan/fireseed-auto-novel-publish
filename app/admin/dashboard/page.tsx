@@ -255,6 +255,16 @@ export default function EnhancedAdminDashboard() {
   const [userSearch, setUserSearch] = useState('');
   const [changingRole, setChangingRole] = useState<string | null>(null);
   const [userMessage, setUserMessage] = useState('');
+  const [garbledExpanded, setGarbledExpanded] = useState(false);
+  const [garbledNovelId, setGarbledNovelId] = useState('');
+  const [garbledReason, setGarbledReason] = useState('');
+  const [garbledLoading, setGarbledLoading] = useState(false);
+  const [garbledResult, setGarbledResult] = useState<{ success: boolean; message: string; novel?: any; author?: any } | null>(null);
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastContent, setBroadcastContent] = useState('');
+  const [broadcastLink, setBroadcastLink] = useState('');
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState('');
   const [openCount, setOpenCount] = useState(0);
   const [taskEvents, setTaskEvents] = useState<any[]>([]);
   const [taskSummary, setTaskSummary] = useState({ unique_workers: 0, total_takes: 0, total_completes: 0 });
@@ -1153,6 +1163,339 @@ export default function EnhancedAdminDashboard() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── ⚠️ 乱码数据通知（仅 super_admin 可见） ─────────────── */}
+        {adminInfo?.role === 'super_admin' && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2
+                className="codex-section-title"
+                style={{
+                  fontFamily: fontDisplay,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: C.text,
+                  margin: 0,
+                }}
+              >
+                ⚠️ 乱码数据通知
+              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontFamily: fontMono, fontSize: 11, color: C.muted }}>手动发送乱码通知邮件给作者</span>
+                <button
+                  onClick={() => setGarbledExpanded(!garbledExpanded)}
+                  className="codex-btn-ghost"
+                  style={{ fontSize: 11, padding: '2px 8px' }}
+                >
+                  {garbledExpanded ? '折叠' : '展开'}
+                </button>
+              </div>
+            </div>
+
+            {garbledExpanded && (
+              <div className="codex-card" style={{ padding: 20 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 3fr',
+                    gap: 16,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontFamily: fontMono,
+                        fontSize: 11,
+                        color: C.muted,
+                        marginBottom: 4,
+                      }}
+                    >
+                      小说ID
+                    </label>
+                    <input
+                      type="text"
+                      value={garbledNovelId}
+                      onChange={(e) => { setGarbledNovelId(e.target.value); setGarbledResult(null); }}
+                      className="codex-input"
+                      placeholder="输入完整UUID或ID前缀..."
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontFamily: fontMono,
+                        fontSize: 11,
+                        color: C.muted,
+                        marginBottom: 4,
+                      }}
+                    >
+                      通知原因（可选）
+                    </label>
+                    <input
+                      type="text"
+                      value={garbledReason}
+                      onChange={(e) => setGarbledReason(e.target.value)}
+                      className="codex-input"
+                      placeholder='默认: 系统检测到作品内容存在编码异常（乱码）'
+                    />
+                  </div>
+                </div>
+
+                {garbledResult && (
+                  <div
+                    style={{
+                      background: garbledResult.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                      border: `1px solid ${garbledResult.success ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                      borderRadius: 8,
+                      padding: 16,
+                      marginBottom: 16,
+                      fontSize: 13,
+                      color: garbledResult.success ? C.green : C.red,
+                      fontFamily: fontMono,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    <p style={{ margin: 0 }}>{garbledResult.success ? '✅' : '❌'} {garbledResult.message}</p>
+                    {garbledResult.novel && (
+                      <p style={{ margin: '4px 0 0', fontSize: 12, color: C.dim }}>
+                        作品: {garbledResult.novel.title} ({garbledResult.novel.id.slice(0, 12)}...)
+                      </p>
+                    )}
+                    {garbledResult.author && (
+                      <p style={{ margin: '2px 0 0', fontSize: 12, color: C.dim }}>
+                        作者: {garbledResult.author.username} ({garbledResult.author.email})
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  onClick={async () => {
+                    if (!garbledNovelId) { setGarbledResult({ success: false, message: '请输入小说ID' }); return; }
+                    setGarbledLoading(true);
+                    setGarbledResult(null);
+                    try {
+                      const res = await fetch('/api/admin/notify-garbled', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          novel_id: garbledNovelId,
+                          reason: garbledReason || undefined,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        setGarbledResult({
+                          success: true,
+                          message: data.data.message,
+                          novel: data.data.novel,
+                          author: data.data.author,
+                        });
+                      } else {
+                        setGarbledResult({
+                          success: false,
+                          message: data.error?.message || data.error || '发送失败',
+                        });
+                      }
+                    } catch {
+                      setGarbledResult({ success: false, message: '网络错误，请重试' });
+                    } finally {
+                      setGarbledLoading(false);
+                    }
+                  }}
+                  disabled={garbledLoading}
+                  className="codex-btn-gold"
+                  style={{ fontSize: 13, padding: '8px 24px', display: 'flex', alignItems: 'center', gap: 8 }}
+                >
+                  {garbledLoading ? (
+                    <>
+                      <div
+                        className="codex-animate"
+                        style={{
+                          width: 14,
+                          height: 14,
+                          border: '2px solid #1a1a2e',
+                          borderTopColor: 'transparent',
+                          borderRadius: '50%',
+                        }}
+                      />
+                      发送中...
+                    </>
+                  ) : (
+                    '📧 发送乱码通知'
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── 📢 全站通知广播（仅 super_admin 可见） ─────────────── */}
+        {adminInfo?.role === 'super_admin' && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2
+                className="codex-section-title"
+                style={{
+                  fontFamily: fontDisplay,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: C.text,
+                  margin: 0,
+                }}
+              >
+                📢 全站通知广播
+              </h2>
+            </div>
+
+            <div className="codex-card" style={{ padding: 20 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr',
+                  gap: 16,
+                  marginBottom: 16,
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontFamily: fontMono,
+                      fontSize: 11,
+                      color: C.muted,
+                      marginBottom: 4,
+                    }}
+                  >
+                    通知标题
+                  </label>
+                  <input
+                    type="text"
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    className="codex-input"
+                    placeholder="例如：平台维护通知、新功能上线"
+                    maxLength={100}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontFamily: fontMono,
+                      fontSize: 11,
+                      color: C.muted,
+                      marginBottom: 4,
+                    }}
+                  >
+                    通知内容
+                  </label>
+                  <textarea
+                    value={broadcastContent}
+                    onChange={(e) => setBroadcastContent(e.target.value)}
+                    className="codex-input"
+                    style={{ minHeight: 100, resize: 'vertical', fontFamily: 'inherit' }}
+                    placeholder="输入通知正文内容...最多 1000 字符"
+                    maxLength={1000}
+                  />
+                  <p style={{ fontSize: 11, color: C.muted, marginTop: 4, textAlign: 'right' }}>
+                    {broadcastContent.length}/1000
+                  </p>
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontFamily: fontMono,
+                      fontSize: 11,
+                      color: C.muted,
+                      marginBottom: 4,
+                    }}
+                  >
+                    跳转链接（可选）
+                  </label>
+                  <input
+                    type="text"
+                    value={broadcastLink}
+                    onChange={(e) => setBroadcastLink(e.target.value)}
+                    className="codex-input"
+                    placeholder="例如：https://fireseed.online/novels"
+                  />
+                </div>
+              </div>
+
+              {broadcastResult && (
+                <p
+                  style={{
+                    fontFamily: fontMono,
+                    fontSize: 12,
+                    marginBottom: 12,
+                    color: broadcastResult.includes('成功') ? C.green : C.red,
+                  }}
+                >
+                  {broadcastResult}
+                </p>
+              )}
+
+              <button
+                onClick={async () => {
+                  if (!broadcastTitle.trim()) { setBroadcastResult('请输入通知标题'); return; }
+                  if (!broadcastContent.trim()) { setBroadcastResult('请输入通知内容'); return; }
+                  setBroadcastLoading(true);
+                  setBroadcastResult('');
+                  try {
+                    const res = await fetch('/api/admin/broadcast', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        title: broadcastTitle.trim(),
+                        content: broadcastContent.trim(),
+                        link: broadcastLink.trim() || undefined,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      setBroadcastResult(`✅ ${data.message}`);
+                      setBroadcastTitle('');
+                      setBroadcastContent('');
+                      setBroadcastLink('');
+                    } else {
+                      setBroadcastResult(`❌ ${data.error || '发送失败'}`);
+                    }
+                  } catch {
+                    setBroadcastResult('❌ 网络错误');
+                  } finally {
+                    setBroadcastLoading(false);
+                  }
+                }}
+                disabled={broadcastLoading}
+                className="codex-btn-gold"
+                style={{ fontSize: 13, padding: '8px 24px', display: 'flex', alignItems: 'center', gap: 8 }}
+              >
+                {broadcastLoading ? (
+                  <>
+                    <div
+                      className="codex-animate"
+                      style={{
+                        width: 14,
+                        height: 14,
+                        border: '2px solid #1a1a2e',
+                        borderTopColor: 'transparent',
+                        borderRadius: '50%',
+                      }}
+                    />
+                    发送中...
+                  </>
+                ) : (
+                  '📢 群发通知'
+                )}
+              </button>
+            </div>
           </div>
         )}
 

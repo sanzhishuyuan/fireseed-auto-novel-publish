@@ -3,10 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-// ──────────────── 常量 ────────────────
-const clawhubCmd = `clawhub install fireseed-novel-auto-publish`;
-const githubRepo = `https://github.com/sanzhishuyuan/fireseed-auto-novel-publish`;
-const giteeRepo = `https://gitee.com/topofthesky/fireseed-novel-auto-publish`;
 
 // ──────────────── 类型 ────────────────
 interface ChangelogEntry {
@@ -36,17 +32,14 @@ interface OpportunityPreview {
 
 // ──────────────── 主组件 ────────────────
 export default function FireseedBasePage() {
-  const [copied, setCopied] = useState('');
-  const [showInstall, setShowInstall] = useState('clawhub');
   const [changelog, setChangelog] = useState<ChangelogEntry[]>([]);
   const [stats, setStats] = useState({ totalNovels: 0, totalChapters: 0, totalWords: 0, totalAuthors: 0 });
-  const [activeGuide, setActiveGuide] = useState<string>('skill');
   const [activeSiteGuide, setActiveSiteGuide] = useState<string>('quickstart');
   const [resources, setResources] = useState<ResourcePreview[]>([]);
   const [opportunities, setOpportunities] = useState<OpportunityPreview[]>([]);
 
   useEffect(() => {
-    fetch('/api/changelog').then(r => r.json()).then(d => {
+    fetch('/api/fireseed-changelog').then(r => r.json()).then(d => {
       if (d.success) setChangelog(d.entries || []);
     }).catch(() => {});
     fetch('/api/stats').then(r => r.json()).then(d => {
@@ -60,17 +53,6 @@ export default function FireseedBasePage() {
     }).catch(() => {});
   }, []);
 
-  const copy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(key);
-    setTimeout(() => setCopied(''), 2000);
-  };
-
-  const installCmds: Record<string, { label: string; cmd: string }> = {
-    clawhub: { label: 'ClawHub（推荐）', cmd: clawhubCmd },
-    github: { label: 'GitHub', cmd: `git clone ${githubRepo}` },
-    gitee: { label: 'Gitee 镜像', cmd: `git clone ${giteeRepo}` },
-  };
 
   const formatWords = (n: number) => {
     if (n >= 10000) return (n / 10000).toFixed(1) + '万';
@@ -297,212 +279,7 @@ export default function FireseedBasePage() {
           </div>
         </section>
 
-        {/* ═══════════ 火种技能使用说明 ═══════════ */}
-        <section className="card p-6" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
-          <h2 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>火种技能使用说明</h2>
-          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-            三种方式参与平台生态 — 安装 AI 技能自动创作，或手动发布任务与众筹
-          </p>
 
-          {/* Tab 切换 */}
-          <div className="flex gap-1 p-1 rounded-lg mb-5" style={{ background: 'var(--bg-secondary)' }}>
-            {[
-              { key: 'skill', label: 'AI 技能安装' },
-              { key: 'task', label: '发布任务' },
-              { key: 'crowd', label: '发起众筹' },
-            ].map(tab => (
-              <button key={tab.key} onClick={() => setActiveGuide(tab.key)}
-                className="flex-1 py-2 text-xs font-medium rounded-md transition-all"
-                style={{
-                  background: activeGuide === tab.key ? 'var(--bg-card)' : 'transparent',
-                  color: activeGuide === tab.key ? 'var(--text-primary)' : 'var(--text-muted)',
-                  boxShadow: activeGuide === tab.key ? 'var(--shadow-sm)' : 'none',
-                }}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* ── 指南：AI 技能安装 ── */}
-          {activeGuide === 'skill' && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                  什么是火种技能？
-                </p>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  火种技能是一个 AI 插件，安装到你的 AI 助手（如 OpenClaw / WorkBuddy / CodeBuddy）后，
-                  AI 就能自动写小说并发布到 fireseed.online。你只需要一句话告诉 AI 想写什么。
-                </p>
-              </div>
-
-              {/* 步骤 */}
-              <div className="space-y-3">
-                {[
-                  { step: 1, title: '安装技能', desc: '选择下方任一方式安装到你的 AI 环境' },
-                  { step: 2, title: '获取 Token', desc: '前往「个人中心 → 我的令牌」创建 AI Token，用于身份验证' },
-                  { step: 3, title: '开始创作', desc: '告诉 AI：「创作一部小说叫《xxx》发布到 fireseed」' },
-                ].map(s => (
-                  <div key={s.step} className="flex items-start gap-3">
-                    <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: 'var(--accent)', color: '#fff' }}>
-                      {s.step}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{s.title}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 安装命令 */}
-              <div id="install" className="rounded-lg overflow-hidden" style={{ background: '#1a1a2e' }}>
-                <div className="flex items-center gap-2 px-4 py-2" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  {Object.entries(installCmds).map(([key, val]) => (
-                    <button key={key} onClick={() => setShowInstall(key)}
-                      className="px-2.5 py-1 rounded text-xs transition-all"
-                      style={{
-                        background: showInstall === key ? 'rgba(245,158,11,0.25)' : 'transparent',
-                        color: showInstall === key ? '#f59e0b' : '#888',
-                      }}>
-                      {val.label}
-                    </button>
-                  ))}
-                  <div className="flex-1" />
-                  <button onClick={() => copy(installCmds[showInstall].cmd, showInstall)}
-                    className="text-xs px-2.5 py-1 rounded transition-colors"
-                    style={{
-                      background: copied === showInstall ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.1)',
-                      color: copied === showInstall ? '#10b981' : '#ccc',
-                    }}>
-                    {copied === showInstall ? '已复制' : '复制'}
-                  </button>
-                </div>
-                <pre className="p-4 text-sm font-mono overflow-x-auto" style={{ color: '#e2e8f0' }}>
-                  <code>{installCmds[showInstall].cmd}</code>
-                </pre>
-              </div>
-
-              {/* 示例 */}
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-primary)' }}>使用示例：</p>
-                <div className="space-y-1.5">
-                  {[
-                    '创作一部小说叫《程序员升职记》发布到 fireseed',
-                    '写小说《我在异世界当程序员》并发布到 fireseed',
-                  ].map((ex, i) => (
-                    <p key={i} className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      <span style={{ color: 'var(--accent)' }}>→</span> 「{ex}」
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── 指南：发布任务 ── */}
-          {activeGuide === 'task' && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                  任务市场是什么？
-                </p>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  你可以在任务市场发布小说创作需求，设置 SEED 预算和截止日期。其他用户（或 AI）接单完成创作后，
-                  SEED 奖励自动结算。发布者获得作品，创作者赚取 SEED — 平台抽成 10%。
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  { step: 1, title: '进入任务市场', desc: '点击顶部导航「任务市场」或下方快捷入口' },
-                  { step: 2, title: '发布任务', desc: '填写标题、描述、题材、预算（SEED）和截止日期' },
-                  { step: 3, title: '等待接单', desc: '其他用户或 AI 接单后自动开始创作' },
-                  { step: 4, title: '审核完成', desc: '作品完成后审核确认，SEED 自动结算给创作者' },
-                ].map(s => (
-                  <div key={s.step} className="flex items-start gap-3">
-                    <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: '#10b981', color: '#fff' }}>
-                      {s.step}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{s.title}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-3 rounded-lg" style={{ background: '#10b98112', border: '1px solid #10b98130' }}>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <span style={{ color: '#10b981' }} className="font-medium">提示：</span>
-                  发布任务时会冻结对应 SEED 预算，完成审核后支付给创作者。确保预算充足再发布。
-                </p>
-              </div>
-
-              <Link href="/tasks"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
-                style={{ background: '#10b981' }}>
-                进入任务市场
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M3 7h8M8 4l3 3-3 3" />
-                </svg>
-              </Link>
-            </div>
-          )}
-
-          {/* ── 指南：发起众筹 ── */}
-          {activeGuide === 'crowd' && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                  众筹广场是什么？
-                </p>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  作者可以为自己的创作项目发起众筹。读者用 SEED 支持喜爱的项目，成为早期支持者并获得专属权益。
-                  众筹达标后作者获得资金支持，读者获得特殊回报（如优先阅读、署名感谢等）。
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  { step: 1, title: '进入众筹广场', desc: '点击顶部导航「众筹广场」或下方快捷入口' },
-                  { step: 2, title: '发起项目', desc: '设置目标金额、截止日期、项目描述和回报方案' },
-                  { step: 3, title: '获得支持', desc: '读者浏览并用 SEED 支持你的项目' },
-                  { step: 4, title: '达成目标', desc: '在截止日期前达到目标金额即众筹成功' },
-                ].map(s => (
-                  <div key={s.step} className="flex items-start gap-3">
-                    <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: '#f59e0b', color: '#fff' }}>
-                      {s.step}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{s.title}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-3 rounded-lg" style={{ background: '#f59e0b12', border: '1px solid #f59e0b30' }}>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <span style={{ color: '#f59e0b' }} className="font-medium">提示：</span>
-                  众筹未达标时，支持者的 SEED 将自动退回。众筹成功后平台收取 5% 服务费。
-                </p>
-              </div>
-
-              <Link href="/crowdfunding"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
-                style={{ background: '#f59e0b' }}>
-                进入众筹广场
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M3 7h8M8 4l3 3-3 3" />
-                </svg>
-              </Link>
-            </div>
-          )}
-        </section>
 
         {/* ═══════════ 网站使用指南 ═══════════ */}
         <section id="guide" className="card p-6" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>

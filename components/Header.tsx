@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { HeaderContext, type HeaderConfig } from './HeaderContext';
 import type { User } from '@/types';
+import NotificationBell from './NotificationBell';
 
 // ============ Constants ============
 const NAV_LINKS = [
@@ -182,6 +183,13 @@ function UserMenu({ user, onLogout, loggingOut }: {
                 </svg>
                 个人中心
               </Link>
+              <Link href="/my/tasks" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors"
+                style={{ color: 'var(--text-primary)' }} onClick={() => setMenuOpen(false)}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 7h6M5 10h4"/>
+                </svg>
+                我的任务
+              </Link>
               {user.role === 'admin' && (
                 <Link href="/admin" className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                   style={{ color: 'var(--accent)' }} onClick={() => setMenuOpen(false)}>
@@ -319,7 +327,7 @@ export default function Header() {
 
               {/* User menu / Login buttons */}
               {user ? (
-                <UserMenu user={user} onLogout={handleLogout} loggingOut={loggingOut} />
+                <><NotificationBell /><UserMenu user={user} onLogout={handleLogout} loggingOut={loggingOut} /></>
               ) : (
                 <>
                   <Link href="/auth/login" className="btn-ghost text-sm py-2">登录</Link>
@@ -428,6 +436,12 @@ export default function Header() {
                   <path d="M13 14c0-2.8-2.2-5-5-5s-5 2.2-5 5" strokeLinecap="round"/>
                 </svg>
                 个人中心
+              </Link>
+              <Link href="/my/tasks" onClick={closeMobile} className="drawer-link">
+                <svg className="link-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="2" y="3" width="12" height="10" rx="1.5" strokeLinecap="round"/><path d="M5 7h6M5 10h4" strokeLinecap="round"/>
+                </svg>
+                我的任务
               </Link>
               {user.role === 'admin' && (
                 <Link href="/admin" onClick={closeMobile} className="drawer-link" style={{ color: 'var(--accent)' }}>

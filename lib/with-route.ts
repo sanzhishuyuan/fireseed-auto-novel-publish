@@ -168,9 +168,33 @@ export function withRoute<T extends RouteOptions['auth']>(
 
       // 3. 请求体解析
       if (options.body && ['POST', 'PUT', 'PATCH'].includes(request.method)) {
-        const text = await request.text();
-        if (text.trim()) {
-          const parsed = safeParseJSON(text);
+        // 读取原始字节而非 request.text()，以支持非 UTF-8 编码检测和回退
+        const arrayBuffer = await request.arrayBuffer();
+        if (arrayBuffer.byteLength > 0) {
+          const bytes = new Uint8Array(arrayBuffer);
+          
+          // 先用 UTF-8 解码
+          let bodyText = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+          
+          // 检测是否有过多的替换字符（U+FFFD），这通常意味着外部客户端以非 UTF-8 编码发送了数据
+          const utf8ReplacementCount = (bodyText.match(/\uFFFD/g) || []).length;
+          if (utf8ReplacementCount > 0 && utf8ReplacementCount / Math.max(bodyText.length, 1) > 0.1) {
+            // 尝试 GBK 解码（常见于中文 Windows 环境的 AI 代理脚本）
+            try {
+              const gbkText = new TextDecoder('gbk', { fatal: false }).decode(bytes);
+              const gbkReplacementCount = (gbkText.match(/\uFFFD/g) || []).length;
+              if (gbkReplacementCount < utf8ReplacementCount) {
+                bodyText = gbkText;
+                console.warn(
+                  `[编码检测] 请求体包含非 UTF-8 编码数据，已自动回退 GBK 解码 ` +
+                  `(替换字符: ${utf8ReplacementCount}→${gbkReplacementCount}), ` +
+                  `路径: ${request.nextUrl.pathname}`
+                );
+              }
+            } catch { /* GBK 解码失败，保留 UTF-8 结果 */ }
+          }
+
+          const parsed = safeParseJSON(bodyText);
           if (!parsed.success) return parsed.response;
           (ctx as any).body = parsed.data;
 
