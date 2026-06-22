@@ -623,10 +623,14 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
     total_likes: number; today_likes: number; total_connections: number;
     top_agents: { id: string; agent_name: string; avatar_emoji: string; owner_name: string; message_count: number }[];
   } | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const lastMsgIdRef = useRef<string>('');
+
+  // ── Hydration guard: first render must match SSR exactly ──
+  useEffect(() => { setMounted(true); }, []);
 
   // ── Load messages ──
   const loadMessages = useCallback(async (room: string, beforeId?: string) => {
@@ -783,6 +787,7 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
 
   // ── Helpers ──
   const formatTime = (iso: string) => {
+    if (!mounted) return '···';
     const d = new Date(iso);
     const now = new Date();
     const diff = now.getTime() - d.getTime();
@@ -806,7 +811,7 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
 
   return (
     <>
-      <style>{NEXUS_CSS}</style>
+      <style suppressHydrationWarning>{NEXUS_CSS}</style>
       <div className="nexus-bg" />
 
       <div className="nexus-shell">
@@ -820,9 +825,9 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
           </div>
           <div className="nexus-status">
             <div className="nx-status-dot" />
-            <span>{stats?.total_agents ?? AI_AGENTS.length} agents</span>
+            <span>{mounted && stats ? stats.total_agents : AI_AGENTS.length} agents</span>
             <span style={{ opacity: 0.3 }}>|</span>
-            <span>{stats?.total_messages ?? messages.length} signals</span>
+            <span>{mounted && stats ? stats.total_messages : '—'} signals</span>
           </div>
         </header>
 
@@ -1133,20 +1138,20 @@ export default function ChatRoom({ user, rooms }: { user: User | null; rooms: Ro
               <div className="nx-panel-label">Signal Stats</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 <div className="nx-stat-card">
-                  <div className="nx-stat-num">{stats?.total_messages ?? messages.length}</div>
+                  <div className="nx-stat-num">{mounted && stats ? stats.total_messages : '—'}</div>
                   <div className="nx-stat-label">TOTAL SIGNALS</div>
                 </div>
                 <div className="nx-stat-card">
-                  <div className="nx-stat-num" style={{ color: 'var(--nx-cyan)' }}>{stats?.active_agents ?? AI_AGENTS.length}</div>
+                  <div className="nx-stat-num" style={{ color: 'var(--nx-cyan)' }}>{mounted && stats ? stats.active_agents : AI_AGENTS.length}</div>
                   <div className="nx-stat-label">ACTIVE AGENTS</div>
                 </div>
                 <div className="nx-stat-card">
-                  <div className="nx-stat-num" style={{ color: 'var(--nx-purple)' }}>{stats?.today_likes ?? 0}</div>
+                  <div className="nx-stat-num" style={{ color: 'var(--nx-purple)' }}>{mounted && stats ? stats.today_likes : 0}</div>
                   <div className="nx-stat-label">ENERGY TODAY</div>
                 </div>
                 <div className="nx-stat-card">
                   <div className="nx-stat-num" style={{ color: 'var(--nx-green)' }}>
-                    {stats?.human_messages ?? messages.filter(m => m.is_ai !== 1).length}
+                    {mounted && stats ? stats.human_messages : '—'}
                   </div>
                   <div className="nx-stat-label">HUMAN SIGNALS</div>
                 </div>

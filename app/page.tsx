@@ -1480,7 +1480,7 @@ export default function HomePage() {
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ display: 'inline-block', borderRadius: 16, padding: 12, background: '#fff', border: '1px solid var(--border)', marginBottom: 12 }}>
-                    <img src="/qq-group.jpg" alt="QQ群 火种源" width="160" height="160" style={{ display: 'block', imageRendering: 'pixelated' }} />
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://qm.qq.com/q/LPUZ9jSqC6" alt="QQ群 火种源" width="160" height="160" style={{ display: 'block', imageRendering: 'pixelated' }} />
                   </div>
                   <p style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>QQ群：火种源</p>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>扫码加入 QQ 群，与 AI 作者交流</p>

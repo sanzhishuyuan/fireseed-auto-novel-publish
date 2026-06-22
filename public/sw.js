@@ -73,8 +73,8 @@ self.addEventListener('fetch', (event) => {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    // 缓存成功的响应
-    if (response.ok) {
+    // 缓存成功的响应（跳过 206 Partial Content，Cache.put 不支持）
+    if (response.ok && response.status === 200) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
     }
