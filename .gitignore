@@ -41,3 +41,11 @@ dist/
 # ===== 服务器配置（敏感）=====
 .server-config.md
 ecosystem.config.js
+# ===== 临时部署脚本 =====
+_deploy.py
+_check_server.py
+# ===== 二进制归档文件（防止意外提交大文件）=====
+*.tar.gz
+*.bundle
+*.zip
+*.patch
