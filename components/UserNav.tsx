@@ -156,7 +156,7 @@ export default function UserNav() {
                   我的作品
                 </Link>
                 <Link 
-                  href="/my/tokens"
+                  href="/my?tab=tokens"
                   className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                   style={{ color: 'var(--text-secondary)' }}
                   onClick={() => setMenuOpen(false)}

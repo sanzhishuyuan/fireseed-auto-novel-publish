@@ -65,8 +65,16 @@ export default function MyDashboard() {
   const [savingNickname, setSavingNickname] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [tokens, setTokens] = useState<{ id: string; token: string; name: string; created_at: string; last_used: string | null }[]>([]);
+  interface TokenData {
+    id: string; token: string; name: string; permissions: string[];
+    created_at: string; last_used: string | null; is_active: number;
+  }
+  const [tokens, setTokens] = useState<TokenData[]>([]);
   const [copiedToken, setCopiedToken] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [newToken, setNewToken] = useState({ name: '', permissions: ['create_novel', 'create_chapter'] });
+  const [createdToken, setCreatedToken] = useState<{ id: string; token: string; name: string } | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   // VIP购买状态
   const [purchasing, setPurchasing] = useState(false);
@@ -82,6 +90,15 @@ export default function MyDashboard() {
 
   useEffect(() => {
     loadAllData();
+  }, []);
+
+  // 读取 URL 参数中的 tab
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && TABS.some(t => t.key === tabParam)) {
+      setTab(tabParam as TabKey);
+    }
   }, []);
 
   const loadAllData = async () => {
@@ -273,6 +290,30 @@ export default function MyDashboard() {
       setSavingEmail(false);
       setTimeout(() => setSettingsMsg(null), 3000);
     }
+  };
+
+  // ========== Token 创建 ==========
+  const handleCreateToken = async () => {
+    const res = await fetch('/api/ai/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newToken)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setCreatedToken(data.token);
+      loadAllData();
+    } else {
+      const data = await res.json();
+      setTokenError(data.error || '创建失败');
+    }
+  };
+
+  // ========== Token 删除 ==========
+  const handleDeleteToken = async (id: string) => {
+    if (!confirm('确定删除此 Token？删除后使用此 Token 的 AI 将无法再发布作品。')) return;
+    const res = await fetch(`/api/ai/token?id=${id}`, { method: 'DELETE' });
+    if (res.ok) loadAllData();
   };
 
   // ========== Token 复制 ==========
@@ -767,14 +808,222 @@ export default function MyDashboard() {
   function renderTokens() {
     return (
       <div className="space-y-5">
-        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>API Token 管理</h2>
-        <div className="card p-5">
-          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-            API Token 用于 AI 客户端自动发布小说。通过我们的创作技能，AI 可以直接用 Token 登录并发布作品。
-          </p>
-          <Link href="/my/tokens" className="btn-primary inline-flex px-5 py-2.5 text-sm">
-            管理我的 Token →
-          </Link>
+        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>AI 写作 Token</h2>
+
+        {/* 🎁 免费 Token 领取信息栏 */}
+        <div
+          className="rounded-xl p-5 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+          }}
+        >
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🎁</span>
+              <h3 className="font-bold text-white text-base">免费大模型 API Token 领取</h3>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">NEW</span>
+            </div>
+            <div className="space-y-2 text-sm text-white/80">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
+                <span className="text-lg shrink-0 mt-0.5">🔥</span>
+                <div>
+                  <p className="font-medium text-white">SiliconCloud 全平台通用代金券 16 元</p>
+                  <p className="text-xs mt-1 text-white/60">完成实名认证即可领取。免费调用 deepseek / qwen / glm5 等全品类大模型</p>
+                  <a href="https://cloud.siliconflow.cn/i/lQsiPTpO" target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-xs font-medium underline underline-offset-2 hover:text-white transition-colors"
+                    style={{ color: '#60a5fa' }}>
+                    立即领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M3 9l6-6M5 3h4v4"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
+                <span className="text-lg shrink-0 mt-0.5">🧠</span>
+                <div>
+                  <p className="font-medium text-white">智谱 BigModel GLM-5：注册即送 2000 万 Tokens</p>
+                  <p className="text-xs mt-1 text-white/60">智谱新一代旗舰模型 GLM-5，推理、代码、智能体综合能力开源模型 SOTA。通过邀请链接注册即可领取 2000 万 Tokens 大礼包</p>
+                  <a href="https://www.bigmodel.cn/invite?icode=x70Xu1tg5DvILXe%2FQUZWIA%3D%3D" target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-xs font-medium underline underline-offset-2 hover:text-white transition-colors"
+                    style={{ color: '#60a5fa' }}>
+                    立即注册领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M3 9l6-6M5 3h4v4"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
+                <span className="text-lg shrink-0 mt-0.5">🤖</span>
+                <div>
+                  <p className="font-medium text-white">腾讯 IMA：解锁 Copilot 功能，创建专属知识伙伴</p>
+                  <p className="text-xs mt-1 text-white/60">通过推荐链接解锁 IMA Copilot 功能，创建专属知识伙伴，并获得 500 免费算力</p>
+                  <a href="https://ima.qq.com/copilot-invite-reward-token/assist/V_5sR6zTzuz6W0wf8qLMng" target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-xs font-medium underline underline-offset-2 hover:text-white transition-colors"
+                    style={{ color: '#60a5fa' }}>
+                    立即领取 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M3 9l6-6M5 3h4v4"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs mt-3 text-white/40">⏰ 活动有效期至 2026 年 12 月 31 日</p>
+          </div>
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>管理用于 AI 写作助手的授权令牌</p>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm"
+          >
+            + 创建 Token
+          </button>
+        </div>
+
+        {/* 创建 Token */}
+        {showCreate && !createdToken && (
+          <div className="card p-5">
+            <h3 className="font-bold text-base mb-4" style={{ color: 'var(--text-primary)' }}>创建新 Token</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Token 名称</label>
+                <input
+                  type="text"
+                  value={newToken.name}
+                  onChange={(e) => setNewToken({ ...newToken, name: e.target.value })}
+                  className="input w-full"
+                  placeholder="例如：我的写作助手"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>权限</label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={newToken.permissions.includes('create_novel')}
+                      onChange={(e) => {
+                        if (e.target.checked) setNewToken({ ...newToken, permissions: [...newToken.permissions, 'create_novel'] });
+                        else setNewToken({ ...newToken, permissions: newToken.permissions.filter(p => p !== 'create_novel') });
+                      }}
+                      className="rounded" />
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>创建作品</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={newToken.permissions.includes('create_chapter')}
+                      onChange={(e) => {
+                        if (e.target.checked) setNewToken({ ...newToken, permissions: [...newToken.permissions, 'create_chapter'] });
+                        else setNewToken({ ...newToken, permissions: newToken.permissions.filter(p => p !== 'create_chapter') });
+                      }}
+                      className="rounded" />
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>发布章节</span>
+                  </label>
+                </div>
+              </div>
+              {tokenError && (
+                <div className="p-3 rounded-lg text-sm bg-red-500/10 text-red-400">{tokenError}</div>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button onClick={handleCreateToken} className="btn-primary px-6 py-2 text-sm">创建</button>
+                <button onClick={() => { setShowCreate(false); setTokenError(null); }}
+                  className="px-6 py-2 rounded-lg text-sm" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 显示新创建的 Token */}
+        {createdToken && (
+          <div className="rounded-xl p-5" style={{ background: 'rgba(16,185,129,0.08)' }}>
+            <h3 className="font-bold text-base mb-3" style={{ color: '#10b981' }}>Token 创建成功！</h3>
+            <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>请立即复制保存，关闭后将无法再次查看此 Token。</p>
+            <div className="rounded-lg p-3 break-all font-mono text-sm" style={{ background: 'var(--bg-secondary)', color: 'var(--accent)' }}>
+              {createdToken.token}
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => copyToken(createdToken.token, createdToken.id)}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700">
+                复制 Token
+              </button>
+              <button onClick={() => { setCreatedToken(null); setShowCreate(false); }}
+                className="px-4 py-2 rounded-lg text-sm" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                完成
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Token 列表 */}
+        <div className="card overflow-hidden divide-y" style={{ borderColor: 'var(--border)' }}>
+          <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+            <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>我的 Token</h3>
+          </div>
+          {tokens.map((token) => (
+            <div key={token.id} className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{token.name}</span>
+                    <span className={"px-2 py-0.5 rounded text-xs " + (token.is_active
+                      ? 'bg-green-500/10 text-green-500'
+                      : 'bg-gray-500/10 text-gray-500'
+                    )}>
+                      {token.is_active ? '启用' : '禁用'}
+                    </span>
+                  </div>
+                  <div className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                    权限: {token.permissions?.join(', ') || '无'}
+                  </div>
+                  <div className="text-xs mt-1 opacity-60" style={{ color: 'var(--text-muted)' }}>
+                    创建于 {formatDate(token.created_at)}
+                    {token.last_used ? ` | 最后使用 ${formatDate(token.last_used)}` : ' | 从未使用'}
+                  </div>
+                  {/* 显示 Token 密钥(可复制) */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 rounded-lg px-3 py-1.5 font-mono text-xs break-all select-all"
+                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--accent)' }}>
+                      {token.token}
+                    </div>
+                    <button
+                      onClick={() => copyToken(token.token, token.id)}
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs transition-all"
+                      style={{
+                        background: copiedToken === token.id ? 'rgba(16,185,129,0.15)' : 'var(--bg-secondary)',
+                        color: copiedToken === token.id ? '#10b981' : 'var(--text-muted)'
+                      }}
+                    >
+                      {copiedToken === token.id ? '已复制' : '复制'}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteToken(token.id)}
+                  className="ml-3 shrink-0 px-3 py-1 rounded text-sm bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                >
+                  删除
+                </button>
+              </div>
+            </div>
+          ))}
+          {tokens.length === 0 && !showCreate && (
+            <div className="p-8 text-center">
+              <p style={{ color: 'var(--text-muted)' }}>暂无 Token</p>
+              <p className="text-sm mt-1 opacity-60" style={{ color: 'var(--text-muted)' }}>创建 Token 后，AI 写作助手可以使用它来发布作品到你的账号</p>
+            </div>
+          )}
+        </div>
+
+        {/* 使用说明 */}
+        <div className="rounded-xl p-4" style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.1)' }}>
+          <h3 className="font-medium mb-2" style={{ color: '#60a5fa' }}>使用说明</h3>
+          <ul className="text-sm space-y-1" style={{ color: 'var(--text-secondary)' }}>
+            <li>• Token 用于授权 AI 写作助手访问你的账号</li>
+            <li>• 每个 Token 都可以独立管理权限</li>
+            <li>• 建议为不同的 AI 助手创建不同的 Token</li>
+            <li>• 删除 Token 后，使用该 Token 的 AI 将无法再发布作品</li>
+          </ul>
         </div>
       </div>
     );
@@ -899,57 +1148,19 @@ export default function MyDashboard() {
           </div>
         </div>
 
-        {/* API Token */}
+        {/* API Token - 快捷入口 */}
         <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>API Token</h3>
-            <Link href="/my/tokens" className="text-xs underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>API Token</h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                当前 {tokens.length} 个 Token · 用于 AI 创作
+              </p>
+            </div>
+            <button onClick={() => setTab('tokens')}
+              className="text-xs underline underline-offset-2" style={{ color: 'var(--accent)' }}>
               管理 Token
-            </Link>
-          </div>
-
-          {tokens.length === 0 ? (
-            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              暂无 Token。注册账号时会自动生成一个 Token。
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {tokens.map((t) => (
-                <div key={t.id}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                      {t.name} · 创建于 {new Date(t.created_at).toLocaleDateString('zh-CN')}
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {t.last_used ? `最后使用: ${new Date(t.last_used).toLocaleDateString('zh-CN')}` : '从未使用'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="flex-1 rounded-lg px-3 py-2 font-mono text-xs break-all select-all"
-                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--accent)' }}
-                    >
-                      {t.token}
-                    </div>
-                    <button
-                      className="shrink-0 px-3 py-2 rounded-lg text-xs transition-all"
-                      style={{
-                        background: copiedToken === t.id ? 'rgba(16,185,129,0.15)' : 'var(--bg-secondary)',
-                        color: copiedToken === t.id ? '#10b981' : 'var(--text-muted)'
-                      }}
-                      onClick={() => copyToken(t.token, t.id)}
-                    >
-                      {copiedToken === t.id ? '已复制' : '复制'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-3 p-3 rounded-lg text-xs" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.1)', color: 'var(--text-muted)' }}>
-            API Token 用于 AI 创作。复制后发给 AI，AI 用它登录并发布作品到你的账号。
-            如果 Token 泄露，可在 <Link href="/my/tokens" style={{ color: 'var(--accent)' }}>Token 管理页</Link> 删除重建。
+            </button>
           </div>
         </div>
       </div>
