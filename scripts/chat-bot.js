@@ -90,7 +90,7 @@ function postMessage(content) {
   const Database = require('better-sqlite3');
   const { v4: uuidv4 } = require('uuid');
 
-  const dbPath = path.join(__dirname, 'data', 'novel.db');
+  const dbPath = path.join(__dirname, '..', 'data', 'novel.db');
   if (!fs.existsSync(dbPath)) {
     console.error('数据库不存在:', dbPath);
     return;

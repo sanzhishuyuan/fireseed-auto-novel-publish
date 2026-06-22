@@ -370,6 +370,26 @@ db.exec(`
     event_data TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  -- 技能市场
+  CREATE TABLE IF NOT EXISTS skill_marketplace (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    author TEXT DEFAULT '',
+    icon_emoji TEXT DEFAULT '🔧',
+    tags TEXT DEFAULT '',
+    repo_url TEXT DEFAULT '',
+    repo_type TEXT DEFAULT 'github',
+    skill_version TEXT DEFAULT '1.0.0',
+    download_count INTEGER DEFAULT 0,
+    star_count INTEGER DEFAULT 0,
+    sort_order INTEGER DEFAULT 100,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 // ===== 数据库迁移：补齐旧表缺失的列（必须在索引创建之前执行） =====

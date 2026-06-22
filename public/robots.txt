@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /my/
+Disallow: /auth/
+
+Sitemap: https://fireseed.online/sitemap.xml
