@@ -81,9 +81,14 @@ function shouldHideHeader(pathname: string): boolean {
 
 function isFullNavRoute(pathname: string): boolean {
   if (pathname === '/') return true;
-  // All top-level (single-segment) routes get full nav: /novels, /rpg, /chat, /tasks, /crowdfunding, /download, etc.
   const segments = pathname.split('/').filter(Boolean);
-  return segments.length === 1;
+  // Single-segment routes: /novels, /rpg, /chat, /tasks, /crowdfunding, /download
+  if (segments.length === 1) return true;
+  // RPG sub-pages: /rpg/characters, /rpg/market, /rpg/campaigns, /rpg/lorebooks, /rpg/creator, /rpg/fund
+  if (segments.length === 2 && segments[0] === 'rpg') return true;
+  // Novel detail pages: /novels/[id] (but NOT reading pages /novels/[id]/[chapterId] which hide header)
+  if (segments.length === 2 && segments[0] === 'novels') return true;
+  return false;
 }
 
 // ============ Logo ============
