@@ -43,7 +43,7 @@ function applyReading(p: ReadingPrefs) {
 const DEFAULT_READING: ReadingPrefs = { fontSize: 18, lineHeight: 1.9 };
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>('dark');
+  const [mode, setModeState] = useState<ThemeMode>('light');
   const [reading, setReadingState] = useState<ReadingPrefs>(DEFAULT_READING);
 
   // 初始化：从 localStorage 读取
@@ -53,7 +53,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setModeState(savedTheme);
       applyTheme(savedTheme);
     } else {
-      applyTheme('dark');
+      applyTheme('light');
     }
 
     try {

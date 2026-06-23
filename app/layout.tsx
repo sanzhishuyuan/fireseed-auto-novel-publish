@@ -112,7 +112,7 @@ export default function RootLayout({
       <head>
         {/* 在 React 渲染前读取 localStorage，避免主题闪烁 */}
         <script dangerouslySetInnerHTML={{
-          __html: `(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.remove('dark','eye-care-bg','eye-care-text');if(t==='light'){/* default light */}else if(t==='eye-care'){document.documentElement.classList.add('eye-care-bg','eye-care-text');}else{document.documentElement.classList.add('dark');}var r=JSON.parse(localStorage.getItem('readSettings')||'{}');if(r.fontSize)document.documentElement.style.setProperty('--reading-font-size',r.fontSize+'px');if(r.lineHeight)document.documentElement.style.setProperty('--reading-line-height',String(r.lineHeight));}catch(e){}})()`
+          __html: `(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.remove('dark','eye-care-bg','eye-care-text');if(t==='light'){/* default light */}else if(t==='eye-care'){document.documentElement.classList.add('eye-care-bg','eye-care-text');}else{/* default light */}var r=JSON.parse(localStorage.getItem('readSettings')||'{}');if(r.fontSize)document.documentElement.style.setProperty('--reading-font-size',r.fontSize+'px');if(r.lineHeight)document.documentElement.style.setProperty('--reading-line-height',String(r.lineHeight));}catch(e){}})()`
         }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

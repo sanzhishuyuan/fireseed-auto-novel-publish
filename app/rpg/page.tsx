@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const C = {
-  bg: '#0b0b0f', card: '#131318', border: '#1e1e24',
-  gold: '#c9a55c', goldDim: '#a6823a',
-  text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
-  purple: '#a78bfa',
+  bg: 'var(--codex-bg)', card: 'var(--codex-bg-card)', border: 'var(--codex-border)',
+  gold: 'var(--codex-gold)', goldDim: 'var(--codex-gold)',
+  text: 'var(--codex-text)', textSec: 'var(--codex-text-dim)', textDim: 'var(--codex-text-muted)',
+  purple: 'var(--codex-purple)',
 };
 
 const SYS_LABEL: Record<string, string> = {
@@ -75,7 +75,7 @@ export default function RpgLobbyPage() {
             <Link href="/rpg/characters"
               style={{
                 padding: '8px 20px', borderRadius: 6,
-                background: C.goldDim + '20', border: `1px solid ${C.goldDim}`,
+                background: 'var(--codex-gold-glow)', border: '1px solid var(--codex-border-gold)',
                 color: C.gold, textDecoration: 'none', fontSize: 14,
               }}>
               ✦ 创建角色
@@ -99,8 +99,8 @@ export default function RpgLobbyPage() {
             <Link href="/rpg/campaigns/new"
               style={{
                 padding: '8px 20px', borderRadius: 6,
-                background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
-                color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
+                background: `linear-gradient(135deg, ${C.gold}, var(--codex-gold-light))`,
+                color: 'var(--codex-gold-btn-text)', textDecoration: 'none', fontSize: 14, fontWeight: 600,
               }}>
               ⚔️ 开始冒险
             </Link>
@@ -135,8 +135,8 @@ export default function RpgLobbyPage() {
         {showNewbieGuide && newbieAssets.campaignId && (
           <div style={{
             padding: 20, borderRadius: 12, marginBottom: 24,
-            background: `linear-gradient(135deg, ${C.gold}10, ${C.purple}10)`,
-            border: `1px solid ${C.gold}40`,
+            background: `linear-gradient(135deg, var(--codex-gold-glow), var(--codex-purple-bg))`,
+            border: '1px solid var(--codex-border-gold)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
@@ -151,8 +151,8 @@ export default function RpgLobbyPage() {
                   <Link href={`/rpg/campaigns/${newbieAssets.campaignId}`}
                     style={{
                       padding: '10px 24px', borderRadius: 6, textDecoration: 'none', fontSize: 14, fontWeight: 600,
-                      background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
-                      color: '#0b0b0f',
+                      background: `linear-gradient(135deg, ${C.gold}, var(--codex-gold-light))`,
+                      color: 'var(--codex-gold-btn-text)',
                     }}>
                     ⚔️ 开始第一次冒险
                   </Link>
@@ -206,7 +206,7 @@ export default function RpgLobbyPage() {
               {t.count > 0 && (
                 <span style={{
                   marginLeft: 8, padding: '1px 8px', borderRadius: 10, fontSize: 11,
-                  background: tab === t.key ? C.gold + '20' : C.border,
+                  background: tab === t.key ? 'var(--codex-gold-glow)' : C.border,
                   color: tab === t.key ? C.gold : C.textDim,
                 }}>
                   {t.count}
@@ -232,8 +232,8 @@ export default function RpgLobbyPage() {
               <Link href="/rpg/campaigns/new"
                 style={{
                   display: 'inline-block', marginTop: 16, padding: '10px 24px', borderRadius: 6,
-                  background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
-                  color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
+                  background: `linear-gradient(135deg, ${C.gold}, var(--codex-gold-light))`,
+                  color: 'var(--codex-gold-btn-text)', textDecoration: 'none', fontSize: 14, fontWeight: 600,
                 }}>
                 开始冒险
               </Link>
@@ -246,7 +246,7 @@ export default function RpgLobbyPage() {
                   <Link key={c.id} href={`/rpg/campaigns/${c.id}`}
                     style={{
                       padding: 16, borderRadius: 8, background: C.card,
-                      border: `1px solid ${isPurchased ? C.purple + '30' : C.border}`, textDecoration: 'none',
+                      border: `1px solid ${isPurchased ? 'var(--codex-purple-border)' : C.border}`, textDecoration: 'none',
                       display: 'block', transition: 'border-color 0.2s',
                     }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -259,7 +259,7 @@ export default function RpgLobbyPage() {
                           {isPurchased && (
                             <span style={{
                               padding: '1px 8px', borderRadius: 4, fontSize: 11,
-                              background: C.purple + '20', color: C.purple, fontFamily: 'sans-serif',
+                              background: 'var(--codex-purple-bg)', color: C.purple, fontFamily: 'sans-serif',
                             }}>
                               已购买
                             </span>
@@ -308,15 +308,15 @@ export default function RpgLobbyPage() {
               <Link href="/rpg/characters"
                 style={{
                   display: 'inline-block', padding: '10px 24px', borderRadius: 6,
-                  background: `linear-gradient(135deg, ${C.gold}, ${C.goldDim})`,
-                  color: '#0b0b0f', textDecoration: 'none', fontSize: 14, fontWeight: 600,
+                  background: `linear-gradient(135deg, ${C.gold}, var(--codex-gold-light))`,
+                  color: 'var(--codex-gold-btn-text)', textDecoration: 'none', fontSize: 14, fontWeight: 600,
                 }}>
                 进入角色工坊
               </Link>
               <Link href="/rpg/market"
                 style={{
                   display: 'inline-block', padding: '10px 24px', borderRadius: 6,
-                  background: C.goldDim + '20', border: `1px solid ${C.goldDim}`,
+                  background: 'var(--codex-gold-glow)', border: '1px solid var(--codex-border-gold)',
                   color: C.gold, textDecoration: 'none', fontSize: 14,
                 }}>
                 去市场购买

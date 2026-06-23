@@ -426,10 +426,10 @@ export default function HomePage() {
         .hero {
           position: relative;
           z-index: 1;
-          min-height: 100vh;
+          min-height: auto;
           display: flex;
           align-items: center;
-          padding-top: 80px;
+          padding: 80px 0 48px;
           overflow: hidden;
         }
         .hero::before {
@@ -611,7 +611,7 @@ export default function HomePage() {
         }
 
         /* ===== 通用区块 ===== */
-        .home-section { position: relative; z-index: 1; padding: 100px 0; }
+        .home-section { position: relative; z-index: 1; padding: 60px 0; }
         .section-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
         .section-label {
           display: inline-flex;
@@ -657,8 +657,8 @@ export default function HomePage() {
         .features-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 24px;
-          margin-top: 48px;
+          gap: 20px;
+          margin-top: 32px;
         }
         .feature-card {
           background: var(--bg-card);
@@ -697,52 +697,20 @@ export default function HomePage() {
         .feature-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
         .feature-card p { font-size: 0.85rem; line-height: 1.7; color: var(--text-secondary); }
 
-        /* ===== Stats ===== */
+
+        /* ===== Novel Grid ===== */
         .showcase-header {
           display: flex;
           align-items: flex-end;
           justify-content: space-between;
-          margin-bottom: 48px;
+          margin-bottom: 28px;
           gap: 40px;
         }
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 1px;
-          background: var(--border);
-          border-radius: 20px;
-          overflow: hidden;
-          border: 1px solid var(--border);
-        }
-        .stat-item {
-          background: var(--bg-card);
-          padding: 36px 24px;
-          text-align: center;
-          transition: all 0.2s ease;
-        }
-        .stat-item:hover { background: var(--bg-secondary); }
-        .stat-number {
-          font-family: 'Orbitron', monospace;
-          font-size: clamp(1.8rem, 3vw, 2.5rem);
-          font-weight: 700;
-          background: linear-gradient(135deg, var(--accent), #fbbf24);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          margin-bottom: 6px;
-        }
-        .stat-label {
-          font-size: 0.8rem;
-          color: var(--text-muted);
-          letter-spacing: 0.05em;
-        }
-
-        /* ===== Novel Grid ===== */
         .novel-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 20px;
-          margin-top: 48px;
+          margin-top: 28px;
         }
         .novel-card {
           background: var(--bg-card);
@@ -811,10 +779,10 @@ export default function HomePage() {
         .section-divider {
           position: relative; z-index: 1;
           text-align: center;
-          padding: 60px 0;
+          padding: 32px 0;
         }
         .divider-line {
-          width: 1px; height: 80px;
+          width: 1px; height: 40px;
           background: linear-gradient(to bottom, transparent, var(--accent), transparent);
           margin: 0 auto;
           opacity: 0.3;
@@ -946,11 +914,6 @@ export default function HomePage() {
           .feature-card p { font-size: 0.82rem; }
           .feature-icon { width: 40px; height: 40px; font-size: 1.1rem; margin-bottom: 16px; }
 
-          .stats-grid { grid-template-columns: repeat(2, 1fr); border-radius: 12px; }
-          .stat-item { padding: 24px 16px; }
-          .stat-number { font-size: clamp(1.5rem, 5vw, 2rem); }
-          .stat-label { font-size: 0.72rem; }
-
           .novel-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 32px; }
           .novel-info { padding: 12px; }
           .novel-info h4 { font-size: 0.82rem; }
@@ -992,10 +955,6 @@ export default function HomePage() {
           .feature-icon { width: 36px; height: 36px; font-size: 1rem; margin-bottom: 12px; }
           .feature-card h3 { font-size: 0.9rem; }
           .feature-card p { font-size: 0.78rem; }
-
-          .stats-grid { border-radius: 8px; }
-          .stat-item { padding: 20px 12px; }
-          .stat-number { font-size: 1.4rem; }
 
           .novel-grid { gap: 10px; margin-top: 24px; }
           .novel-info { padding: 10px; }
@@ -1293,35 +1252,6 @@ export default function HomePage() {
                 <h3>开放生态</h3>
                 <p>API 开放、数据可导出、支持自定义 AI 模型接入。不做封闭花园，做 AI 叙事领域的开源基础设施。</p>
               </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* ===== DIVIDER ===== */}
-        <div className="section-divider">
-          <div className="divider-line"></div>
-        </div>
-
-        {/* ===== STATS ===== */}
-        <section className="home-section" id="showcase">
-          <div className="section-container">
-            <div className="reveal">
-              <div className="section-label">Platform</div>
-              <div className="showcase-header">
-                <div>
-                  <h2 className="section-title">从火种到燎原</h2>
-                  <p className="section-subtitle">我们相信，一粒火种可以点燃整片草原。<br />以下数据见证了社区的成长</p>
-                </div>
-                <div className="section-subtitle" style={{ textAlign: 'right' }}>
-                  <span className="text-gradient" style={{ fontFamily: "'Orbitron',monospace", fontSize: '0.85rem', letterSpacing: '0.05em' }}>LIVE · 实时更新</span>
-                </div>
-              </div>
-            </div>
-            <div className="stats-grid stagger" id="stats-grid">
-              <div className="stat-item"><div className="stat-number">{stats.totalNovels}</div><div className="stat-label">部 AI 作品</div></div>
-              <div className="stat-item"><div className="stat-number">{stats.totalChapters}</div><div className="stat-label">章节内容</div></div>
-              <div className="stat-item"><div className="stat-number">{formatWords(stats.totalWords)}</div><div className="stat-label">{stats.totalWords >= 10000 ? '万字 · 累计' : '字 · 累计'}</div></div>
-              <div className="stat-item"><div className="stat-number">{stats.totalAuthors || '-'}</div><div className="stat-label">注册作者</div></div>
             </div>
           </div>
         </section>

@@ -17,26 +17,6 @@ import type { User, Novel } from '@/types';
 const CODEX_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Mono:wght@300;400;500&display=swap');
 
-:root {
-  --codex-bg: #0b0b0f;
-  --codex-bg-card: #131318;
-  --codex-bg-elevated: #1a1a22;
-  --codex-bg-hover: #22222c;
-  --codex-text: #f0ece4;
-  --codex-text-dim: #9a9a8e;
-  --codex-text-muted: #5a5a52;
-  --codex-gold: #c9a55c;
-  --codex-gold-light: #e4cc8a;
-  --codex-gold-glow: rgba(201,165,92,0.12);
-  --codex-gold-glow-strong: rgba(201,165,92,0.25);
-  --codex-border: rgba(255,255,255,0.06);
-  --codex-border-gold: rgba(201,165,92,0.2);
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-mono: 'DM Mono', 'Menlo', monospace;
-  --font-cn: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --codex-radius: 12px;
-  --codex-radius-sm: 8px;
-}
 
 /* ═══════ Texture Background ═══════ */
 .codex-bg {
