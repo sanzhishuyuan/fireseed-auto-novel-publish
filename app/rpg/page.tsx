@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
 const C = {
@@ -31,7 +31,8 @@ export default function RpgLobbyPage() {
   const [showNewbieGuide, setShowNewbieGuide] = useState(false);
   const [newbieAssets, setNewbieAssets] = useState<{ campaignId?: string; characterName?: string }>({});
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setAuthError(false);
     Promise.all([
       fetch('/api/rpg/campaigns').then(r => r.ok ? r.json() : Promise.reject()),
       fetch('/api/rpg/characters').then(r => r.ok ? r.json() : Promise.reject()),
@@ -46,7 +47,7 @@ export default function RpgLobbyPage() {
         const starterPack = assets.data.find((a: any) => 
           a.source === 'free_claim' && a.asset_type === 'module' && a.name?.includes('雾隐镇')
         );
-        if (starterPack && campaigns.length > 0) {
+        if (starterPack) {
           const hasStartedCampaign = campaigns.some((cp: any) => cp.name?.includes('雾隐镇初冒险'));
           if (!hasStartedCampaign) {
             setShowNewbieGuide(true);
@@ -59,6 +60,18 @@ export default function RpgLobbyPage() {
       }
     }).catch(() => setAuthError(true)).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // 监听登录/登出事件，同步刷新
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      setLoading(true);
+      loadData();
+    };
+    window.addEventListener('auth-changed', handleAuthChanged);
+    return () => window.removeEventListener('auth-changed', handleAuthChanged);
+  }, [loadData]);
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text }}>

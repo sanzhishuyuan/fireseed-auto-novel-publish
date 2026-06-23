@@ -5,11 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const C = {
-  bg: '#0b0b0f', card: '#131318', border: '#1e1e24',
-  gold: '#c9a55c', goldDim: '#a6823a',
-  text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
-  inputBg: '#1a1a20', danger: '#ef4444', success: '#22c55e',
-  fateSuccess: '#22c55e', fateFail: '#ef4444', fateCritical: '#a855f7', fateMixed: '#eab308',
+  bg: 'var(--codex-bg)', card: 'var(--codex-bg-card)', border: 'var(--codex-border)',
+  gold: 'var(--codex-gold)', goldDim: 'var(--codex-gold)',
+  text: 'var(--codex-text)', textSec: 'var(--codex-text-dim)', textDim: 'var(--codex-text-muted)',
+  inputBg: 'var(--codex-input-bg)', danger: 'var(--codex-red)', success: 'var(--codex-green)',
+  fateSuccess: 'var(--codex-green)', fateFail: 'var(--codex-red)', fateCritical: 'var(--codex-purple)', fateMixed: 'var(--codex-yellow)',
 };
 
 const SYS_LABEL: Record<string, string> = {
@@ -308,8 +308,8 @@ export default function CampaignPage() {
               textDecoration: 'none',
               padding: '6px 14px',
               borderRadius: 6,
-              background: `${C.gold}10`,
-              border: `1px solid ${C.gold}40`,
+              background: 'var(--codex-gold-glow)',
+              border: '1px solid var(--codex-border-gold)',
               transition: 'all 0.2s',
               display: 'inline-flex',
               alignItems: 'center',

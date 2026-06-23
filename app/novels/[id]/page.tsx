@@ -33,24 +33,24 @@ interface Novel {
 
 /* ─── Codex palette constants ─── */
 const C = {
-  bg:        '#0b0b0f',
-  card:      '#131318',
-  elevated:  '#1a1a22',
-  hover:     '#22222c',
-  text:      '#f0ece4',
-  dim:       '#9a9a8e',
-  muted:     '#5a5a52',
-  gold:      '#c9a55c',
-  goldLight: '#e4cc8a',
-  goldGlow:  'rgba(201,165,92,0.12)',
-  goldBorder:'rgba(201,165,92,0.2)',
-  border:    'rgba(255,255,255,0.06)',
-  green:     '#22c55e',
-  greenGlow: 'rgba(34,197,94,0.12)',
-  greenBorder:'rgba(34,197,94,0.2)',
-  purple:    '#a855f7',
-  purpleGlow:'rgba(168,85,247,0.12)',
-  red:       '#ef4444',
+  bg:        'var(--codex-bg)',
+  card:      'var(--codex-bg-card)',
+  elevated:  'var(--codex-bg-elevated)',
+  hover:     'var(--codex-bg-hover)',
+  text:      'var(--codex-text)',
+  dim:       'var(--codex-text-dim)',
+  muted:     'var(--codex-text-muted)',
+  gold:      'var(--codex-gold)',
+  goldLight: 'var(--codex-gold-light)',
+  goldGlow:  'var(--codex-gold-glow)',
+  goldBorder:'var(--codex-border-gold)',
+  border:    'var(--codex-border)',
+  green:     'var(--codex-green)',
+  greenGlow: 'var(--codex-green-bg)',
+  greenBorder:'var(--codex-green-border)',
+  purple:    'var(--codex-purple)',
+  purpleGlow:'var(--codex-purple-bg)',
+  red:       'var(--codex-red)',
 } as const;
 
 const fontDisplay = "'Fraunces', Georgia, serif";
@@ -301,13 +301,13 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                 <div style={{
                   aspectRatio: '3/4', borderRadius: 10, marginBottom: 20,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  background: `linear-gradient(160deg, #2a1f0e 0%, #3d2b14 50%, ${C.gold}44 100%)`,
-                  border: `1px solid ${C.goldBorder}`,
+                  background: `linear-gradient(160deg, var(--codex-bg-elevated) 0%, var(--codex-bg-card) 50%, var(--codex-gold-bg) 100%)`,
+                  border: `1px solid var(--codex-border-gold)`,
                   overflow: 'hidden', position: 'relative',
                 }}>
                   <div style={{
                     width: 48, height: 48, borderRadius: '50%',
-                    border: `1.5px solid ${C.gold}55`,
+                    border: `1.5px solid var(--codex-border-gold)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     opacity: 0.5,
                   }}>
@@ -317,7 +317,7 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                     </svg>
                   </div>
                   <span style={{
-                    color: `${C.gold}66`, fontSize: 10, fontWeight: 600,
+                    color: 'var(--codex-text-muted)', fontSize: 10, fontWeight: 600,
                     letterSpacing: 3, textTransform: 'uppercase', marginTop: 10,
                     fontFamily: fontMono,
                   }}>

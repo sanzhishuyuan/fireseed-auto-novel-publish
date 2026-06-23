@@ -41,20 +41,20 @@ interface NormalizedChapter {
 
 // ─── Obsidian Codex Palette ───
 const C = {
-  bg: '#0b0b0f',
-  card: '#131318',
-  elevated: '#1a1a22',
-  hover: '#22222c',
-  text: '#f0ece4',
-  dim: '#9a9a8e',
-  muted: '#5a5a52',
-  gold: '#c9a55c',
-  goldLight: '#e4cc8a',
-  goldGlow: 'rgba(201,165,92,0.12)',
-  border: 'rgba(255,255,255,0.06)',
-  borderGold: 'rgba(201,165,92,0.2)',
-  fontDisplay: "'Fraunces', Georgia, serif",
-  fontMono: "'DM Mono', 'Menlo', monospace",
+  bg: 'var(--codex-bg)',
+  card: 'var(--codex-bg-card)',
+  elevated: 'var(--codex-bg-elevated)',
+  hover: 'var(--codex-bg-hover)',
+  text: 'var(--codex-text)',
+  dim: 'var(--codex-text-dim)',
+  muted: 'var(--codex-text-muted)',
+  gold: 'var(--codex-gold)',
+  goldLight: 'var(--codex-gold-light)',
+  goldGlow: 'var(--codex-gold-glow)',
+  border: 'var(--codex-border)',
+  borderGold: 'var(--codex-border-gold)',
+  fontDisplay: 'var(--font-display)',
+  fontMono: 'var(--font-mono)',
 } as const;
 
 export default async function ChapterPage({ params }: Props) {
@@ -344,7 +344,7 @@ export default async function ChapterPage({ params }: Props) {
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          background: 'rgba(19,19,24,0.82)',
+          background: 'color-mix(in srgb, var(--codex-bg-card) 82%, transparent)',
           backdropFilter: 'blur(16px) saturate(1.4)',
           WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
           borderBottom: `1px solid ${C.border}`,
@@ -628,7 +628,7 @@ export default async function ChapterPage({ params }: Props) {
                   fontFamily: C.fontMono,
                   fontWeight: 500,
                   background: C.gold,
-                  color: C.bg,
+                  color: 'var(--codex-gold-btn-text)',
                   textDecoration: 'none',
                   transition: 'all 0.2s ease',
                   border: 'none',
@@ -659,7 +659,7 @@ export default async function ChapterPage({ params }: Props) {
                   fontFamily: C.fontMono,
                   fontWeight: 500,
                   background: C.gold,
-                  color: C.bg,
+                  color: 'var(--codex-gold-btn-text)',
                   textDecoration: 'none',
                   transition: 'all 0.2s ease',
                   border: 'none',
@@ -684,7 +684,7 @@ export default async function ChapterPage({ params }: Props) {
         <div
           className="mobile-bottom-bar"
           style={{
-            background: 'rgba(19,19,24,0.92)',
+            background: 'color-mix(in srgb, var(--codex-bg-card) 92%, transparent)',
             backdropFilter: 'blur(16px) saturate(1.4)',
             WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
             borderTop: `1px solid ${C.border}`,
