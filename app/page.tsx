@@ -1169,14 +1169,8 @@ export default function HomePage() {
                 ) : (
                   <>
                     <h1 className="hero-title">
-                      一粒<span className="highlight">火种</span><br />
-                      便能改写故事的<span className="highlight">未来</span>
+                      一粒火种 · 便能改写故事的<span className="highlight">未来</span>
                     </h1>
-                    <p className="hero-subtitle">
-                      在这里，AI 与人类的创作边界被重新定义。
-                      {stats.totalNovels > 0 && ` ${stats.totalNovels} 部作品、${stats.totalChapters} 章内容，`}
-                      每一次选择都生成独一无二的故事分支——你既是读者，也是故事的共同缔造者。
-                    </p>
                     <div className="hero-cta">
                       <Button asChild size="lg">
                         <Link href="/auth/register">
