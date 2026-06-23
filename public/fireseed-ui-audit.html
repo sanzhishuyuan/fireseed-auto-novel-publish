@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireSeed UI 设计审计与升级方案</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Mono:wght@300;400&display=swap');
+
+:root {
+  --bg: #0f0f0f;
+  --bg2: #181818;
+  --bg3: #222222;
+  --ink: #e8e4df;
+  --ink2: #b8b0a8;
+  --muted: #7a756e;
+  --rule: #2a2724;
+  --accent: oklch(0.75 0.16 55);
+  --accent2: oklch(0.82 0.12 65);
+  --danger: oklch(0.63 0.22 25);
+  --warning: oklch(0.78 0.15 85);
+  --success: oklch(0.72 0.17 155);
+  --info: oklch(0.7 0.14 250);
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --max: 960px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body { font-family: var(--font); color: var(--ink); background: var(--bg); line-height: 1.7; padding: var(--s-5) var(--s-4); }
+article.page { max-width: var(--max); margin: 0 auto; }
+
+.report-header { text-align: center; padding: var(--s-8) 0 var(--s-7); border-bottom: 1px solid var(--rule); margin-bottom: var(--s-7); }
+.report-header .badge { display: inline-block; background: var(--accent); color: var(--bg); font-size: 0.7rem; font-weight: 700; padding: var(--s-1) var(--s-3); border-radius: 999px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: var(--s-4); }
+.report-header h1 { font-size: 2.4rem; font-weight: 700; line-height: 1.25; margin-bottom: var(--s-3); color: var(--ink); }
+.report-header h1 em { font-style: normal; color: var(--accent); }
+.report-header .subtitle { font-size: 1rem; color: var(--muted); max-width: 560px; margin: 0 auto; }
+.report-header .meta { margin-top: var(--s-5); font-size: 0.82rem; color: var(--muted); display: flex; gap: var(--s-5); justify-content: center; flex-wrap: wrap; }
+
+h2 { font-size: 1.5rem; font-weight: 700; margin-top: var(--s-8); margin-bottom: var(--s-5); padding-bottom: var(--s-2); border-bottom: 2px solid var(--accent); color: var(--ink); }
+h3 { font-size: 1.15rem; font-weight: 700; margin-top: var(--s-6); margin-bottom: var(--s-3); color: var(--accent2); }
+h4 { font-size: 1rem; font-weight: 600; margin-top: var(--s-5); margin-bottom: var(--s-2); color: var(--ink); }
+p { margin-bottom: var(--s-4); color: var(--ink2); }
+ul, ol { margin-bottom: var(--s-4); padding-left: var(--s-5); }
+li { margin-bottom: var(--s-2); color: var(--ink2); }
+code { font-family: var(--mono); font-size: 0.82rem; background: var(--bg2); padding: 2px 6px; border-radius: var(--r-sm); border: 1px solid var(--rule); }
+mark.key { background: none; color: var(--accent); font-weight: 600; }
+
+.table-wrap { overflow-x: auto; margin: var(--s-5) 0; border: 1px solid var(--rule); border-radius: var(--r-md); }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+thead { position: sticky; top: 0; z-index: 1; }
+th { background: var(--bg2); color: var(--accent2); font-weight: 600; text-align: left; padding: var(--s-3) var(--s-4); border-bottom: 2px solid var(--accent); white-space: nowrap; }
+td { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--rule); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: oklch(0.75 0.16 55 / 0.04); }
+
+.callout { padding: var(--s-4) var(--s-5); border-radius: var(--r-md); margin: var(--s-5) 0; border-left: 4px solid; }
+.callout.danger { background: oklch(0.63 0.22 25 / 0.06); border-color: var(--danger); }
+.callout.warning { background: oklch(0.78 0.15 85 / 0.06); border-color: var(--warning); }
+.callout.success { background: oklch(0.72 0.17 155 / 0.06); border-color: var(--success); }
+.callout.info { background: oklch(0.7 0.14 250 / 0.06); border-color: var(--info); }
+.callout-title { font-weight: 700; font-size: 0.88rem; margin-bottom: var(--s-1); }
+.callout.danger .callout-title { color: var(--danger); }
+.callout.warning .callout-title { color: var(--warning); }
+.callout.success .callout-title { color: var(--success); }
+.callout.info .callout-title { color: var(--info); }
+.callout p { margin-bottom: 0; font-size: 0.88rem; }
+
+.tag { display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: var(--r-sm); letter-spacing: 0.03em; }
+.tag.p0 { background: var(--danger); color: #fff; }
+.tag.p1 { background: var(--warning); color: var(--bg); }
+.tag.p2 { background: var(--info); color: #fff; }
+.tag.ok { background: var(--success); color: #fff; }
+.tag.fail { background: var(--danger); color: #fff; }
+.tag.warn { background: var(--warning); color: var(--bg); }
+
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s-4); margin: var(--s-5) 0; }
+.metric-card { background: var(--bg2); border: 1px solid var(--rule); border-radius: var(--r-md); padding: var(--s-5); text-align: center; }
+.metric-card .value { font-size: 2.2rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
+.metric-card .label { font-size: 0.78rem; color: var(--muted); margin-top: var(--s-1); }
+
+.phase-card { background: var(--bg2); border: 1px solid var(--rule); border-radius: var(--r-lg); padding: var(--s-5); margin: var(--s-5) 0; }
+.phase-card .phase-header { display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-4); }
+.phase-card .phase-num { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.88rem; flex-shrink: 0; }
+.phase-card .phase-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+.phase-card .phase-time { font-size: 0.78rem; color: var(--muted); }
+
+.score-ring { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; border: 3px solid; font-size: 1.2rem; font-weight: 700; flex-shrink: 0; }
+.score-ring.good { border-color: var(--success); color: var(--success); }
+.score-ring.mid { border-color: var(--warning); color: var(--warning); }
+.score-ring.bad { border-color: var(--danger); color: var(--danger); }
+
+.audit-row { display: flex; gap: var(--s-4); align-items: flex-start; padding: var(--s-4) 0; border-bottom: 1px solid var(--rule); }
+.audit-row:last-child { border-bottom: none; }
+
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--s-3); margin: var(--s-4) 0; }
+.swatch { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--rule); }
+.swatch-color { height: 48px; }
+.swatch-label { padding: var(--s-2) var(--s-3); font-size: 0.72rem; color: var(--muted); background: var(--bg2); }
+
+.before-after { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); margin: var(--s-5) 0; }
+.ba-card { background: var(--bg2); border: 1px solid var(--rule); border-radius: var(--r-md); padding: var(--s-4); }
+.ba-card .ba-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--s-2); }
+.ba-card.before .ba-label { color: var(--danger); }
+.ba-card.after .ba-label { color: var(--success); }
+.ba-card code { display: block; font-size: 0.78rem; line-height: 1.6; white-space: pre-wrap; }
+
+footer { margin-top: var(--s-8); padding-top: var(--s-6); border-top: 1px solid var(--rule); font-size: 0.82rem; color: var(--muted); }
+
+@media (max-width: 768px) {
+  .report-header h1 { font-size: 1.6rem; }
+  .metric-grid { grid-template-columns: repeat(2, 1fr); }
+  .before-after { grid-template-columns: 1fr; }
+  body { padding: var(--s-4) var(--s-3); }
+}
+</style>
+</head>
+<body>
+<article class="page">
+
+<header class="report-header">
+  <div class="badge">UI Design Audit</div>
+  <h1>FireSeed <em>UI 设计审计</em><br>与升级方案</h1>
+  <p class="subtitle">基于 frontend-design-pro 专业设计规范，对 fireseed.online 全站 UI 进行视觉审查、设计系统分析与分模块升级路径规划</p>
+  <div class="meta">
+    <span>审计日期：2026-06-23</span>
+    <span>审计范围：6 个核心页面 + 全局组件</span>
+    <span>设计规范：impeccable / frontend-design-pro</span>
+  </div>
+</header>
+
+<!-- ===== 一、执行摘要 ===== -->
+<section>
+<h2>一、执行摘要</h2>
+<p>FireSeed 已具备扎实的产品功能和正确的整体视觉方向——暖色暗调主题、粒子动画首页、Codex 编辑美学都展现了设计野心。但审计发现核心问题是<mark class="key">设计系统碎片化</mark>：两套并行 CSS 体系（globals vs codex）、三组不同字体栈、不统一的间距和圆角数值、大量内联样式绕过缓存——导致页面间视觉跳跃、维护困难、性能损耗。</p>
+
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="value" style="color: var(--warning)">62</div>
+    <div class="label">设计一致性评分 / 100</div>
+  </div>
+  <div class="metric-card">
+    <div class="value" style="color: var(--success)">78</div>
+    <div class="label">无障碍评分 / 100</div>
+  </div>
+  <div class="metric-card">
+    <div class="value" style="color: var(--danger)">3</div>
+    <div class="label">字体族冲突数</div>
+  </div>
+  <div class="metric-card">
+    <div class="value" style="color: var(--warning)">2</div>
+    <div class="label">并行 CSS 体系数</div>
+  </div>
+</div>
+</section>
+
+<!-- ===== 二、全站 /audit ===== -->
+<section>
+<h2>二、全站设计审计</h2>
+
+<h3>2.1 字体系统 / Typography</h3>
+
+<div class="callout danger">
+  <div class="callout-title">反模式：字体身份碎片化</div>
+  <p>全站存在三组互不兼容的字体栈。首页使用 Orbitron + ZCOOL QingKe HuangYou（后者甚至在 CSS 中引用但从未加载，静默降级为 serif）；小说/任务/众筹页使用 Fraunces + DM Mono；基础正文使用系统字体。用户在不同页面间导航时会感知到"这不是同一个网站"。</p>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>字体</th><th>使用位置</th><th>加载方式</th><th>问题</th></tr></thead>
+<tbody>
+<tr><td>Noto Sans SC</td><td>全局正文</td><td>Google Fonts（全局）</td><td><span class="tag ok">正常</span> 加载 4 个字重偏多</td></tr>
+<tr><td>Noto Serif SC</td><td>阅读正文</td><td>Google Fonts（全局）</td><td><span class="tag warn">冗余</span> 与 Sans 并存</td></tr>
+<tr><td>Orbitron</td><td>首页统计数字</td><td>Google Fonts（全局）</td><td><span class="tag warn">浪费</span> 仅首页使用却全局加载</td></tr>
+<tr><td>ZCOOL QingKe HuangYou</td><td>首页标题（引用但未加载）</td><td><strong>未加载</strong></td><td><span class="tag fail">严重</span> 静默降级为 serif</td></tr>
+<tr><td>Fraunces</td><td>Codex 页面标题</td><td>@import（页面级）</td><td><span class="tag warn">阻断</span> 阻塞渲染</td></tr>
+<tr><td>DM Mono</td><td>Codex 元数据</td><td>@import（页面级）</td><td><span class="tag warn">阻断</span> 阻塞渲染</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout info">
+  <div class="callout-title">升级建议：统一为双字体系统</div>
+  <p><strong>正文：</strong>Noto Sans SC（400/600 两个字重足够）<br>
+  <strong>展示/标题：</strong>Fraunces（variable serif，支持 300-900 全可变字重，一个文件替代多个静态字体）<br>
+  <strong>等宽/数据：</strong>DM Mono（仅按需加载）<br>
+  砍掉 Orbitron、ZCOOL QingKe HuangYou、Noto Serif SC，字体请求从 12 个 woff2 降至 4-5 个。</p>
+</div>
+
+<h3>2.2 色彩体系 / Color</h3>
+
+<div class="before-after">
+  <div class="ba-card before">
+    <div class="ba-label">当前：两套冲突色板</div>
+<code>/* globals.css 暖棕色系 */
+--bg-primary: #1a1410;
+--accent: #f59e0b;
+
+/* codex.css 中性黑色系 */
+--codex-bg: #0b0b0f;
+--codex-gold: #c9a55c;
+
+/* Tailwind config 紫色（从未使用） */
+primary: '#7c3aed'</code>
+  </div>
+  <div class="ba-card after">
+    <div class="ba-label">升级后：统一 OKLCH 色板</div>
+<code>/* 统一暗色主题 */
+--bg: #0f0f0f;         /* 带微暖 */
+--accent: oklch(0.75 0.16 55);
+--gold: oklch(0.78 0.12 75);
+--text: oklch(0.92 0.01 65);
+--muted: oklch(0.55 0.02 55);</code>
+  </div>
+</div>
+
+<p>globals.css 暗色背景是暖棕 <code>#1a1410</code>，codex 是中性近黑 <code>#0b0b0f</code>。用户从首页（暖棕）导航到小说列表（中性黑）时，背景色跳变明显。建议统一为 <code>#0f0f0f</code>（带微量暖色的深灰），兼顾火种品牌调性和视觉一致性。</p>
+
+<div class="swatch-grid">
+  <div class="swatch"><div class="swatch-color" style="background: #0f0f0f"></div><div class="swatch-label">#0f0f0f 统一背景</div></div>
+  <div class="swatch"><div class="swatch-color" style="background: #181818"></div><div class="swatch-label">#181818 卡片背景</div></div>
+  <div class="swatch"><div class="swatch-color" style="background: #f59e0b"></div><div class="swatch-label">#f59e0b 品牌琥珀</div></div>
+  <div class="swatch"><div class="swatch-color" style="background: #c9a55c"></div><div class="swatch-label">#c9a55c Codex 金</div></div>
+  <div class="swatch"><div class="swatch-color" style="background: oklch(0.75 0.16 55)"></div><div class="swatch-label">OKLCH 主强调</div></div>
+  <div class="swatch"><div class="swatch-color" style="background: oklch(0.72 0.17 155)"></div><div class="swatch-label">OKLCH 成功</div></div>
+  <div class="swatch"><div class="swatch-color" style="background: oklch(0.63 0.22 25)"></div><div class="swatch-label">OKLCH 错误</div></div>
+  <div class="swatch"><div class="swatch-color" style="background: #e8e4df"></div><div class="swatch-label">#e8e4df 主文字</div></div>
+</div>
+
+<h3>2.3 间距与圆角 / Spacing & Radius</h3>
+
+<div class="callout warning">
+  <div class="callout-title">问题：间距和圆角未 Token 化</div>
+  <p>审计发现 18 种不同间距值（4/6/8/10/12/14/16/20/24/28/32/36/40/48/60/64/80/100px）和 6 种圆角值（4/6/8/12/16/20px + 100px pill），缺乏系统性的间距/圆角 Token，导致视觉节奏不统一。</p>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Token</th><th>间距值</th><th>用途</th><th>圆角 Token</th><th>值</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>--s-1</code></td><td>4px</td><td>图标内间距</td><td><code>--r-xs</code></td><td>4px</td><td>标签/徽章</td></tr>
+<tr><td><code>--s-2</code></td><td>8px</td><td>紧凑元素间距</td><td><code>--r-sm</code></td><td>8px</td><td>按钮/输入框</td></tr>
+<tr><td><code>--s-3</code></td><td>12px</td><td>列表项间距</td><td><code>--r-md</code></td><td>12px</td><td>卡片/弹窗</td></tr>
+<tr><td><code>--s-4</code></td><td>16px</td><td>区块内 padding</td><td><code>--r-lg</code></td><td>16px</td><td>大卡片/模态框</td></tr>
+<tr><td><code>--s-5</code></td><td>24px</td><td>区块间间距</td><td><code>--r-pill</code></td><td>999px</td><td>胶囊按钮/标签</td></tr>
+<tr><td><code>--s-6</code></td><td>32px</td><td>Section 内间距</td><td></td><td></td><td></td></tr>
+<tr><td><code>--s-7</code></td><td>48px</td><td>Section 间间距</td><td></td><td></td><td></td></tr>
+<tr><td><code>--s-8</code></td><td>64px</td><td>大区域分隔</td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>2.4 动效系统 / Motion</h3>
+
+<p>首页动画系统质量较高——粒子 Canvas、IntersectionObserver 滚动触发、交错入场动画、浮动装饰元素都展现了专业水准。但存在以下问题：</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>问题</th><th>严重度</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>动画缓动不统一</td><td><span class="tag p1">重要</span></td><td>首页用 <code>cubic-bezier(0.16, 1, 0.3, 1)</code>，globals 用 <code>0.2s ease</code>，codex 用 <code>0.3s ease</code></td></tr>
+<tr><td>动画声明分散</td><td><span class="tag p2">一般</span></td><td><code>@keyframes</code> 定义在 3 个不同文件中，存在重复命名</td></tr>
+<tr><td>粒子 Canvas 无降级</td><td><span class="tag p1">重要</span></td><td><code>prefers-reduced-motion</code> 已处理 CSS 动画，但 Canvas 粒子仍在运行</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>2.5 响应式设计 / Responsive</h3>
+
+<div class="callout warning">
+  <div class="callout-title">断点不一致</div>
+  <p>globals 使用 640px 移动端断点，首页使用 768px，Codex 页面同时使用 768px 和 1024px。底部导航栏在 640px 出现，但汉堡菜单也在 640px 触发——两者同时显示造成空间拥挤。</p>
+</div>
+
+<p>建议统一断点为：移动端 <code>&lt;768px</code>、平板 <code>768-1024px</code>、桌面 <code>&gt;1024px</code>。使用 CSS 自定义媒体查询变量或 Tailwind 配置统一管理。</p>
+</section>
+
+<!-- ===== 三、分页面 /critique ===== -->
+<section>
+<h2>三、分页面视觉评审</h2>
+
+<h3>3.1 首页 / Homepage</h3>
+<div class="audit-row">
+  <div class="score-ring mid">65</div>
+  <div>
+    <h4>视觉层次</h4>
+    <p>Hero 区标题排版有冲击力，但副标题过长（60+ 字）削弱了首屏信息密度。统计数字卡片浮动在右侧，与主文案形成两个视觉焦点，用户视线来回跳跃。</p>
+    <h4>具体问题</h4>
+    <ul>
+      <li>Hero 副标题应精简到 1-2 句话，详细数据移到下方 Stats 区</li>
+      <li>右侧浮动数据卡与下方统计区内容重复（764 章、15 创作者出现两次）</li>
+      <li>CTA 按钮「浏览作品」使用描边样式，与「开始创作」的实色按钮对比不足——两个按钮视觉权重相近，用户不知道先点哪个</li>
+      <li>能力卡片区的图标（菱形/星形/三角）过于抽象，缺乏语义辨识度</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.2 小说列表 / Novels</h3>
+<div class="audit-row">
+  <div class="score-ring mid">58</div>
+  <div>
+    <h4>视觉层次</h4>
+    <p>页面顶部展示了最新手稿的详情（封面 + 简介 + 按钮），但这实际上是一个「精选推荐」——用户容易误以为这是唯一的小说。下方的搜索和筛选区域视觉层级不够清晰。</p>
+    <h4>具体问题</h4>
+    <ul>
+      <li>精选手稿占满首屏，真正的手稿列表被推到视口以下——应缩小推荐区高度</li>
+      <li>13 个分类标签一字排开，水平溢出需滚动，在移动端体验极差</li>
+      <li>标签筛选与排序控件视觉权重相同，用户无法快速区分「筛选条件」和「排序方式」</li>
+      <li>手稿卡片封面大小不一，部分有 AI 生成封面，部分是纯色占位——视觉节奏被打断</li>
+      <li>「LATEST CODEX / 最新手稿」标签使用英文大写，但全站其他地方是中文——语言混用造成认知摩擦</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.3 社区聊天 / Chat (NEURAL NEXUS)</h3>
+<div class="audit-row">
+  <div class="score-ring good">72</div>
+  <div>
+    <h4>视觉层次</h4>
+    <p>NEURAL NEXUS 设计语言相对独立且成熟——三栏布局、信号术语体系、Agent 花名册都构建了完整的品牌世界观。但它是用 600 行内联 CSS + JS style 标签实现的，完全脱离设计系统。</p>
+    <h4>具体问题</h4>
+    <ul>
+      <li>消息气泡的 AGENT/HUMAN 标签颜色对比度不足（深色背景上的暗色标签）</li>
+      <li>左侧 Agent 列表的消息计数全是 0，信息密度低——考虑移除或改为活跃度指示器</li>
+      <li>右侧统计面板「ENERGY TODAY: 0」「HUMAN SIGNALS: 1」——数据过于稀疏，空状态应有引导</li>
+      <li>HOT SIGNALS 标签云静态不可点击，应标记为「即将上线」或移除</li>
+      <li>输入区 @Agent 按钮颜色过于鲜艳（橙/紫/青/绿四色），在暗色背景上显得嘈杂</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.4 AI 跑团 / RPG</h3>
+<div class="audit-row">
+  <div class="score-ring mid">55</div>
+  <div>
+    <h4>视觉层次</h4>
+    <p>雾隐酒馆概念有吸引力，但实现层最混乱。6 个功能按钮颜色各不相同（金/褐/紫/棕/绿），没有统一的按钮系统。二级导航条（酒馆/角色/世界书/副本/市场/创作者中心）图标和文字拥挤。</p>
+    <h4>具体问题</h4>
+    <ul>
+      <li>6 个 CTA 按钮使用 5 种不同颜色背景——用户无法判断哪个是主操作</li>
+      <li>二级导航 Tab 在暗色背景上使用暗色文字，可读性差</li>
+      <li>冒险卡片只显示一张，大量空白区域未利用</li>
+      <li>RPG 页面定义了自己的 JS 颜色常量（<code>const C = { bg: '#0b0b0f', gold: '#c9a55c' }</code>），完全绕过 CSS 变量系统</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.5 任务市场 / Tasks</h3>
+<div class="audit-row">
+  <div class="score-ring mid">60</div>
+  <div>
+    <h4>视觉层次</h4>
+    <p>布局清晰，统计卡片、筛选、任务列表层级分明。但卡片信息密度过高——每张任务卡展示了金额、描述、标签、进度、截止日期、创建者等 7+ 个数据点，缺少视觉优先级。</p>
+    <h4>具体问题</h4>
+    <ul>
+      <li>SEED 金额（50000）是最大视觉元素，但位置在右上角——应与任务标题紧邻</li>
+      <li>任务描述文字截断不统一——有的完整显示，有的截断加省略号</li>
+      <li>「开放中」绿色标签与进度条信息重复</li>
+      <li>筛选器只有「状态」和「题材」两个维度，缺少搜索框</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.6 众筹广场 / Crowdfunding</h3>
+<div class="audit-row">
+  <div class="score-ring mid">63</div>
+  <div>
+    <h4>视觉层次</h4>
+    <p>项目卡片设计简洁，进度条清晰。但只有 2 个项目时页面过于空旷，大面积暗色空白削弱了「广场」的感觉。</p>
+    <h4>具体问题</h4>
+    <ul>
+      <li>项目卡片缺少封面图/视觉锚点——纯文字卡片在暗色背景上缺乏吸引力</li>
+      <li>进度信息（169/1000 SEED + 16% + 11 人）用 3 种方式表达同一件事——应简化</li>
+      <li>「剩余天数」没有紧迫感设计——低天数项目应有颜色警告</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ===== 四、设计系统整合方案 ===== -->
+<section>
+<h2>四、设计系统整合方案</h2>
+
+<p>当前最高优先级的改进是<mark class="key">将 globals.css 和 codex.css 合并为统一的设计系统</mark>。以下是具体的 Token 化方案：</p>
+
+<h3>4.1 统一 CSS 变量体系</h3>
+
+<div class="before-after">
+  <div class="ba-card before">
+    <div class="ba-label">现状：分散定义</div>
+<code>/* globals.css */
+--bg-primary: #1a1410;
+--accent: #f59e0b;
+--radius: 12px;
+
+/* codex.css */
+--codex-bg: #0b0b0f;
+--codex-gold: #c9a55c;
+--codex-radius: 12px;
+
+/* rpg/page.tsx */
+const C = { bg: '#0b0b0f' };</code>
+  </div>
+  <div class="ba-card after">
+    <div class="ba-label">目标：单一 Token 源</div>
+<code>/* design-tokens.css */
+:root {
+  --bg: oklch(0.14 0.01 55);
+  --bg-card: oklch(0.18 0.01 55);
+  --accent: oklch(0.75 0.16 55);
+  --gold: oklch(0.78 0.12 75);
+  --r-sm: 8px;
+  --r-md: 12px;
+}</code>
+  </div>
+</div>
+
+<h3>4.2 统一组件库</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>组件</th><th>当前实现</th><th>目标</th></tr></thead>
+<tbody>
+<tr><td>按钮</td><td>3 种：.btn-primary / .codex-btn-gold / inline style</td><td>1 个 <code>&lt;Button variant="primary|gold|ghost"&gt;</code> 组件</td></tr>
+<tr><td>卡片</td><td>3 种：.card / .codex-card / inline div</td><td>1 个 <code>&lt;Card&gt;</code> 组件</td></tr>
+<tr><td>标签/徽章</td><td>4 种：.tag / .badge / .codex-badge / inline span</td><td>1 个 <code>&lt;Badge variant&gt;</code> 组件</td></tr>
+<tr><td>输入框</td><td>2 种：.input / .codex-input</td><td>1 个 <code>&lt;Input&gt;</code> 组件</td></tr>
+<tr><td>导航</td><td>Header.tsx + 各页面内联导航</td><td>统一 <code>&lt;Header&gt;</code> + <code>&lt;SubNav&gt;</code></td></tr>
+<tr><td>空状态</td><td>各页面自行设计</td><td>1 个 <code>&lt;EmptyState icon title action&gt;</code></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- ===== 五、分阶段升级路径 ===== -->
+<section>
+<h2>五、分阶段升级路径</h2>
+
+<div class="phase-card">
+  <div class="phase-header">
+    <div class="phase-num">1</div>
+    <div>
+      <div class="phase-title">设计系统基础层统一</div>
+      <div class="phase-time">预计工期：3-5 天 | 优先级：P0</div>
+    </div>
+  </div>
+  <ul>
+    <li>创建 <code>app/design-tokens.css</code>，合并 globals + codex 变量为单一 Token 文件</li>
+    <li>统一字体栈：Noto Sans SC（正文）+ Fraunces（标题）+ DM Mono（代码/数据）</li>
+    <li>统一背景色为 <code>#0f0f0f</code>，消除页面间色温跳变</li>
+    <li>建立 8 级间距 Token + 5 级圆角 Token</li>
+    <li>统一断点为 768px / 1024px</li>
+    <li>移除未加载的 ZCOOL 字体引用和未使用的 Tailwind 紫色主题</li>
+  </ul>
+  <div class="callout success">
+    <div class="callout-title">验收标准</div>
+    <p>全站 <code>getComputedStyle</code> 检查：同一 Token 在所有页面返回相同值。字体请求数 &le; 5 个。</p>
+  </div>
+</div>
+
+<div class="phase-card">
+  <div class="phase-header">
+    <div class="phase-num">2</div>
+    <div>
+      <div class="phase-title">共享组件库构建</div>
+      <div class="phase-time">预计工期：5-7 天 | 优先级：P0</div>
+    </div>
+  </div>
+  <ul>
+    <li>创建 <code>components/ui/</code> 目录，实现 Button / Card / Badge / Input / EmptyState / Tabs</li>
+    <li>将首页 1034 行内联 CSS 提取为 CSS 文件 + 组件 props</li>
+    <li>将小说页 478 行内联 CSS 迁移到组件样式</li>
+    <li>将 ChatRoom.tsx 的 600 行 NEXUS_CSS 拆分为组件样式</li>
+    <li>将 RPG 页面的 JS 颜色常量替换为 CSS 变量引用</li>
+  </ul>
+  <div class="callout success">
+    <div class="callout-title">验收标准</div>
+    <p>各页面 <code>&lt;style&gt;</code> 内联 CSS 行数 &le; 50。Lighthouse Performance 分数提升 5+ 分。</p>
+  </div>
+</div>
+
+<div class="phase-card">
+  <div class="phase-header">
+    <div class="phase-num">3</div>
+    <div>
+      <div class="phase-title">首页与核心页面视觉升级</div>
+      <div class="phase-time">预计工期：5-7 天 | 优先级：P1</div>
+    </div>
+  </div>
+  <ul>
+    <li><strong>首页：</strong>精简 Hero 副标题、消除浮动卡与 Stats 区的数据重复、强化主 CTA 按钮视觉权重、替换抽象图标为语义化图标</li>
+    <li><strong>小说列表：</strong>缩小精选区高度使列表进入首屏、分类标签改为两行 wrap 布局、增加封面图占位设计</li>
+    <li><strong>社区聊天：</strong>优化 AGENT/HUMAN 标签对比度、空状态添加引导、@Agent 按钮降低饱和度</li>
+    <li><strong>RPG：</strong>统一 6 个 CTA 按钮为 2 级（主操作 + 次操作）、优化二级导航可读性</li>
+    <li><strong>任务市场：</strong>SEED 金额紧邻标题、统一描述截断方式、添加搜索框</li>
+    <li><strong>众筹广场：</strong>添加项目封面图、简化进度信息表达、低天数项目添加紧迫色</li>
+  </ul>
+  <div class="callout success">
+    <div class="callout-title">验收标准</div>
+    <p>设计一致性评分从 62 提升至 85+。用户在页面间导航时无背景色跳变感知。</p>
+  </div>
+</div>
+
+<div class="phase-card">
+  <div class="phase-header">
+    <div class="phase-num">4</div>
+    <div>
+      <div class="phase-title">动效与微交互打磨</div>
+      <div class="phase-time">预计工期：3-4 天 | 优先级：P2</div>
+    </div>
+  </div>
+  <ul>
+    <li>统一全站 transition easing 为 <code>cubic-bezier(0.16, 1, 0.3, 1)</code></li>
+    <li>添加页面过渡动画（fade + subtle slide）</li>
+    <li>Canvas 粒子系统增加 <code>prefers-reduced-motion</code> 检测并降级</li>
+    <li>统一 skeleton loading 为单一 shimmer 组件</li>
+    <li>按钮 hover/active/focus 状态统一设计</li>
+  </ul>
+</div>
+</section>
+
+<!-- ===== 六、优先级矩阵 ===== -->
+<section>
+<h2>六、优先级矩阵</h2>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>改进项</th><th>影响范围</th><th>工作量</th><th>优先级</th><th>阶段</th></tr></thead>
+<tbody>
+<tr><td>统一背景色（消除页面间色温跳变）</td><td>全站</td><td>0.5 天</td><td><span class="tag p0">P0</span></td><td>1</td></tr>
+<tr><td>统一字体栈（砍到 3 个字体）</td><td>全站</td><td>1 天</td><td><span class="tag p0">P0</span></td><td>1</td></tr>
+<tr><td>合并 globals + codex CSS 变量</td><td>全站</td><td>2 天</td><td><span class="tag p0">P0</span></td><td>1</td></tr>
+<tr><td>移除未加载的 ZCOOL 字体引用</td><td>首页</td><td>0.5h</td><td><span class="tag p0">P0</span></td><td>1</td></tr>
+<tr><td>创建 Button/Card/Badge 共享组件</td><td>全站</td><td>3 天</td><td><span class="tag p0">P0</span></td><td>2</td></tr>
+<tr><td>提取首页 1034 行内联 CSS</td><td>首页</td><td>2 天</td><td><span class="tag p1">P1</span></td><td>2</td></tr>
+<tr><td>RPG 按钮颜色统一</td><td>RPG</td><td>0.5 天</td><td><span class="tag p1">P1</span></td><td>3</td></tr>
+<tr><td>小说列表首屏优化</td><td>Novels</td><td>1 天</td><td><span class="tag p1">P1</span></td><td>3</td></tr>
+<tr><td>Chat 空状态引导</td><td>Chat</td><td>0.5 天</td><td><span class="tag p1">P1</span></td><td>3</td></tr>
+<tr><td>众筹卡片添加封面</td><td>Crowdfunding</td><td>1 天</td><td><span class="tag p2">P2</span></td><td>3</td></tr>
+<tr><td>全站 transition easing 统一</td><td>全站</td><td>1 天</td><td><span class="tag p2">P2</span></td><td>4</td></tr>
+<tr><td>Canvas 粒子 reduced-motion 降级</td><td>首页</td><td>0.5 天</td><td><span class="tag p2">P2</span></td><td>4</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- ===== 七、总结 ===== -->
+<section>
+<h2>七、总结</h2>
+<p>FireSeed 的视觉基础扎实——暖色暗调契合「火种」品牌、首页动画有质感、Codex 编辑美学有辨识度。当前的核心瓶颈不是「设计不好」，而是<mark class="key">好设计没有统一</mark>。两套 CSS 体系、三组字体、分散的组件实现让每个页面各自为政。</p>
+<p>建议按「先统一基础 → 再构建组件 → 后打磨页面」的顺序推进，预计 3-4 周可完成前三阶段，将设计一致性从 62 分提升至 85 分以上。</p>
+</section>
+
+<footer>
+  <p>审计工具：frontend-design-pro / impeccable 设计规范 &middot; 审计范围：fireseed.online 全站 6 个核心页面 + 全局组件 + 3 套 CSS 源文件</p>
+</footer>
+
+</article>
+</body>
+</html>
