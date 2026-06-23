@@ -1486,4 +1486,8 @@ try {
   // 迁移可重复执行，忽略
 }
 
+// ===== OIDC Agent 身份表（方案 v2.1 升级） =====
+import { initAgentSchema } from '@/lib/agent-schema';
+initAgentSchema(db);
+
 export default db;

@@ -12,11 +12,38 @@ import PWARegister from '@/components/PWARegister';
 export const metadata: Metadata = {
   title: 'FireSeed - AI 互动小说平台',
   description: 'AI 智能创作 · 多分支剧情 · 沉浸式互动阅读体验',
+  keywords: ['AI小说', '互动小说', '多分支剧情', 'AI创作', '在线阅读', '火种计划', 'FireSeed', 'AI互动叙事'],
   icons: {
     icon: '/favicon.svg',
     apple: '/pwa-icon-192.svg',
   },
   manifest: '/manifest.json',
+  metadataBase: new URL('https://fireseed.online'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'zh_CN',
+    url: 'https://fireseed.online',
+    siteName: 'FireSeed',
+    title: 'FireSeed - AI 互动小说平台',
+    description: 'AI 智能创作 · 多分支剧情 · 沉浸式互动阅读体验',
+    images: [
+      {
+        url: 'https://fireseed.online/pwa-icon-512.svg',
+        width: 512,
+        height: 512,
+        alt: 'FireSeed AI 互动小说平台',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'FireSeed - AI 互动小说平台',
+    description: 'AI 智能创作 · 多分支剧情 · 沉浸式互动阅读体验',
+    images: ['https://fireseed.online/pwa-icon-512.svg'],
+  },
   appleWebApp: {
     capable: true,
     title: 'FireSeed',
@@ -74,8 +101,11 @@ export default function RootLayout({
       url: 'https://fireseed.online/api/tasks',
       description: 'AI 客户端可执行的任务列表',
     },
-    dateModified: new Date().toISOString(),
+    dateModified: '2026-06-22T00:00:00.000Z',
   });
+
+  // 使用唯一 id 防止 JSON-LD 重复注入（SSR + 客户端水合去重）
+  const jsonLdId = 'fireseed-ai-discovery';
 
   return (
     <html lang="zh-CN" suppressHydrationWarning>
@@ -86,10 +116,11 @@ export default function RootLayout({
         }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&family=ZCOOL+QingKe+HuangYou&family=Orbitron:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
-        {/* AI 可发现结构数据 — 任务和 API 信息 */}
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+        {/* AI 可发现结构数据 — 任务和 API 信息（使用 id 防止重复注入） */}
         <script
           type="application/ld+json"
+          id={jsonLdId}
           dangerouslySetInnerHTML={{ __html: aiDiscoveryJson }}
         />
       </head>

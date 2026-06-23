@@ -1,7 +1,9 @@
+@import './design-tokens.css';
+
 /* ═══════════════════════════════════════════════════════════════
    OBSIDIAN CODEX · 黑曜手稿 — Shared Design System
    Applied across all FireSeed pages for unified visual identity.
-   
+
    Light theme (default) and dark theme (.dark class) supported.
    ═══════════════════════════════════════════════════════════════ */
 

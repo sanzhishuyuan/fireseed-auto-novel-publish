@@ -1,0 +1,217 @@
+/* ═══════════════════════════════════════════════════════════════
+   FireSeed · 统一设计 Token 系统
+   色彩、间距、字体、圆角、阴影、动画、断点
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   1. 色彩系统
+   ───────────────────────────────────────────────────────────── */
+
+/* 主色 — Amber 系列 */
+:root {
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
+
+  /* 辅色 — Sky 系列 */
+  --color-sky-50: #f0f9ff;
+  --color-sky-100: #e0f2fe;
+  --color-sky-200: #bae6fd;
+  --color-sky-300: #7dd3fc;
+  --color-sky-400: #38bdf8;
+  --color-sky-500: #0ea5e9;
+  --color-sky-600: #0284c7;
+  --color-sky-700: #0369a1;
+  --color-sky-800: #075985;
+  --color-sky-900: #0c4a6e;
+
+  /* 中性色 — Warm Gray 系列 */
+  --color-warmgray-50: #faf8f5;
+  --color-warmgray-100: #f5f0eb;
+  --color-warmgray-200: #e8e0d8;
+  --color-warmgray-300: #d6cdc3;
+  --color-warmgray-400: #b8aa9c;
+  --color-warmgray-500: #9c8d7e;
+  --color-warmgray-600: #8a7a6a;
+  --color-warmgray-700: #6b5d50;
+  --color-warmgray-800: #4a3f36;
+  --color-warmgray-900: #2d2926;
+
+  /* 语义色 */
+  --color-success: #16a34a;
+  --color-success-light: #22c55e;
+  --color-warning: #d97706;
+  --color-warning-light: #f59e0b;
+  --color-error: #dc2626;
+  --color-error-light: #ef4444;
+  --color-info: #2563eb;
+  --color-info-light: #3b82f6;
+  --color-purple: #7c3aed;
+  --color-purple-light: #a855f7;
+
+  /* 状态色背景与边框 */
+  --color-success-bg: rgba(22, 163, 74, 0.08);
+  --color-success-border: rgba(22, 163, 74, 0.18);
+  --color-warning-bg: rgba(217, 119, 6, 0.08);
+  --color-warning-border: rgba(217, 119, 6, 0.18);
+  --color-error-bg: rgba(220, 38, 38, 0.06);
+  --color-error-border: rgba(220, 38, 38, 0.14);
+  --color-info-bg: rgba(37, 99, 235, 0.08);
+  --color-info-border: rgba(37, 99, 235, 0.18);
+  --color-purple-bg: rgba(124, 58, 237, 0.08);
+  --color-purple-border: rgba(124, 58, 237, 0.18);
+
+  /* ─────────────────────────────────────────────────────────
+     2. 间距系统（4px 基础倍数）
+     ───────────────────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-25: 100px;
+
+  /* ─────────────────────────────────────────────────────────
+     3. 字体系统
+     ───────────────────────────────────────────────────────── */
+  --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  --font-serif: 'Noto Serif SC', Georgia, 'Songti SC', serif;
+  --font-display: 'Orbitron', 'Fraunces', Georgia, serif;
+  --font-mono: 'DM Mono', 'Menlo', 'Monaco', monospace;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+  --font-size-4xl: 32px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  --line-height-loose: 1.9;
+
+  /* ─────────────────────────────────────────────────────────
+     4. 圆角系统
+     ───────────────────────────────────────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --radius-full: 50%;
+
+  /* ─────────────────────────────────────────────────────────
+     5. 阴影系统
+     ───────────────────────────────────────────────────────── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+  --shadow-glow-amber: 0 4px 20px rgba(245, 158, 11, 0.15);
+  --shadow-glow-sky: 0 4px 20px rgba(125, 211, 252, 0.15);
+
+  /* ─────────────────────────────────────────────────────────
+     6. 动画与缓动
+     ───────────────────────────────────────────────────────── */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --duration-fast: 0.15s;
+  --duration-normal: 0.2s;
+  --duration-slow: 0.3s;
+  --duration-slower: 0.5s;
+
+  /* ─────────────────────────────────────────────────────────
+     7. 断点变量
+     ───────────────────────────────────────────────────────── */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* ─────────────────────────────────────────────────────────
+     8. 主题变量（亮色模式 — 默认）
+     与现有 globals.css 兼容
+     ───────────────────────────────────────────────────────── */
+  --bg: #faf8f5;
+  --bg-primary: #faf8f5;
+  --bg-secondary: #f5f0eb;
+  --bg-card: #ffffff;
+  --bg-elevated: #f0ede8;
+  --bg-hover: #e8e4de;
+
+  --text: #2d2926;
+  --text-primary: #2d2926;
+  --text-secondary: #8a8279;
+  --text-muted: #9c8d7e;
+  --text-dim: #6b5d50;
+
+  --accent: #f59e0b;
+  --accent-light: #fbbf24;
+  --accent-dark: #d97706;
+  --accent-glow: rgba(245, 158, 11, 0.12);
+
+  --border: rgba(0, 0, 0, 0.06);
+  --border-light: #f0ebe5;
+  --border-strong: #e0dbd4;
+
+  /* 阅读模式 */
+  --reading-font-size: 18px;
+  --reading-line-height: 1.9;
+}
+
+/* ═══════ Dark Theme ═══════ */
+.dark {
+  --bg: #0f0f0f;
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1410;
+  --bg-card: #1a1410;
+  --bg-elevated: #241e18;
+  --bg-hover: #2d2520;
+
+  --text: #f5f0eb;
+  --text-primary: #f5f0eb;
+  --text-secondary: #a89f94;
+  --text-muted: #8a7a6a;
+  --text-dim: #b8a89a;
+
+  --accent: #f59e0b;
+  --accent-light: #fbbf24;
+  --accent-dark: #d97706;
+  --accent-glow: rgba(245, 158, 11, 0.15);
+
+  --border: rgba(245, 158, 11, 0.08);
+  --border-light: #2d2520;
+  --border-strong: #3d322a;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+}

@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getAllNovelIds } from '@/lib/novels';
 import db from '@/lib/db';
 import { withRoute } from '@/lib/with-route';
+import { requireAgentScope, auditAgentRequest, getAgentFromRequest } from '@/lib/agent-middleware';
+import { requireUser } from '@/lib/auth';
+import { randomUUID } from 'crypto';
+import { transferSeed } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,3 +109,114 @@ export const GET = withRoute({ auth: 'none' }, async () => {
     return NextResponse.json({ success: false, novels: [] }, { status: 500 });
   }
 });
+
+// ===== POST: Agent/用户上传新作品 =====
+export async function POST(request: NextRequest) {
+  try {
+    // 优先尝试 Agent 认证，回退到用户认证
+    let agentInfo: any = null;
+    let userId: string | null = null;
+    let authorName: string = '';
+    let isAgentUpload = false;
+
+    agentInfo = getAgentFromRequest(request);
+    if (agentInfo) {
+      // Agent 认证
+      const scopedAgent = requireAgentScope(request, 'novel:write');
+      if (scopedAgent instanceof Response) return scopedAgent;
+      userId = scopedAgent.user_id;
+      authorName = scopedAgent.agent_name || 'AI Agent';
+      isAgentUpload = true;
+    } else {
+      // 用户认证回退
+      const user = requireUser(request);
+      if (user instanceof Response) return user;
+      userId = user.userId;
+      authorName = user.nickname || user.username;
+    }
+
+    const body = await request.json();
+    const { title, description, cover_url, tags, category, status } = body;
+
+    // 参数校验
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, error: '标题不能为空' },
+        { status: 400 }
+      );
+    }
+
+    if (title.length > 200) {
+      return NextResponse.json(
+        { success: false, error: '标题不能超过200字' },
+        { status: 400 }
+      );
+    }
+
+    // 检查乱码
+    if (hasGarbledTitle(title)) {
+      return NextResponse.json(
+        { success: false, error: '标题包含乱码字符' },
+        { status: 400 }
+      );
+    }
+
+    const novelId = randomUUID();
+
+    db.prepare(`
+      INSERT INTO novels (id, title, author, author_id, description, cover_url, tags, category, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      novelId,
+      title.trim(),
+      authorName,
+      userId,
+      description || '',
+      cover_url || '',
+      tags || '',
+      category || '',
+      status || 'ongoing'
+    );
+
+    // 审计日志 + SEED 奖励
+    if (isAgentUpload && agentInfo) {
+      auditAgentRequest(request, agentInfo, 'novel.create', { type: 'novel', id: novelId });
+
+      // Agent 发布小说自动获得 SEED 奖励（与用户发布一致）
+      try {
+        const seedReward = transferSeed(userId, 100, 'publish_novel', {
+          refId: novelId,
+          description: `Agent ${agentInfo.agent_name || 'AI'} 发布小说「${title.trim()}」奖励`,
+        });
+      } catch (seedError) {
+        console.warn('Agent novel publish SEED reward failed:', seedError);
+      }
+    }
+
+    const novel = db.prepare('SELECT * FROM novels WHERE id = ?').get(novelId) as any;
+
+    return NextResponse.json({
+      success: true,
+      novel: {
+        id: novel.id,
+        title: novel.title,
+        author: novel.author,
+        description: novel.description,
+        cover_url: novel.cover_url,
+        tags: novel.tags,
+        category: novel.category,
+        status: novel.status,
+        chapterCount: 0,
+        createdAt: novel.created_at,
+        updatedAt: novel.updated_at,
+        uploaded_by_agent: isAgentUpload,
+      },
+    }, { status: 201 });
+  } catch (error: any) {
+    console.error('Create novel error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || '创建失败' },
+      { status: 500 }
+    );
+  }
+}

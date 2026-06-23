@@ -5,6 +5,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import SafeCover from '@/components/SafeCover';
 import { useHeaderConfig } from '@/components/HeaderContext';
+import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Card } from '@/components/ui/Card';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 
 interface User {
   id: string;
@@ -1185,31 +1189,50 @@ export default function HomePage() {
 
         {/* ===== HERO ===== */}
         <section className="hero" id="main-content">
-          <div className="section-container" style={{ width: '100%' }}>
+          <div className="section-container w-full">
             <div className="hero-grid">
               <div>
                 <div className="hero-badge">
                   <span className="dot"></span>
                   AI 驱动 · 互动叙事 · 未来已来
                 </div>
-                <h1>
-                  一粒<span className="highlight">火种</span><br />
-                  便能改写故事的<span className="highlight">未来</span>
-                </h1>
-                <p>
-                  在这里，AI 与人类的创作边界被重新定义。
-                  {stats.totalNovels > 0 && ` ${stats.totalNovels} 部作品、${stats.totalChapters} 章内容，`}
-                  每一次选择都生成独一无二的故事分支——你既是读者，也是故事的共同缔造者。
-                </p>
-                <div className="hero-actions">
-                  <Link href="/auth/register" className="btn-primary">
-                    开始创作
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </Link>
-                  <Link href="/novels" className="btn-ghost">浏览作品</Link>
-                </div>
+                {loading ? (
+                  <div className="space-y-4">
+                    <Skeleton width="80%" height={60} />
+                    <Skeleton width="60%" height={60} />
+                    <Skeleton width="90%" height={20} className="mt-6" />
+                    <Skeleton width="70%" height={20} />
+                    <div className="hero-cta">
+                      <Skeleton width={140} height={48} />
+                      <Skeleton width={120} height={48} />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h1 className="hero-title">
+                      一粒<span className="highlight">火种</span><br />
+                      便能改写故事的<span className="highlight">未来</span>
+                    </h1>
+                    <p className="hero-subtitle">
+                      在这里，AI 与人类的创作边界被重新定义。
+                      {stats.totalNovels > 0 && ` ${stats.totalNovels} 部作品、${stats.totalChapters} 章内容，`}
+                      每一次选择都生成独一无二的故事分支——你既是读者，也是故事的共同缔造者。
+                    </p>
+                    <div className="hero-cta">
+                      <Button asChild size="lg">
+                        <Link href="/auth/register">
+                          开始创作
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" size="lg">
+                        <Link href="/novels">浏览作品</Link>
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="hero-visual">
                 <div className="hero-orbs">
@@ -1233,45 +1256,43 @@ export default function HomePage() {
         <section className="home-section" id="features">
           <div className="section-container">
             <div className="reveal">
-              <div className="section-label">Capabilities</div>
-              <div className="showcase-header">
-                <div>
-                  <h2 className="section-title">AI 创作 × 人类阅读<br />重新定义叙事</h2>
-                  <p className="section-subtitle">不止是自动写作，更是一个让 AI 与人类共同探索故事可能性的创作生态</p>
-                </div>
-              </div>
+              <SectionHeader
+                label="Capabilities"
+                title="AI 创作 × 人类阅读，重新定义叙事"
+                subtitle="不止是自动写作，更是一个让 AI 与人类共同探索故事可能性的创作生态"
+              />
             </div>
             <div className="features-grid stagger" id="features-grid">
-              <div className="feature-card">
+              <Card hover className="feature-card">
                 <div className="feature-icon amber">✧</div>
                 <h3>AI 自动写作</h3>
                 <p>基于大语言模型的智能创作引擎，支持风格可控的章节生成、分支剧情构建，让灵感从概念到成稿一气呵成。</p>
-              </div>
-              <div className="feature-card">
+              </Card>
+              <Card hover className="feature-card">
                 <div className="feature-icon frost">◈</div>
                 <h3>互动叙事引擎</h3>
                 <p>每个关键节点提供多分支选择，AI 实时生成后续剧情。同一部作品，千人千面，每一次阅读都是独一无二的冒险。</p>
-              </div>
-              <div className="feature-card">
+              </Card>
+              <Card hover className="feature-card">
                 <div className="feature-icon amber">✦</div>
                 <h3>人类共创社区</h3>
                 <p>不只是读者。你可以 fork 作品、贡献分支、投票决定剧情走向。平台连接每一位创作者，让故事在协作中生长。</p>
-              </div>
-              <div className="feature-card">
+              </Card>
+              <Card hover className="feature-card">
                 <div className="feature-icon frost">◇</div>
                 <h3>多模态故事体验</h3>
                 <p>文字、配图、背景音乐三位一体。AI 自动为章节生成插画与氛围音效，让阅读升级为沉浸式感官体验。</p>
-              </div>
-              <div className="feature-card">
+              </Card>
+              <Card hover className="feature-card">
                 <div className="feature-icon amber">☆</div>
                 <h3>SEED 创作者经济</h3>
                 <p>点赞、创作、互动均可获得 SEED 积分。积分可用于解锁高级功能、打赏作者、参与社区治理，让创作有价值回报。</p>
-              </div>
-              <div className="feature-card">
+              </Card>
+              <Card hover className="feature-card">
                 <div className="feature-icon frost">▽</div>
                 <h3>开放生态</h3>
                 <p>API 开放、数据可导出、支持自定义 AI 模型接入。不做封闭花园，做 AI 叙事领域的开源基础设施。</p>
-              </div>
+              </Card>
             </div>
           </div>
         </section>
@@ -1404,91 +1425,82 @@ export default function HomePage() {
         </section>
 
         {/* ===== 火种·百人AI作家共创计划 ===== */}
-        <section className="home-section" style={{ paddingTop: 0 }}>
+        <section className="home-section cta-section">
           <div className="section-container">
             <div className="reveal">
-              <div className="cta-inner">
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px 6px 8px', borderRadius: 100, background: 'var(--accent-glow)', border: '1px solid rgba(245, 158, 11, 0.12)', fontSize: '0.75rem', color: 'var(--accent)', marginBottom: 24 }}>
-                  <span className="dot" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }}></span>
+              <Card className="cta-card" padding="none">
+                <div className="cta-badge">
+                  <span className="dot"></span>
                   正在招募
                 </div>
-                <h2 style={{ fontFamily: "'ZCOOL QingKe HuangYou', serif", fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', marginBottom: 12, color: 'var(--text-primary)' }}>
+                <h2 style={{ fontFamily: "'ZCOOL QingKe HuangYou', serif" }}>
                   火种·百人AI作家共创计划
                 </h2>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: 32, maxWidth: 520, margin: '0 auto 32px' }}>
+                <p>
                   100位AI作家，一起用AI写小说，探索互动叙事的可能性
                 </p>
-                <div className="btn-group" style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <Link href="/plan" className="btn-primary" style={{ padding: '14px 32px', borderRadius: 100, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', fontWeight: 600 }}>
-                    了解完整方案
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </Link>
+                <div className="btn-group">
+                  <Button asChild>
+                    <Link href="/plan">
+                      了解完整方案
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </Link>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
         </section>
 
         {/* ===== 会员 CTA ===== */}
-        <section className="home-section" style={{ paddingTop: 0 }}>
+        <section className="home-section cta-section">
           <div className="section-container">
             <div className="reveal">
-              <div
-                style={{
-                  background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)',
-                  borderRadius: 28,
-                  padding: '80px 48px',
-                  textAlign: 'center',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 700, color: '#fff', marginBottom: 12 }}>
-                    解锁全部剧情分支
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: 32, maxWidth: 480, margin: '0 auto 32px' }}>
+              <div className="cta-card cta-card-primary">
+                <div className="cta-card-content">
+                  <h2>解锁全部剧情分支</h2>
+                  <p>
                     升级会员，探索每一条隐藏支线，体验完整的故事宇宙
                   </p>
-                  <Link href="/vip" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 100, background: '#fff', color: 'var(--accent)', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none' }}>
-                    了解会员权益
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </Link>
+                  <Button variant="ghost" asChild>
+                    <Link href="/vip">
+                      了解会员权益
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </Link>
+                  </Button>
                 </div>
-                <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-                <div style={{ position: 'absolute', bottom: -40, left: -40, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
               </div>
             </div>
           </div>
         </section>
 
         {/* ===== 双二维码并排 ===== */}
-        <section className="home-section" style={{ paddingTop: 0 }}>
+        <section className="home-section cta-section">
           <div className="section-container">
             <div className="reveal">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 48, maxWidth: 640, margin: '0 auto' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ display: 'inline-block', borderRadius: 16, padding: 12, background: '#fff', border: '1px solid var(--border)', marginBottom: 12 }}>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://fireseed.online" alt="扫码访问 fireseed.online" width="160" height="160" style={{ display: 'block', imageRendering: 'pixelated' }} />
+              <div className="qr-grid">
+                <Card className="qr-card" padding="none">
+                  <div className="qr-image">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://fireseed.online" alt="扫码访问 fireseed.online" width="160" height="160" />
                   </div>
-                  <p style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>扫码访问</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>浏览器或微信扫一扫，手机直接看</p>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ display: 'inline-block', borderRadius: 16, padding: 12, background: '#fff', border: '1px solid var(--border)', marginBottom: 12 }}>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://qm.qq.com/q/LPUZ9jSqC6" alt="QQ群 火种源" width="160" height="160" style={{ display: 'block', imageRendering: 'pixelated' }} />
+                  <p className="qr-title">扫码访问</p>
+                  <p className="qr-desc">浏览器或微信扫一扫，手机直接看</p>
+                </Card>
+                <Card className="qr-card" padding="none">
+                  <div className="qr-image">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://qm.qq.com/q/LPUZ9jSqC6" alt="QQ群 火种源" width="160" height="160" />
                   </div>
-                  <p style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>QQ群：火种源</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>扫码加入 QQ 群，与 AI 作者交流</p>
+                  <p className="qr-title">QQ群：火种源</p>
+                  <p className="qr-desc">扫码加入 QQ 群，与 AI 作者交流</p>
                   <p style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>与 AI 作者一起创作</p>
-                  <a href="https://qm.qq.com/q/LPUZ9jSqC6" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 8, fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'underline' }}>
+                  <a href="https://qm.qq.com/q/LPUZ9jSqC6" target="_blank" rel="noopener noreferrer" className="qr-link">
                     点击直接加群 →
                   </a>
-                </div>
+                </Card>
               </div>
             </div>
           </div>
@@ -1496,30 +1508,31 @@ export default function HomePage() {
 
         {/* ===== 页脚 ===== */}
         <footer className="home-footer">
-          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-            <div style={{ maxWidth: 560, margin: '0 auto 32px', color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.8 }}>
+          <div className="footer-container">
+            <div className="footer-quote">
               一粒火种微弱，众火方成燎原。<br />
               FireSeed 从诞生之初，就是为AI网文创作发布而生。未来的AI小说将有专属的宇宙空间。<br /><br />
               诚招有兴趣玩玩的核心伙伴，不以工作为目的，只以共建专属创作者的免费AI写作发布平台为初心，慢慢打磨、共同成长。<br /><br />
               期待同频的你，一起守着这份热爱，深耕网文创作，完善专属我们的创作工具。
             </div>
-            <a href="mailto:50541358@qq.com"
-              style={{ display: 'inline-block', marginBottom: 32, padding: '10px 24px', borderRadius: 100, fontSize: '0.85rem', fontWeight: 500, background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', color: '#fff', textDecoration: 'none' }}>
-              联系我们 → 50541358@qq.com
-            </a>
+            <Button asChild className="footer-contact-btn">
+              <a href="mailto:50541358@qq.com">
+                联系我们 → 50541358@qq.com
+              </a>
+            </Button>
 
-            <div className="footer-inner" style={{ borderTop: '1px solid var(--border)', paddingTop: 24, marginTop: 0 }}>
+            <div className="footer-inner">
               <div className="footer-copyright">
-                <span style={{ fontFamily: "'Orbitron',monospace", fontWeight: 600, background: 'linear-gradient(135deg,var(--accent),#fbbf24)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>FireSeed</span>
-                <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>© 2026 · AI 互动叙事平台</span>
+                <span className="footer-brand">FireSeed</span>
+                <span className="footer-year">© 2026 · AI 互动叙事平台</span>
               </div>
               <div className="footer-links">
-                <a href="/novels">全部作品</a>
-                <a href="/plan">火种计划</a>
-                <a href="/skills">🔥 技能排行榜</a>
-                <a href="/seed/leaderboard">🏆 SEED 富豪榜</a>
-                <a href="/feedback">反馈</a>
-                <a href="/api/rss" target="_blank">📡 RSS</a>
+                <Link href="/novels">全部作品</Link>
+                <Link href="/plan">火种计划</Link>
+                <Link href="/skills">🔥 技能排行榜</Link>
+                <Link href="/seed/leaderboard">🏆 SEED 富豪榜</Link>
+                <Link href="/feedback">反馈</Link>
+                <a href="/api/rss" target="_blank" rel="noopener noreferrer">📡 RSS</a>
               </div>
             </div>
           </div>

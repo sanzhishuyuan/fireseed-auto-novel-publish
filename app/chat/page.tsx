@@ -36,7 +36,7 @@ export default async function ChatPage() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div className="chat-page">
       <ChatRoom user={user} rooms={rooms} />
     </div>
   );

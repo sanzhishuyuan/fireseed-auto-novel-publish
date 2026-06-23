@@ -38,6 +38,8 @@ import { apiError, apiSuccess } from '@/lib/api-response';
 import { safeParseJSON } from '@/lib/request-parser';
 import { requireAdmin, getUserIdFromRequest, verifyToken } from '@/lib/auth';
 import { requireAI } from '@/lib/ai-auth';
+import { getAgentFromRequest, requireAgentScopes } from '@/lib/agent-middleware';
+import type { AgentTokenPayload } from '@/lib/agent-token';
 import type { Permission } from '@/lib/permissions';
 import type { AdminUser } from '@/lib/auth';
 import type { AIAuthResult } from '@/lib/ai-auth';
@@ -72,13 +74,21 @@ export interface AIContext extends RouteContextBase {
   body?: any;
 }
 
-export type RouteContext = PublicContext | UserContext | AdminContext | AIContext;
+export interface AgentContext extends RouteContextBase {
+  auth: 'agent';
+  agent: AgentTokenPayload;
+  body?: any;
+}
+
+export type RouteContext = PublicContext | UserContext | AdminContext | AIContext | AgentContext;
 
 // ─── 路由配置选项 ───
 
 export interface RouteOptions {
-  /** 认证类型: 'none' 公开 | 'user' 需登录 | 'admin' 管理员 | 'ai' AI Token */
-  auth?: 'none' | 'user' | 'admin' | 'ai';
+  /** 认证类型: 'none' 公开 | 'user' 需登录 | 'admin' 管理员 | 'ai' AI Token | 'agent' OIDC Agent Token */
+  auth?: 'none' | 'user' | 'admin' | 'ai' | 'agent';
+  /** Agent 所需 Scope（仅 auth='agent' 时有效） */
+  scopes?: string[];
   /** 管理员所需权限（仅 auth='admin' 时有效） */
   permission?: Permission;
   /** 是否自动解析 JSON 请求体 */
@@ -95,6 +105,7 @@ type ContextForAuth<T extends string | undefined> =
   T extends 'admin' ? AdminContext :
   T extends 'user' ? UserContext :
   T extends 'ai' ? AIContext :
+  T extends 'agent' ? AgentContext :
   PublicContext;
 
 type HandlerFn<Ctx = RouteContext> = (request: NextRequest, ctx: Ctx) => Promise<Response>;
@@ -157,6 +168,19 @@ export function withRoute<T extends RouteOptions['auth']>(
             break;
           }
           ctx = { auth: 'ai', ai: aiAuth, params };
+          break;
+        }
+
+        case 'agent': {
+          const scopes = options.scopes || [];
+          const agentResult = scopes.length > 0
+            ? requireAgentScopes(request, scopes)
+            : getAgentFromRequest(request);
+          if (!agentResult) {
+            return apiError('UNAUTHORIZED', 'Agent 认证失败，请提供有效的 Bearer Token', 401);
+          }
+          if (agentResult instanceof Response) return agentResult;
+          ctx = { auth: 'agent', agent: agentResult, params };
           break;
         }
 
