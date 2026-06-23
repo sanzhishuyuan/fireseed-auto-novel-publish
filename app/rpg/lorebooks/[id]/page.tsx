@@ -5,10 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const C = {
-  bg: '#0b0b0f', card: '#131318', border: '#1e1e24', inputBg: '#1a1a20',
-  gold: '#c9a55c', goldDim: '#a6823a',
-  text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
-  danger: '#ef4444', success: '#22c55e',
+  bg: 'var(--codex-bg)', card: 'var(--codex-bg-card)', border: 'var(--codex-border)', inputBg: 'var(--codex-input-bg)',
+  gold: 'var(--codex-gold)', goldDim: 'var(--codex-gold)',
+  text: 'var(--codex-text)', textSec: 'var(--codex-text-dim)', textDim: 'var(--codex-text-muted)',
+  danger: 'var(--codex-red)', success: 'var(--codex-green)',
 };
 
 interface LorebookEntry {
@@ -184,8 +184,8 @@ export default function LorebookEditorPage() {
                 textDecoration: 'none',
                 padding: '8px 18px',
                 borderRadius: 6,
-                background: `${C.gold}10`,
-                border: `1px solid ${C.gold}40`,
+                background: 'var(--codex-gold-glow)',
+                border: '1px solid var(--codex-border-gold)',
                 transition: 'all 0.2s',
                 display: 'inline-flex',
                 alignItems: 'center',

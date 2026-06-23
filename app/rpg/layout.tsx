@@ -27,7 +27,7 @@ export default function RpgLayout({ children }: { children: React.ReactNode }) {
       {/* 顶部导航栏 */}
       <nav style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: C.bg + 'ee', backdropFilter: 'blur(12px)',
+        background: 'var(--codex-bg-card)', backdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${C.border}`,
       }}>
         <div style={{
@@ -58,7 +58,7 @@ export default function RpgLayout({ children }: { children: React.ReactNode }) {
                 padding: '6px 12px', borderRadius: 6, textDecoration: 'none',
                 fontSize: 13, fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap',
                 color: isActive ? C.gold : C.textSec,
-                background: isActive ? C.gold + '12' : 'transparent',
+                background: isActive ? 'var(--codex-gold-glow)' : 'transparent',
                 transition: 'all 0.15s',
               }}>
                 <span style={{ fontSize: 14 }}>{item.icon}</span>

@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const C = {
-  bg: '#0b0b0f', card: '#131318', border: '#1e1e24',
-  gold: '#c9a55c', goldDim: '#a6823a',
-  text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
-  danger: '#ef4444', success: '#22c55e', purple: '#a78bfa', blue: '#60a5fa',
+  bg: 'var(--codex-bg)', card: 'var(--codex-bg-card)', border: 'var(--codex-border)',
+  gold: 'var(--codex-gold)', goldDim: 'var(--codex-gold)',
+  text: 'var(--codex-text)', textSec: 'var(--codex-text-dim)', textDim: 'var(--codex-text-muted)',
+  danger: 'var(--codex-red)', success: 'var(--codex-green)', purple: 'var(--codex-purple)', blue: 'var(--codex-blue)',
 };
 
 const LEVELS = [

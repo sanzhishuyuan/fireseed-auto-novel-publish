@@ -5,10 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const C = {
-  bg: '#0b0b0f', card: '#131318', border: '#1e1e24', inputBg: '#1a1a20',
-  gold: '#c9a55c', goldDim: '#a6823a',
-  text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
-  purple: '#a78bfa',
+  bg: 'var(--codex-bg)', card: 'var(--codex-bg-card)', border: 'var(--codex-border)', inputBg: 'var(--codex-input-bg)',
+  gold: 'var(--codex-gold)', goldDim: 'var(--codex-gold)',
+  text: 'var(--codex-text)', textSec: 'var(--codex-text-dim)', textDim: 'var(--codex-text-muted)',
+  purple: 'var(--codex-purple)',
 };
 
 const SYS_LABEL: Record<string, string> = {
@@ -129,8 +129,8 @@ function NewCampaignForm() {
               textDecoration: 'none',
               padding: '8px 18px',
               borderRadius: 6,
-              background: `${C.gold}10`,
-              border: `1px solid ${C.gold}40`,
+              background: 'var(--codex-gold-glow)',
+              border: '1px solid var(--codex-border-gold)',
               transition: 'all 0.2s',
               display: 'inline-flex',
               alignItems: 'center',
@@ -209,7 +209,7 @@ function NewCampaignForm() {
         {selectedLorebook && (
           <div style={{
             marginBottom: 20, padding: 16, borderRadius: 8,
-            background: C.gold + '08', border: `1px solid ${C.goldDim}30`,
+            background: C.gold + '08', border: `1px solid var(--codex-border-gold)`,
           }}>
             <div style={{ fontSize: 12, color: C.gold, marginBottom: 8, fontWeight: 500 }}>
               📖 已选择: {selectedLorebook.name}
@@ -235,7 +235,7 @@ function NewCampaignForm() {
                   {linkedNPCs.map((npc: any) => (
                     <span key={npc.id} style={{
                       padding: '4px 10px', borderRadius: 4, fontSize: 12,
-                      background: C.purple + '15', border: `1px solid ${C.purple}30`,
+                      background: 'var(--codex-purple-bg)', border: `1px solid var(--codex-purple-border)`,
                       color: C.purple,
                     }}>
                       🎭 {npc.linked_name || npc.linked_id}
@@ -347,7 +347,7 @@ function NewCampaignForm() {
         {/* SEED 费用提示 */}
         <div style={{
           padding: '10px 14px', borderRadius: 6, background: C.gold + '10',
-          border: `1px solid ${C.goldDim}40`, marginBottom: 16, fontSize: 13, color: C.textSec,
+          border: `1px solid var(--codex-border-gold)`, marginBottom: 16, fontSize: 13, color: C.textSec,
         }}>
           🌱 AI GM 每次响应消耗 2 SEED。首次体验可免费使用。
         </div>

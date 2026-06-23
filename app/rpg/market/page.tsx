@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const C = {
-  bg: '#0b0b0f', card: '#131318', border: '#1e1e24',
-  gold: '#c9a55c', goldDim: '#a6823a', inputBg: '#1a1a20',
-  text: '#f0ece4', textSec: '#8a8682', textDim: '#5a5652',
-  danger: '#ef4444', success: '#22c55e', purple: '#a78bfa',
+  bg: 'var(--codex-bg)', card: 'var(--codex-bg-card)', border: 'var(--codex-border)',
+  gold: 'var(--codex-gold)', goldDim: 'var(--codex-gold)', inputBg: 'var(--codex-input-bg)',
+  text: 'var(--codex-text)', textSec: 'var(--codex-text-dim)', textDim: 'var(--codex-text-muted)',
+  danger: 'var(--codex-red)', success: 'var(--codex-green)', purple: 'var(--codex-purple)',
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -220,8 +220,8 @@ export default function RpgMarketPage() {
               style={{
                 padding: '8px 18px',
                 borderRadius: 6,
-                background: `${C.gold}10`,
-                border: `1px solid ${C.gold}40`,
+                background: 'var(--codex-gold-glow)',
+                border: '1px solid var(--codex-border-gold)',
                 color: C.gold,
                 textDecoration: 'none',
                 fontSize: 15,
@@ -237,8 +237,8 @@ export default function RpgMarketPage() {
               style={{
                 padding: '8px 18px',
                 borderRadius: 6,
-                background: C.goldDim + '20',
-                border: `1px solid ${C.goldDim}`,
+                background: 'var(--codex-gold-glow)',
+                border: `1px solid var(--codex-border-gold)`,
                 color: C.gold,
                 cursor: 'pointer',
                 fontSize: 15,
@@ -277,8 +277,8 @@ export default function RpgMarketPage() {
                   <button key={t} onClick={() => { setTypeFilter(t); setPage(1); }}
                     style={{
                       padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12,
-                      background: typeFilter === t ? C.goldDim + '30' : C.card,
-                      border: typeFilter === t ? `1px solid ${C.goldDim}` : `1px solid ${C.border}`,
+                      background: typeFilter === t ? 'var(--codex-border-gold)' : C.card,
+                      border: typeFilter === t ? `1px solid var(--codex-border-gold)` : `1px solid ${C.border}`,
                       color: typeFilter === t ? C.gold : C.textSec,
                     }}>
                     {t === 'all' ? '全部' : TYPE_LABEL[t] || t}
@@ -363,8 +363,8 @@ export default function RpgMarketPage() {
                 <button key={t} onClick={() => { setMyTab(t); loadMyData(t); }}
                   style={{
                     padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 13,
-                    background: myTab === t ? C.goldDim + '30' : C.card,
-                    border: myTab === t ? `1px solid ${C.goldDim}` : `1px solid ${C.border}`,
+                    background: myTab === t ? 'var(--codex-border-gold)' : C.card,
+                    border: myTab === t ? `1px solid var(--codex-border-gold)` : `1px solid ${C.border}`,
                     color: myTab === t ? C.gold : C.textSec,
                   }}>
                   {t === 'listings' ? '我的挂牌' : t === 'purchases' ? '已购买' : '数据统计'}
@@ -422,7 +422,7 @@ export default function RpgMarketPage() {
                           </span>
                           {item.status === 'active' && (
                             <button onClick={() => handleDelist(item.id)}
-                              style={{ fontSize: 11, color: C.danger, background: 'transparent', border: `1px solid ${C.danger}30`, borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
+                              style={{ fontSize: 11, color: C.danger, background: 'transparent', border: '1px solid var(--codex-red-border)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
                               下架
                             </button>
                           )}
@@ -533,7 +533,7 @@ export default function RpgMarketPage() {
               </div>
 
               {purchaseResult ? (
-                <div style={{ background: C.success + '15', border: `1px solid ${C.success}30`, borderRadius: 8, padding: 16, textAlign: 'center' }}>
+                <div style={{ background: 'var(--codex-green-bg)', border: '1px solid var(--codex-green-border)', borderRadius: 8, padding: 16, textAlign: 'center' }}>
                   <div style={{ color: C.success, fontSize: 24, marginBottom: 8 }}>✓</div>
                   <p style={{ color: C.text, fontSize: 14, margin: 0 }}>{detailItem.price === 0 ? '领取成功！' : '购买成功！'}资产已添加到你的库中</p>
                 </div>
@@ -702,8 +702,8 @@ export default function RpgMarketPage() {
 
               {detailItem.price > 0 && userBalance !== null && userBalance < detailItem.price && (
                 <div style={{
-                  padding: '10px 14px', borderRadius: 6, background: C.danger + '15',
-                  border: `1px solid ${C.danger}30`, marginBottom: 16, fontSize: 13, color: C.danger,
+                  padding: '10px 14px', borderRadius: 6, background: 'var(--codex-red-bg)',
+                  border: '1px solid var(--codex-red-border)', marginBottom: 16, fontSize: 13, color: C.danger,
                 }}>
                   余额不足！还需要 {detailItem.price - userBalance} 🌱
                 </div>
