@@ -24,7 +24,6 @@ export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [navScrolled, setNavScrolled] = useState(false);
   const [stats, setStats] = useState({ totalChapters: 0, totalNovels: 0, totalWords: 0, totalAuthors: 0 });
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -72,13 +71,6 @@ export default function HomePage() {
         }
       })
       .catch(console.error);
-  }, []);
-
-  // 导航滚动检测
-  useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // 关闭抽屉时禁止 body 滚动
@@ -255,28 +247,32 @@ export default function HomePage() {
           min-height: 100vh;
         }
 
-        /* ===== 导航 ===== */
+        /* ===== 导航 — 与全局 Header 统一 glass 风格 ===== */
         .nav-header {
           position: fixed;
           top: 0; left: 0; right: 0;
           z-index: 100;
-          padding: 16px 0;
-          transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+          background: rgba(255, 255, 255, 0.75);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--border-light);
+          padding: 0;
+          transition: none;
+        }
+        .dark .nav-header {
+          background: rgba(45, 37, 32, 0.85);
+          border-bottom-color: rgba(255, 255, 255, 0.06);
         }
         .nav-header.scrolled {
-          background: rgba(26, 20, 16, 0.88);
-          backdrop-filter: blur(20px) saturate(1.4);
-          -webkit-backdrop-filter: blur(20px) saturate(1.4);
-          border-bottom: 1px solid var(--border);
-          padding: 10px 0;
+          /* 与全局 Header 保持一致，滚动不再改变样式 */
         }
         .dark .nav-header.scrolled {
-          background: rgba(7, 7, 13, 0.88);
+          /* 与全局 Header 保持一致 */
         }
         .nav-inner {
           max-width: 1200px;
           margin: 0 auto;
-          padding: 0 24px;
+          padding: 16px 24px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -288,19 +284,14 @@ export default function HomePage() {
           text-decoration: none;
         }
         .logo-text {
-          font-family: 'Orbitron', monospace;
-          font-weight: 700;
-          font-size: 1.1rem;
-          letter-spacing: 0.08em;
-          background: linear-gradient(135deg, var(--accent), #fbbf24);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          font-weight: 600;
+          font-size: 1.125rem;
+          color: var(--text-primary);
         }
         .nav-links {
           display: flex;
           align-items: center;
-          gap: 28px;
+          gap: 8px;
           list-style: none;
           margin: 0;
           padding: 0;
@@ -308,35 +299,38 @@ export default function HomePage() {
         .nav-links a {
           text-decoration: none;
           color: var(--text-secondary);
-          font-size: 0.85rem;
-          transition: color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+          font-size: 0.875rem;
+          font-weight: 500;
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: 1px solid transparent;
+          transition: all 0.2s ease;
           position: relative;
         }
         .nav-links a::after {
-          content: '';
-          position: absolute;
-          bottom: -4px; left: 0;
-          width: 0; height: 1.5px;
-          background: var(--accent);
-          transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+          display: none;
         }
-        .nav-links a:hover { color: var(--text-primary); }
-        .nav-links a:hover::after { width: 100%; }
+        .nav-links a:hover {
+          color: var(--text-primary);
+          background: var(--bg-hover);
+          border-color: var(--border-strong);
+        }
         .nav-user-btn {
-          background: none;
+          background: transparent;
           border: none;
-          color: var(--text-secondary);
-          font-size: 0.85rem;
+          color: var(--text-primary);
+          font-size: 0.875rem;
+          font-weight: 500;
           cursor: pointer;
-          padding: 6px 12px;
+          padding: 8px 12px;
           border-radius: 8px;
           transition: all 0.2s ease;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
         }
         .nav-user-btn:hover {
-          background: var(--bg-secondary);
+          background: var(--bg-hover);
           color: var(--text-primary);
         }
         .nav-mobile-wrap { display: none; }
@@ -382,12 +376,16 @@ export default function HomePage() {
         .drawer-close {
           background: none;
           border: none;
-          color: var(--text-primary);
-          font-size: 1.5rem;
+          color: var(--text-secondary);
           cursor: pointer;
-          padding: 4px 8px;
+          padding: 4px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
         }
-        .drawer-close:hover { color: var(--accent); }
+        .drawer-close:hover { color: var(--text-primary); background: var(--bg-hover); }
         .drawer-links {
           list-style: none;
           display: flex;
@@ -886,8 +884,6 @@ export default function HomePage() {
           .showcase-header { flex-direction: column; align-items: flex-start; }
         }
         @media (max-width: 768px) {
-          .nav-header { padding: 12px 0; }
-          .nav-header.scrolled { padding: 8px 0; }
           .nav-links { display: none; }
           .nav-mobile-wrap { display: flex; align-items: center; gap: 8px; }
           .nav-mobile-btn {
@@ -895,7 +891,7 @@ export default function HomePage() {
             cursor: pointer; padding: 8px; border-radius: 8px;
           }
           .nav-mobile-btn:active { background: var(--accent-glow); }
-          .nav-inner { padding: 0 20px; }
+          .nav-inner { padding: 16px 20px; }
           .logo-text { font-size: 1rem; }
 
           .hero { min-height: calc(100vh - 60px); padding-top: 72px; }
@@ -1001,19 +997,19 @@ export default function HomePage() {
 
       <div className="home-wrap">
         {/* ===== 导航 ===== */}
-        <header className={`nav-header${navScrolled ? ' scrolled' : ''}`}>
+        <header className="nav-header">
           <div className="nav-inner">
             <Link href="/" className="logo-wrap" aria-label="FireSeed 首页">
-              <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-                <circle cx="18" cy="18" r="17" stroke="url(#logo-grad)" strokeWidth="1.5" opacity="0.3"/>
-                <path d="M18 8C18 8 22 16 18 22C14 16 18 8 18 8Z" fill="url(#logo-grad)"/>
-                <circle cx="18" cy="22" r="3" fill="url(#logo-grad)"/>
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
                 <defs>
-                  <linearGradient id="logo-grad" x1="0" y1="0" x2="36" y2="36">
-                    <stop offset="0%" stopColor="#f59e0b"/>
-                    <stop offset="100%" stopColor="#d97706"/>
+                  <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+                    <stop offset="0%" stopColor="var(--accent)" />
+                    <stop offset="100%" stopColor="var(--accent-light)" />
                   </linearGradient>
                 </defs>
+                <circle cx="14" cy="14" r="14" fill="url(#logoGrad)" />
+                <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
+                <circle cx="14" cy="14" r="3" fill="white"/>
               </svg>
               <span className="logo-text">FireSeed</span>
             </Link>
@@ -1118,8 +1114,25 @@ export default function HomePage() {
         <div className={`drawer-overlay${drawerOpen ? ' open' : ''}`} onClick={closeDrawer} />
         <div className={`mobile-drawer${drawerOpen ? ' open' : ''}`}>
           <div className="drawer-header">
-            <span className="logo-text" style={{ fontSize: '1rem' }}>FireSeed</span>
-            <button className="drawer-close" onClick={closeDrawer}>&times;</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="22" height="22" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="drawerLogoGrad" x1="0" y1="0" x2="28" y2="28">
+                    <stop offset="0%" stopColor="var(--accent)" />
+                    <stop offset="100%" stopColor="var(--accent-light)" />
+                  </linearGradient>
+                </defs>
+                <circle cx="14" cy="14" r="14" fill="url(#drawerLogoGrad)" />
+                <path d="M8 14C8 14 10 8 14 8C18 8 20 14 20 14C20 14 18 20 14 20C10 20 8 14 8 14Z" stroke="white" strokeWidth="1.5" fill="none"/>
+                <circle cx="14" cy="14" r="3" fill="white"/>
+              </svg>
+              <span className="logo-text" style={{ fontSize: '1rem' }}>FireSeed</span>
+            </div>
+            <button className="drawer-close" onClick={closeDrawer} aria-label="关闭菜单">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M5 5l10 10M15 5l-10 10" />
+              </svg>
+            </button>
           </div>
           <ul className="drawer-links">
             <li><Link href="/" onClick={closeDrawer}>首页</Link></li>
